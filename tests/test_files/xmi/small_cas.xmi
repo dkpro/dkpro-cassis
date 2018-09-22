@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmlns:cassis="http:///cassis.ecore"
+         xmlns:tcas="http:///uima/tcas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
+    <cassis:Token xmi:id="13" sofa="1" begin="0" end="3" id="0"/>
+    <cassis:Token xmi:id="19" sofa="1" begin="4" end="10" id="0"/>
+    <cassis:Token xmi:id="25" sofa="1" begin="11" end="14" id="0"/>
+    <cassis:Token xmi:id="31" sofa="1" begin="15" end="18" id="0"/>
+    <cassis:Token xmi:id="37" sofa="1" begin="19" end="24" id="0"/>
+    <cassis:Token xmi:id="43" sofa="1" begin="25" end="26" id="0"/>
+    <cassis:Token xmi:id="49" sofa="1" begin="27" end="30" id="0"/>
+    <cassis:Token xmi:id="55" sofa="1" begin="31" end="36" id="0"/>
+    <cassis:Token xmi:id="61" sofa="1" begin="37" end="40" id="0"/>
+    <cassis:Token xmi:id="67" sofa="1" begin="41" end="45" id="0"/>
+    <cassis:Token xmi:id="73" sofa="1" begin="46" end="47" id="0"/>
+    <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="26" id="0"/>
+    <cassis:Sentence xmi:id="84" sofa="1" begin="27" end="47" id="0"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="mySofa" mimeType="text/plain"
+              sofaString="Joe waited for the train . The train was late ."/>
+    <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
+</xmi:XMI>

@@ -3,6 +3,7 @@ from collections import namedtuple
 Type = namedtuple('TypeDescription', ['name', 'description', 'supertypeName', 'features'])
 Feature = namedtuple('Feature', ['name', 'description', 'rangeTypeName'])
 
+
 class TypeSystem():
 
     def __init__(self, types):

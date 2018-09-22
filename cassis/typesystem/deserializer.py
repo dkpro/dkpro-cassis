@@ -1,12 +1,11 @@
-from collections import namedtuple
-
 from lxml import etree
 
-from cassis.typesystem import TypeSystem, Type, Feature
+from cassis.typesystem.typesystem import TypeSystem, Type, Feature
+
 
 class TypeSystemDeserializer():
 
-    def parse(self, source):
+    def parse(self, source) -> TypeSystem:
         """
 
         Args:
@@ -17,8 +16,8 @@ class TypeSystemDeserializer():
         """
         types = []
 
-        context = etree.iterparse(source, events=('end', ), tag=('{*}typeDescription', ))
-        for action, elem in context:
+        context = etree.iterparse(source, events=('end',), tag=('{*}typeDescription',))
+        for event, elem in context:
             name = elem.find('{*}name').text or ''
             description = elem.find('{*}description').text or ''
             supertypeName = elem.find('{*}supertypeName').text or ''
@@ -39,7 +38,7 @@ class TypeSystemDeserializer():
 
         return TypeSystem(types)
 
-    def _parse_feature(self, elem):
+    def _parse_feature(self, elem) -> Feature:
         name = elem.find('{*}name').text or ''
         description = elem.find('{*}description').text or ''
         rangeTypeName = elem.find('{*}rangeTypeName').text or ''

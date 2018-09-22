@@ -7,6 +7,12 @@ FIXTURE_DIR = os.path.join(
     'test_files'
 )
 
+
+@pytest.fixture
+def small_xmi():
+    return os.path.join(FIXTURE_DIR, 'xmi', 'small_cas.xmi')
+
+
 @pytest.fixture
 def small_typesystem():
     return os.path.join(FIXTURE_DIR, 'typesystems', 'small_typesystem.xml')

@@ -1,6 +1,6 @@
 from tests.fixtures import small_typesystem
 
-from cassis.typesystem import TypeSystemDeserializer, Type, Feature
+from cassis.typesystem import TypeSystemDeserializer, Feature, Type
 
 def test_deserializing_small_typesystem(small_typesystem):
     deserializer = TypeSystemDeserializer()
@@ -23,4 +23,3 @@ def test_deserializing_small_typesystem(small_typesystem):
     sentence_features = [Feature('id', '', 'uima.cas.Integer')]
     sentence_type = Type('cassis.Sentence', '', 'uima.tcas.Annotation', sentence_features)
     assert typesystem.get_type('cassis.Sentence') == sentence_type
-

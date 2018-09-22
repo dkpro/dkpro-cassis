@@ -1,7 +1,8 @@
+from io import StringIO
+
 from lxml import etree
 
 from cassis.typesystem.typesystem import TypeSystem, Type, Feature
-
 
 class TypeSystemDeserializer():
 
@@ -30,7 +31,6 @@ class TypeSystemDeserializer():
             type = Type(name, description, supertypeName, features)
             types.append(type)
 
-            # https://www.ibm.com/developerworks/xml/library/x-hiperfparse/
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
@@ -43,3 +43,13 @@ class TypeSystemDeserializer():
         description = elem.find('{*}description').text or ''
         rangeTypeName = elem.find('{*}rangeTypeName').text or ''
         return Feature(name, description, rangeTypeName)
+
+
+def load_from_file(path: str) -> TypeSystem:
+    deserializer = TypeSystemDeserializer()
+    return deserializer.parse(path)
+
+
+def load_from_string(xml: str) -> TypeSystem:
+    deserializer = TypeSystemDeserializer()
+    return deserializer.parse(StringIO(xml))

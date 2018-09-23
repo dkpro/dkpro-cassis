@@ -1,11 +1,29 @@
 from tests.fixtures import small_typesystem
 
-from cassis.typesystem import TypeSystemDeserializer, Feature, Type
+from cassis.typesystem import Feature, Type, load_from_file, load_from_string
+
+
+def test_deserializing_from_file(small_typesystem):
+    load_from_file(small_typesystem)
+
+
+def test_deserializing_from_string():
+    cas_xmi = '''<?xml version="1.0" encoding="UTF-8"?>
+    <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+             xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
+        <cas:NULL xmi:id="0"/>
+        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
+        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="26" id="0"/>
+        <cassis:Sentence xmi:id="84" sofa="1" begin="27" end="47" id="1"/>
+        <cas:Sofa xmi:id="1" sofaNum="1" sofaID="mySofa" mimeType="text/plain"
+                  sofaString="Joe waited for the train . The train was late ."/>
+        <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
+    </xmi:XMI>    
+    '''
+    load_from_string(cas_xmi)
 
 def test_deserializing_small_typesystem(small_typesystem):
-    deserializer = TypeSystemDeserializer()
-
-    typesystem = deserializer.parse(small_typesystem)
+    typesystem = load_from_file(small_typesystem)
 
     assert len(typesystem) == 3
 

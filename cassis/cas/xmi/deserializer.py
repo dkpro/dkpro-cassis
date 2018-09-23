@@ -1,4 +1,4 @@
-from io import StringIO
+from io import BytesIO
 
 from lxml import etree
 
@@ -11,7 +11,7 @@ def load_from_file(path: str, typesystem=TypeSystem()) -> Cas:
 
 
 def load_from_string(xml: str, typesystem=TypeSystem()) -> Cas:
-    return _parse_xmi(StringIO(xml), typesystem)
+    return _parse_xmi(BytesIO(xml.encode('utf-8')), typesystem)
 
 
 def _parse_xmi(source, typesystem):

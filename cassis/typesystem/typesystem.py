@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import Callable, Dict, List
 
 import attr
 
@@ -30,18 +30,17 @@ class Type():
     description: str = attr.ib()
     supertypeName: str = attr.ib()
     features: List[Feature] = attr.ib()
-    constructor = attr.ib(init=False, cmp=False, repr=False)
+    constructor: Callable[[Dict], Annotation] = attr.ib(init=False, cmp=False, repr=False)
 
     def __attrs_post_init__(self):
+        """ Build the constructor that can create annotations of this type """
         name = _string_to_valid_classname(self.name)
         fields = {feature.name: attr.ib(default=None) for feature in self.features}
         fields['type'] = attr.ib(default=self.name)
-        constructor = attr.make_class(name, fields, bases=(Annotation,), slots=True)
+        self.constructor = attr.make_class(name, fields, bases=(Annotation,), slots=True)
 
-        # Set the default values for all fields to None
-        self.constructor = constructor
-
-    def __call__(self, **kwargs):
+    def __call__(self, **kwargs) -> Annotation:
+        """ Creates an annotation of this type """
         return self.constructor(**kwargs)
 
 class FallbackType():

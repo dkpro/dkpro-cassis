@@ -55,17 +55,13 @@ def _parse_xmi(source, typesystem):
             # Free already processed elements
             _clear_elem(elem)
 
-    return Cas(namespaces, sofas, views, annotations)
+    return Cas(annotations=annotations, namespaces=namespaces, sofas=sofas, views=views)
 
 
 def _parse_sofa(elem) -> Sofa:
-    attributes = elem.attrib
-    id = attributes.get('{http://www.omg.org/XMI}id', '')
-    sofaNum = attributes.get('sofaNum', '')
-    sofaID = attributes.get('sofaID', '')
-    mimeType = attributes.get('mimeType', '')
-    sofaString = attributes.get('sofaString', '')
-    return Sofa(id=id, sofaNum=sofaNum, sofaID=sofaID, mimeType=mimeType, sofaString=sofaString)
+    attributes = dict(elem.attrib)
+    attributes['xmiID'] = int(attributes.pop('{http://www.omg.org/XMI}id'))
+    return Sofa(**attributes)
 
 
 def _parse_view(elem) -> View:
@@ -81,15 +77,15 @@ def _parse_annotation(typesystem: TypeSystem, elem):
     typename = elem.tag[9:].replace('/', '.').replace('ecore}', '')
 
     AnnotationType = typesystem.get_type(typename)
-    attrs = dict(elem.attrib)
+    attributes = dict(elem.attrib)
 
     # Map the xmi:id attribute to xmiID
-    attrs['xmiID'] = int(attrs.pop('{http://www.omg.org/XMI}id', None))
-    attrs['begin'] = int(attrs['begin'])
-    attrs['end'] = int(attrs['end'])
-    attrs['sofa'] = int(attrs['sofa'])
+    attributes['xmiID'] = int(attributes.pop('{http://www.omg.org/XMI}id'))
+    attributes['begin'] = int(attributes['begin'])
+    attributes['end'] = int(attributes['end'])
+    attributes['sofa'] = int(attributes['sofa'])
 
-    return AnnotationType(**attrs)
+    return AnnotationType(**attributes)
 
 
 def _clear_elem(elem):

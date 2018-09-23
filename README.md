@@ -2,9 +2,18 @@
 
 **cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in Python. Currently suported features are:
 
-- Serializing/deserializing UIMA CAS from/to XMI
-- Serializing/deserializing type systems from/to XML
+- Deserializing/serializing UIMA CAS from/to XMI
+- Deserializing/serializing type systems from/to XML
 - Selecting annotations, selecting covered annotations, adding annotations
+
+Some featzers are still under development, e.g.
+
+- feature encoding as XML elements (right now only XML attributes work)
+- proper type checking
+- XML/XMI schema validation
+- type unmarshalling
+- reference, array and list features
+- complete sofa support
 
 ## Installation
 

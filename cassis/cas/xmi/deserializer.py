@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import IO, Union
 
 from lxml import etree
 
@@ -6,15 +7,15 @@ from cassis.cas.cas import Cas, Sofa, View
 from cassis.typesystem.typesystem import TypeSystem
 
 
-def load_from_file(path: str, typesystem=TypeSystem()) -> Cas:
+def load_from_file(path: str, typesystem: TypeSystem = TypeSystem()) -> Cas:
     return _parse_xmi(path, typesystem)
 
 
-def load_from_string(xml: str, typesystem=TypeSystem()) -> Cas:
+def load_from_string(xml: str, typesystem: TypeSystem = TypeSystem()) -> Cas:
     return _parse_xmi(BytesIO(xml.encode('utf-8')), typesystem)
 
 
-def _parse_xmi(source, typesystem):
+def _parse_xmi(source: Union[IO, str], typesystem: TypeSystem):
     # namespaces
     NS_XMI = '{http://www.omg.org/XMI}'
     NS_CAS = '{http:///uima/cas.ecore}'

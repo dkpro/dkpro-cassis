@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Iterator
 
 import attr
 
@@ -85,6 +85,10 @@ class TypeSystem():
         else:
             # TODO: Fix fallback for lenient parsing
             return FallbackType
+
+    def get_types(self) -> Iterator[Type]:
+        """ Returns all types of this type system """
+        return iter(self._types.values())
 
     def __len__(self) -> int:
         return len(self._types)

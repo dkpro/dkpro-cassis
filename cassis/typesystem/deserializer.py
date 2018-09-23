@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import IO, Union
 
 from lxml import etree
 
@@ -13,7 +14,7 @@ def load_from_string(xml: str) -> TypeSystem:
     return _parse(BytesIO(xml.encode('utf-8')))
 
 
-def _parse(source) -> TypeSystem:
+def _parse(source: Union[IO, str]) -> TypeSystem:
     """
 
     Args:

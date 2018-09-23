@@ -215,5 +215,7 @@ pip-selfcheck.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+.idea/
+
 
 # End of https://www.gitignore.io/api/python,pycharm,visualstudiocode

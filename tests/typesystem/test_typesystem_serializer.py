@@ -1,5 +1,3 @@
-import lxml.etree as etree
-
 from lxml_asserts import assert_xml_equal
 
 from tests.fixtures import small_typesystem

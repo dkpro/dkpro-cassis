@@ -113,6 +113,16 @@ class Cas():
             if annotation.begin > c_end:
                 break
 
+    def select_all(self) -> Iterator[Annotation]:
+        """ Returns an iterator over all annotations in this Cas
+
+        Returns:
+            an iterator over all annotations in this Cas
+        """
+        for annotations in self._annotations.values():
+            for annotation in annotations:
+                yield annotation
+
     def get_sofa(self, sofa_id: int) -> Sofa:
         return self._sofas[sofa_id]
 

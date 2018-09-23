@@ -25,19 +25,25 @@ tbd
 
 A CAS can be deserialized from XMI either by reading from a file with `load_from_file` or from a string with `load_from_string`.
 
-```
+```python
 import cassis.cas.xmi as xmi
 import cassis.typesystem as ts
 
-typesystem = ts.load_from_file(path_to_typeystem)
-cas = xmi.load_from_file(small_xmi, typesystem=typesystem)
+typesystem = ts.load_from_file('typesystem.xml')
+cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
 ```
     
 ### Adding annotations
 
 Given a type system with a type `cassis.Token` that has an `id` and `pos` feature, annotations can be added in the following:
 
-```
+```python
+import cassis.cas.xmi as xmi
+import cassis.typesystem as ts
+
+typesystem = ts.load_from_file('typesystem.xml')
+cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
+
 TokenType = typesystem.get_type('cassis.Token')
 
 tokens = [
@@ -55,7 +61,13 @@ for token in tokens:
         
 ### Selecting annotations
 
-```
+```python
+import cassis.cas.xmi as xmi
+import cassis.typesystem as ts
+
+typesystem = ts.load_from_file('typesystem.xml')
+cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
+
 for sentence in cas.select('cassis.Sentence'):
     for token in cas.select_covered('cassis.Token', sentence):
         print(cas.get_covered_text(token))

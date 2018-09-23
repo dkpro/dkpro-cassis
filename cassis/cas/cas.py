@@ -49,7 +49,7 @@ class Cas():
 
         # Find maximum id
         maximum_xmiID = 1
-        for obj in chain(_sofas, annotations):
+        for obj in chain(_sofas, _annotations):
             if obj.xmiID and obj.xmiID > maximum_xmiID:
                 maximum_xmiID = obj.xmiID
 

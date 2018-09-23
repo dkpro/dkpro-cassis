@@ -2,7 +2,6 @@ from io import StringIO
 
 from lxml import etree
 
-from cassis.util import CassisException
 from cassis.cas.cas import Cas, Sofa, View
 from cassis.typesystem.typesystem import TypeSystem
 
@@ -61,12 +60,13 @@ def _parse_xmi(source, typesystem):
 def _parse_sofa(elem) -> Sofa:
     attributes = dict(elem.attrib)
     attributes['xmiID'] = int(attributes.pop('{http://www.omg.org/XMI}id'))
+    attributes['sofaNum'] = int(attributes['sofaNum'])
     return Sofa(**attributes)
 
 
 def _parse_view(elem) -> View:
     attributes = elem.attrib
-    sofa = attributes.get('sofa', '')
+    sofa = int(attributes['sofa'])
     members = [int(e) for e in attributes.get('members', '').split(' ')]
     return View(sofa=sofa, members=members)
 

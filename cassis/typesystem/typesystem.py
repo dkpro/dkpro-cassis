@@ -1,4 +1,3 @@
-from collections import namedtuple
 import re
 from typing import List
 
@@ -6,37 +5,44 @@ import attr
 
 
 def _string_to_valid_classname(name: str):
-    return re.sub('[^a-zA-Z_]', '_', name).upper()
+    return re.sub('[^a-zA-Z_]', '_', name)
 
 
-@attr.s
+@attr.s(slots=True)
+class Annotation():
+    type: str = attr.ib()
+    begin: int = attr.ib()
+    end: int = attr.ib()
+    xmiID: int = attr.ib(default=None)
+    sofa: int = attr.ib(default=None)
+
+
+@attr.s(slots=True)
 class Feature():
     name = attr.ib()
     description = attr.ib()
     rangeTypeName = attr.ib()
 
 
-@attr.s
+@attr.s(slots=True)
 class Type():
-    name = attr.ib()
-    description = attr.ib()
-    supertypeName = attr.ib()
-    features = attr.ib()
-    constructor = attr.ib(init=False, cmp=False)
+    name: str = attr.ib()
+    description: str = attr.ib()
+    supertypeName: str = attr.ib()
+    features: List[Feature] = attr.ib()
+    constructor = attr.ib(init=False, cmp=False, repr=False)
 
     def __attrs_post_init__(self):
         name = _string_to_valid_classname(self.name)
-        common_fields = ['type', 'xmiID', 'sofa', 'begin', 'end']
-        fields = common_fields + [feature.name for feature in self.features]
-        constructor = namedtuple(name, fields)
+        fields = {feature.name: attr.ib(default=None) for feature in self.features}
+        fields['type'] = attr.ib(default=self.name)
+        constructor = attr.make_class(name, fields, bases=(Annotation,), slots=True)
 
         # Set the default values for all fields to None
-        constructor.__new__.__defaults__ = (None,) * len(constructor._fields)
         self.constructor = constructor
 
-    def __call__(self, xmiID=None, sofa=None, begin=None, end=None, **kwargs):
-        return self.constructor(type=self.name, xmiID=xmiID, sofa=sofa, begin=begin, end=end, **kwargs)
-
+    def __call__(self, **kwargs):
+        return self.constructor(**kwargs)
 
 class FallbackType():
     def __init__(self, **kwargs):
@@ -78,6 +84,7 @@ class TypeSystem():
         if self.has_type(typename):
             return self._types[typename]
         else:
+            # TODO: Fix fallback for lenient parsing
             return FallbackType
 
     def __len__(self) -> int:

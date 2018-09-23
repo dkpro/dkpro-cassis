@@ -9,6 +9,6 @@ def test_type_can_create_instances():
     features = [Feature(name='testFeature', description='Just a test feature', rangeTypeName='String')]
     TestType = Type(name='test.Type', description='Just a test type', supertypeName='TOP', features=features)
 
-    annotation = TestType(testFeature='testValue')
+    annotation = TestType(begin=0, end=42, testFeature='testValue')
 
     assert annotation.testFeature == 'testValue'

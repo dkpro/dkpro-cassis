@@ -17,8 +17,10 @@ def load_from_string(xml: str, typesystem=TypeSystem()) -> Cas:
 
 def _parse_xmi(source, typesystem):
     # namespaces
+    NS_XMI = '{http://www.omg.org/XMI}'
     NS_CAS = '{http:///uima/cas.ecore}'
 
+    TAG_XMI = NS_XMI + 'XMI'
     TAG_CAS_NULL = NS_CAS + 'NULL'
     TAG_CAS_SOFA = NS_CAS + 'Sofa'
     TAG_CAS_VIEW = NS_CAS + 'View'
@@ -35,7 +37,10 @@ def _parse_xmi(source, typesystem):
             ns, url = elem
             namespaces[ns] = url
         elif event == 'end':
-            if elem.tag == TAG_CAS_NULL:
+            if elem.tag == TAG_XMI:
+                # Ignore the closing 'xmi:XMI' tag
+                pass
+            elif elem.tag == TAG_CAS_NULL:
                 pass
             elif elem.tag == TAG_CAS_SOFA:
                 sofa = _parse_sofa(elem)
@@ -79,7 +84,11 @@ def _parse_annotation(typesystem: TypeSystem, elem):
     attrs = dict(elem.attrib)
 
     # Map the xmi:id attribute to xmiID
-    attrs['xmiID'] = attrs.pop('{http://www.omg.org/XMI}id', None)
+    attrs['xmiID'] = int(attrs.pop('{http://www.omg.org/XMI}id', None))
+    attrs['begin'] = int(attrs['begin'])
+    attrs['end'] = int(attrs['end'])
+    attrs['sofa'] = int(attrs['sofa'])
+
     return AnnotationType(**attrs)
 
 

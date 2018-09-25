@@ -1,6 +1,6 @@
 # cassis
 
-https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master
+[![Build Status](https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master)](https://travis-ci.org/dkpro/dkpro-cassis)
 
 **cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in Python. Currently supported features are:
 

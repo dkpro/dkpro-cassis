@@ -1,6 +1,6 @@
 import random
 
-from tests.fixtures import small_xmi, small_typesystem, tokens, sentences
+from tests.fixtures import *
 
 from cassis.cas import Cas, Sofa, View
 import cassis.typesystem
@@ -57,10 +57,10 @@ def test_get_covered_text_sentences(sentences):
     assert actual_text == expected_text
 
 
-def test_add_annotation(small_typesystem):
+def test_add_annotation(small_typesystem_xml):
     sofa = Sofa(sofaNum=1, sofaString='Joe waited for the train .')
     cas = Cas(sofas=[sofa])
-    typesystem = cassis.typesystem.load_from_file(small_typesystem)
+    typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type('cassis.Token')
 
     tokens = [
@@ -78,9 +78,9 @@ def test_add_annotation(small_typesystem):
     assert actual_tokens == tokens
 
 
-def test_add_annotation_generates_ids(small_typesystem, tokens):
+def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
     cas = Cas()
-    typesystem = cassis.typesystem.load_from_file(small_typesystem)
+    typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type('cassis.Token')
 
     tokens = [

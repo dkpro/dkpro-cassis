@@ -1,12 +1,13 @@
 from collections import defaultdict
+from io import BytesIO
 from itertools import chain
-from typing import Dict, Iterator, List
+from typing import Dict, IO, Iterator, List, Union
 
 import attr
 
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem.typesystem import Annotation
+from cassis.typesystem import Annotation
 
 
 @attr.s(slots=True)
@@ -133,3 +134,24 @@ class Cas():
     def _get_next_id(self):
         self.maximum_xmiID += 1
         return self.maximum_xmiID
+
+    def to_xmi(self, path_or_buf: Union[IO, str] = None):
+        """ Creates a string representation of this type system
+
+        Args:
+            path_or_buf: File path or file-like object, if None is provided the result is returned as a string.
+
+        Returns:
+
+        """
+        from cassis.xmi import CasXmiSerializer
+
+        serializer = CasXmiSerializer()
+
+        # If `path_or_buf` is None, then serialize to a string and return it
+        if path_or_buf is None:
+            sink = BytesIO()
+            serializer.serialize(sink, self)
+            return sink.getvalue().decode('utf-8')
+        else:
+            serializer.serialize(path_or_buf, self)

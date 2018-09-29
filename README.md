@@ -27,14 +27,17 @@ Example CAS XMI and types system files can be found under `tests\test_files`.
 
 ### Loading a CAS
 
-A CAS can be deserialized from XMI either by reading from a file with `load_from_file` or from a string with `load_from_string`.
+A CAS can be deserialized from XMI either by reading from a file or string using `load_cas_from_xmi`.
 
 ```python
-import cassis.cas.xmi as xmi
-import cassis.typesystem as ts
+from cassis import *
 
-typesystem = ts.load_from_file('typesystem.xml')
-cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
+with open('typesystem.xml', 'rb') as f:
+    typesystem = load_typesystem(f)
+    
+with open('cas.xml', 'rb') as f:
+   cas = load_cas_from_xmi(f, typesystem=typesystem)
+
 ```
     
 ### Adding annotations
@@ -42,21 +45,23 @@ cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
 Given a type system with a type `cassis.Token` that has an `id` and `pos` feature, annotations can be added in the following:
 
 ```python
-import cassis.cas.xmi as xmi
-import cassis.typesystem as ts
+from cassis import *
 
-typesystem = ts.load_from_file('typesystem.xml')
-cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
-
-TokenType = typesystem.get_type('cassis.Token')
+with open('typesystem.xml', 'rb') as f:
+    typesystem = load_typesystem(f)
+    
+with open('cas.xml', 'rb') as f:
+   cas = load_cas_from_xmi(f, typesystem=typesystem)
+   
+Token = typesystem.get_type('cassis.Token')
 
 tokens = [
-    TokenType(xmiID=13, sofa=1, begin=0, end=3, id='0', pos='NNP'),
-    TokenType(xmiID=19, sofa=1, begin=4, end=10, id='1', pos='VBD'),
-    TokenType(xmiID=25, sofa=1, begin=11, end=14, id='2', pos='IN'),
-    TokenType(xmiID=31, sofa=1, begin=15, end=18, id='3', pos='DT'),
-    TokenType(xmiID=37, sofa=1, begin=19, end=24, id='4', pos='NN'),
-    TokenType(xmiID=43, sofa=1, begin=25, end=26, id='5', pos='.'),
+    Token(xmiID=13, sofa=1, begin=0, end=3, id='0', pos='NNP'),
+    Token(xmiID=19, sofa=1, begin=4, end=10, id='1', pos='VBD'),
+    Token(xmiID=25, sofa=1, begin=11, end=14, id='2', pos='IN'),
+    Token(xmiID=31, sofa=1, begin=15, end=18, id='3', pos='DT'),
+    Token(xmiID=37, sofa=1, begin=19, end=24, id='4', pos='NN'),
+    Token(xmiID=43, sofa=1, begin=25, end=26, id='5', pos='.'),
 ]
 
 for token in tokens:
@@ -66,11 +71,13 @@ for token in tokens:
 ### Selecting annotations
 
 ```python
-import cassis.cas.xmi as xmi
-import cassis.typesystem as ts
+from cassis import *
 
-typesystem = ts.load_from_file('typesystem.xml')
-cas = xmi.load_from_file('cas.xmi', typesystem=typesystem)
+with open('typesystem.xml', 'rb') as f:
+    typesystem = load_typesystem(f)
+    
+with open('cas.xml', 'rb') as f:
+   cas = load_cas_from_xmi(f, typesystem=typesystem)
 
 for sentence in cas.select('cassis.Sentence'):
     for token in cas.select_covered('cassis.Token', sentence):
@@ -79,4 +86,14 @@ for sentence in cas.select('cassis.Sentence'):
         
 ## Development
 
-tbd
+The required dependencies are managed by [pipenv](https://docs.pipenv.org/). A virtual environment containing all needed packages for development and production can be created and activated by
+
+    pipenv shell
+
+. The tests can be run in the current environment by invoking
+
+    make test
+    
+or in a clean environment via
+
+    tox

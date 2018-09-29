@@ -1,2 +1,0 @@
-class CassisException(Exception):
-    pass

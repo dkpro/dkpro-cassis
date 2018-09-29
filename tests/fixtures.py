@@ -2,28 +2,39 @@ import os
 
 import pytest
 
-import cassis.cas.xmi as xmi
-import cassis.typesystem as ts
+from cassis import *
+import cassis.xmi as xmi
 
 FIXTURE_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'test_files'
 )
 
-
 @pytest.fixture
-def small_xmi():
+def small_xmi_path():
     return os.path.join(FIXTURE_DIR, 'xmi', 'small_cas.xmi')
 
 
 @pytest.fixture
-def small_typesystem():
-    return os.path.join(FIXTURE_DIR, 'typesystems', 'small_typesystem.xml')
+def small_xmi(small_xmi_path):
+    with open(small_xmi_path, 'r') as f:
+        return f.read()
 
 
 @pytest.fixture
-def tokens(small_typesystem):
-    typesystem = ts.load_from_file(small_typesystem)
+def small_typesystem_path():
+    return os.path.join(FIXTURE_DIR, 'typesystems', 'small_typesystem.xml')
+
+@pytest.fixture
+def small_typesystem_xml(small_typesystem_path):
+    with open(small_typesystem_path, 'r') as f:
+        return f.read()
+
+
+@pytest.fixture
+def tokens(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
     TokenType = typesystem.get_type('cassis.Token')
     return [
         TokenType(xmiID=13, sofa=1, begin=0, end=3, id='0', pos='NNP'),
@@ -41,8 +52,8 @@ def tokens(small_typesystem):
 
 
 @pytest.fixture
-def sentences(small_typesystem):
-    typesystem = ts.load_from_file(small_typesystem)
+def sentences(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
     SentenceType = typesystem.get_type('cassis.Sentence')
 
     return [

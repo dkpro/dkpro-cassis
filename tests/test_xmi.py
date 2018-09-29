@@ -1,12 +1,15 @@
-from tests.fixtures import small_xmi, small_typesystem
+from tests.fixtures import *
 
-from cassis.cas import Cas, Sofa, View
-from cassis.cas.xmi import load_from_file, load_from_string
-import cassis.typesystem
+from lxml_asserts import assert_xml_equal
+
+from cassis import *
 
 
-def test_deserializing_from_file(small_xmi):
-    load_from_file(small_xmi)
+# Deserializing
+
+def test_deserializing_from_file(small_xmi_path):
+    with open(small_xmi_path, 'rb') as f:
+        load_cas_from_xmi(f)
 
 
 def test_deserializing_from_string():
@@ -22,10 +25,10 @@ def test_deserializing_from_string():
         <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
     </xmi:XMI>    
     '''
-    load_from_string(cas_xmi)
+    load_cas_from_xmi(cas_xmi)
 
 def test_namespaces_are_parsed(small_xmi):
-    cas = load_from_file(small_xmi)
+    cas = load_cas_from_xmi(small_xmi)
 
     expected_namespaces = {
         'xmi': 'http://www.omg.org/XMI',
@@ -38,7 +41,7 @@ def test_namespaces_are_parsed(small_xmi):
 
 
 def test_sofas_are_parsed(small_xmi):
-    cas = load_from_file(small_xmi)
+    cas = load_cas_from_xmi(small_xmi)
 
     expected_sofas = [Sofa(xmiID=1, sofaNum=1, sofaID='mySofa', mimeType='text/plain',
                            sofaString='Joe waited for the train . The train was late .')]
@@ -46,15 +49,15 @@ def test_sofas_are_parsed(small_xmi):
 
 
 def test_views_are_parsed(small_xmi):
-    cas = load_from_file(small_xmi)
+    cas = load_cas_from_xmi(small_xmi)
 
     expected_views = [View(sofa=1, members=[8, 13, 19, 25, 31, 37, 43, 49, 55, 61, 67, 73, 79, 84])]
     assert cas.views == expected_views
 
 
-def test_simple_features_are_parsed(small_xmi, small_typesystem):
-    typesystem = cassis.typesystem.load_from_file(small_typesystem)
-    cas = load_from_file(small_xmi, typesystem=typesystem)
+def test_simple_features_are_parsed(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
 
     TokenType = typesystem.get_type('cassis.Token')
     SentenceType = typesystem.get_type('cassis.Sentence')
@@ -77,3 +80,37 @@ def test_simple_features_are_parsed(small_xmi, small_typesystem):
     ]
     assert list(cas.select(TokenType.name)) == expected_tokens
     assert list(cas.select(SentenceType.name)) == expected_sentences
+
+
+# Serializing
+
+def test_serializing_small_cas_to_string(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+
+    actual_xml = cas.to_xmi()
+
+    assert_xml_equal(actual_xml, small_xmi.encode('utf-8'))
+
+
+def test_serializing_small_cas_to_file_path(tmpdir, small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+    path = tmpdir.join('cas.xml')
+
+    cas.to_xmi(path)
+
+    with open(path, 'rb') as actual:
+        assert_xml_equal(actual.read(), small_xmi.encode('utf-8'))
+
+
+def test_serializing_small_cas_to_file(tmpdir, small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+    path = tmpdir.join('cas.xml')
+
+    with open(path, 'wb') as f:
+        cas.to_xmi(f)
+
+    with open(path, 'rb') as actual:
+        assert_xml_equal(actual.read(), small_xmi.encode('utf-8'))

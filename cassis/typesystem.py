@@ -23,31 +23,62 @@ class Annotation():
 @attr.s(slots=True)
 class Feature():
     name = attr.ib()
-    description = attr.ib()
     rangeTypeName = attr.ib()
+    description = attr.ib(default=None)
 
 
 @attr.s(slots=True)
-class Type():
+class Type:
     name: str = attr.ib()
-    description: str = attr.ib()
     supertypeName: str = attr.ib()
-    features: List[Feature] = attr.ib()
-    constructor: Callable[[Dict], Annotation] = attr.ib(init=False, cmp=False, repr=False)
+    _committed: bool
+    features: Dict[str, Feature] = attr.ib(factory=dict)
+    description: str = attr.ib(default=None)
+    _constructor: Callable[[Dict], Annotation] = attr.ib(init=False, cmp=False, repr=False)
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create annotations of this type """
         name = _string_to_valid_classname(self.name)
-        fields = {feature.name: attr.ib(default=None) for feature in self.features}
+        fields = {feature.name: attr.ib(default=None) for feature in self.features.values()}
         fields['type'] = attr.ib(default=self.name)
-        self.constructor = attr.make_class(name, fields, bases=(Annotation,), slots=True)
+
+        self._constructor = attr.make_class(name, fields, bases=(Annotation,), slots=True)
 
     def __call__(self, **kwargs) -> Annotation:
         """ Creates an annotation of this type """
-        return self.constructor(**kwargs)
+        return self._constructor(**kwargs)
+
+    def get_feature(self, name: str) -> Feature:
+        """ Find a feature by name
+
+        This returns `None` if this type does not contain a feature
+        with the given `name`.
+
+        Args:
+            name: The name of the feature
+
+        Returns:
+            The feature with name `name` or `None` if it does not exist.
+        """
+        return self.features.get(name, None)
+
+    def add_feature(self, feature: Feature):
+        """ Add the given feature to his type.
+
+        Args:
+            feature: The feature
+
+        """
+        if feature.name in self.features:
+            msg = 'Feature with name [{0}] already exists in [{1}]!'.format(feature.name, self.name)
+            raise ValueError(msg)
+        self.features[feature.name] = feature
+
+        # Recreate constructor to incorporate new features
+        self.__attrs_post_init__()
 
 
-class FallbackType():
+class FallbackType:
     def __init__(self, **kwargs):
         self._fields = kwargs
 
@@ -55,15 +86,10 @@ class FallbackType():
         return self._fields.get(item, None)
 
 
-class TypeSystem():
+class TypeSystem:
 
-    def __init__(self, types: List[Type] = None):
-        if types is None:
-            types = []
-
+    def __init__(self):
         self._types = {}
-        for type in types:
-            self._types[type.name] = type
 
     def has_type(self, typename: str):
         """
@@ -75,6 +101,26 @@ class TypeSystem():
 
         """
         return typename in self._types
+
+    def create_type(self, name: str, supertypeName: str = 'uima.cas.AnnotationBase', description: str = None) -> Type:
+        """ Create a new type and return it.
+
+        Args:
+            name: The name of the new type
+            supertypeName: The name of the new types' supertype. Defaults to `uima.cas.AnnotationBase`
+            description: The description of the new type
+
+        Returns:
+            The newly created type
+        """
+        if self.has_type(name):
+            msg = 'Type with name [{0}] already exists!'.format(name)
+            raise ValueError(msg)
+
+        new_type = Type(name=name, supertypeName=supertypeName, description=description)
+        self._types[name] = new_type
+
+        return new_type
 
     def get_type(self, typename: str) -> Type:
         """
@@ -95,6 +141,10 @@ class TypeSystem():
         """ Returns all types of this type system """
         return iter(self._types.values())
 
+    def add_feature(self, type_: Type, name: str, rangeTypeName: str, description: str = None):
+        feature = Feature(name=name, rangeTypeName=rangeTypeName, description=description)
+        type_.add_feature(feature)
+
     def to_xml(self, path_or_buf: Union[IO, str] = None):
         """ Creates a string representation of this type system
 
@@ -112,10 +162,6 @@ class TypeSystem():
             return sink.getvalue().decode('utf-8')
         else:
             serializer.serialize(path_or_buf, self)
-
-    def __len__(self) -> int:
-        return len(self._types)
-
 
 # Deserializing
 
@@ -138,35 +184,31 @@ class TypeSystemDeserializer():
         Returns:
             typesystem (TypeSystem):
         """
-        types = []
+        typesystem = TypeSystem()
 
         context = etree.iterparse(source, events=('end',), tag=('{*}typeDescription',))
         for event, elem in context:
-            name = elem.find('{*}name').text or ''
-            description = elem.find('{*}description').text or ''
-            supertypeName = elem.find('{*}supertypeName').text or ''
+            name = elem.find('{*}name').text or None
+            description = elem.find('{*}description').text or None
+            supertypeName = elem.find('{*}supertypeName').text or None
             features = []
 
-            for feature_description in elem.iterfind('{*}features/{*}featureDescription'):
-                feature = self._parse_feature(feature_description)
-                features.append(feature)
+            t = typesystem.create_type(name=name, description=description, supertypeName=supertypeName)
 
-            type = Type(name, description, supertypeName, features)
-            types.append(type)
+            # Parse features
+            for feature_description in elem.iterfind('{*}features/{*}featureDescription'):
+                name = feature_description.find('{*}name').text or None
+                rangeTypeName = feature_description.find('{*}rangeTypeName').text or None
+                description = feature_description.find('{*}description').text or None
+
+                typesystem.add_feature(t, name=name, rangeTypeName=rangeTypeName, description=description)
 
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
         del context
 
-        return TypeSystem(types)
-
-    def _parse_feature(self, elem) -> Feature:
-        name = elem.find('{*}name').text or ''
-        description = elem.find('{*}description').text or ''
-        rangeTypeName = elem.find('{*}rangeTypeName').text or ''
-        return Feature(name, description, rangeTypeName)
-
+        return typesystem
 
 # Serializing
 
@@ -193,7 +235,7 @@ class TypeSystemSerializer():
         supertypeName.text = type.supertypeName
 
         features = etree.SubElement(typeDescription, 'features')
-        for feature in type.features:
+        for feature in type.features.values():
             self._serialize_feature(features, feature)
 
         xf.write(typeDescription)

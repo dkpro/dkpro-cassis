@@ -51,7 +51,7 @@ with open('typesystem.xml', 'rb') as f:
     typesystem = load_typesystem(f)
     
 with open('cas.xml', 'rb') as f:
-   cas = load_cas_from_xmi(f, typesystem=typesystem)
+    cas = load_cas_from_xmi(f, typesystem=typesystem)
    
 Token = typesystem.get_type('cassis.Token')
 
@@ -77,7 +77,7 @@ with open('typesystem.xml', 'rb') as f:
     typesystem = load_typesystem(f)
     
 with open('cas.xml', 'rb') as f:
-   cas = load_cas_from_xmi(f, typesystem=typesystem)
+    cas = load_cas_from_xmi(f, typesystem=typesystem)
 
 for sentence in cas.select('cassis.Sentence'):
     for token in cas.select_covered('cassis.Token', sentence):

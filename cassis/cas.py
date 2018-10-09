@@ -1,17 +1,18 @@
 from collections import defaultdict
 from io import BytesIO
 from itertools import chain
-from typing import Dict, IO, Iterator, List, Union
+import sys
+from typing import Dict, IO, Iterator, List, Union, Tuple
 
 import attr
 
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import Annotation
+from cassis.typesystem import AnnotationBase
 
 
 @attr.s(slots=True)
-class Sofa():
+class Sofa:
     sofaNum: int = attr.ib()
     xmiID: int = attr.ib(default=None)
     sofaID: str = attr.ib(default=None)
@@ -20,13 +21,14 @@ class Sofa():
 
 
 @attr.s(slots=True)
-class View():
+class View:
     sofa: int = attr.ib()
     members: List[int] = attr.ib()
 
-class Cas():
 
-    def __init__(self, annotations: List[Annotation] = None, namespaces: Dict[str, str] = None,
+class Cas:
+
+    def __init__(self, annotations: List[AnnotationBase] = None, namespaces: Dict[str, str] = None,
                  sofas: List[Sofa] = None, views: List[View] = None):
         self.namespaces = namespaces or {}
         self._sofas = {}
@@ -34,13 +36,13 @@ class Cas():
         # Annotations are sorted by begin index first (smaller first). If begin
         #  is equal, sort by end index, smaller first. This is the same as
         # comparing a Python tuple of (begin, end)
-        self._annotations = defaultdict(lambda: SortedKeyList(key=lambda a: (a.begin, a.end)))
+        self._annotations = defaultdict(lambda: SortedKeyList(key=_sort_func))
         _annotations = annotations or []
         for annotation in _annotations:
             self._annotations[annotation.type].add(annotation)
 
         # Handle sofas
-        if sofas == None or len(sofas) == 0:
+        if sofas is None or len(sofas) == 0:
             _sofas = [Sofa(sofaNum=1)]
         else:
             _sofas = sofas
@@ -49,14 +51,14 @@ class Cas():
             self._sofas[sofa.sofaNum] = sofa
 
         # Find maximum id
-        maximum_xmiID = 1
+        maximum_xmi_id = 1
         for obj in chain(_sofas, _annotations):
-            if obj.xmiID and obj.xmiID > maximum_xmiID:
-                maximum_xmiID = obj.xmiID
+            if obj.xmiID and obj.xmiID > maximum_xmi_id:
+                maximum_xmi_id = obj.xmiID
 
-        self.maximum_xmiID = maximum_xmiID
+        self.maximum_xmiID = maximum_xmi_id
 
-    def add_annotation(self, annotation: Annotation):
+    def add_annotation(self, annotation: AnnotationBase):
         """ Adds an annotation to this Cas
 
         Args:
@@ -67,7 +69,7 @@ class Cas():
 
         self._annotations[annotation.type].add(annotation)
 
-    def get_covered_text(self, annotation: Annotation) -> str:
+    def get_covered_text(self, annotation: AnnotationBase) -> str:
         """ Gets the text that is covered by `annotation`
 
         Args:
@@ -79,11 +81,11 @@ class Cas():
         sofa = self.get_sofa(annotation.sofa)
         return sofa.sofaString[annotation.begin:annotation.end]
 
-    def select(self, typename: str) -> Iterator[Annotation]:
+    def select(self, typename: str) -> Iterator[AnnotationBase]:
         for annotation in self._annotations[typename]:
             yield annotation
 
-    def select_covered(self, typename: str, covering_annotation: Annotation) -> Iterator[Annotation]:
+    def select_covered(self, typename: str, covering_annotation: AnnotationBase) -> Iterator[AnnotationBase]:
         """ Returns an iterator over covered annotations
 
         Return all annotations that are covered
@@ -114,7 +116,7 @@ class Cas():
             if annotation.begin > c_end:
                 break
 
-    def select_all(self) -> Iterator[Annotation]:
+    def select_all(self) -> Iterator[AnnotationBase]:
         """ Returns an iterator over all annotations in this Cas
 
         Returns:
@@ -155,3 +157,11 @@ class Cas():
             return sink.getvalue().decode('utf-8')
         else:
             serializer.serialize(path_or_buf, self)
+
+
+def _sort_func(a: AnnotationBase) -> Tuple[int, int]:
+    d = a.__slots__
+    if 'begin' in d and 'end' in d:
+        return (a.begin, a.end)
+    else:
+        return (sys.maxsize, sys.maxsize)

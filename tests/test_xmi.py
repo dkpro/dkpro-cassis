@@ -7,12 +7,14 @@ from cassis import *
 
 # Deserializing
 
-def test_deserializing_from_file(small_xmi_path):
+def test_deserializing_from_file(small_xmi_path, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
     with open(small_xmi_path, 'rb') as f:
-        load_cas_from_xmi(f)
+        load_cas_from_xmi(f, typesystem=typesystem)
 
 
-def test_deserializing_from_string():
+def test_deserializing_from_string(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
     cas_xmi = '''<?xml version="1.0" encoding="UTF-8"?>
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
              xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
@@ -25,10 +27,12 @@ def test_deserializing_from_string():
         <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
     </xmi:XMI>    
     '''
-    load_cas_from_xmi(cas_xmi)
+    load_cas_from_xmi(cas_xmi, typesystem=typesystem)
 
-def test_namespaces_are_parsed(small_xmi):
-    cas = load_cas_from_xmi(small_xmi)
+def test_namespaces_are_parsed(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
 
     expected_namespaces = {
         'xmi': 'http://www.omg.org/XMI',
@@ -40,16 +44,18 @@ def test_namespaces_are_parsed(small_xmi):
     assert cas.namespaces == expected_namespaces
 
 
-def test_sofas_are_parsed(small_xmi):
-    cas = load_cas_from_xmi(small_xmi)
+def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem)
 
     expected_sofas = [Sofa(xmiID=1, sofaNum=1, sofaID='mySofa', mimeType='text/plain',
                            sofaString='Joe waited for the train . The train was late .')]
     assert cas.sofas == expected_sofas
 
 
-def test_views_are_parsed(small_xmi):
-    cas = load_cas_from_xmi(small_xmi)
+def test_views_are_parsed(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
 
     expected_views = [View(sofa=1, members=[8, 13, 19, 25, 31, 37, 43, 49, 55, 61, 67, 73, 79, 84])]
     assert cas.views == expected_views
@@ -84,33 +90,45 @@ def test_simple_features_are_parsed(small_xmi, small_typesystem_xml):
 
 # Serializing
 
-def test_serializing_small_cas_to_string(small_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+@pytest.mark.parametrize('xmi, typesystem_xml', [
+    (pytest.lazy_fixture('small_xmi'), pytest.lazy_fixture('small_typesystem_xml')),
+    (pytest.lazy_fixture('cas_with_inheritance_xmi'), pytest.lazy_fixture('typesystem_with_inheritance_xml')),
+])
+def test_serializing_cas_to_string(xmi, typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
+    cas = load_cas_from_xmi(xmi, typesystem=typesystem)
 
     actual_xml = cas.to_xmi()
 
-    assert_xml_equal(actual_xml, small_xmi.encode('utf-8'))
+    assert_xml_equal(actual_xml, xmi.encode('utf-8'))
 
 
-def test_serializing_small_cas_to_file_path(tmpdir, small_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+@pytest.mark.parametrize('xmi, typesystem_xml', [
+    (pytest.lazy_fixture('small_xmi'), pytest.lazy_fixture('small_typesystem_xml')),
+    (pytest.lazy_fixture('cas_with_inheritance_xmi'), pytest.lazy_fixture('typesystem_with_inheritance_xml')),
+])
+def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
+    cas = load_cas_from_xmi(xmi, typesystem=typesystem)
     path = tmpdir.join('cas.xml')
 
     cas.to_xmi(path)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), small_xmi.encode('utf-8'))
+        assert_xml_equal(actual.read(), xmi.encode('utf-8'))
 
 
-def test_serializing_small_cas_to_file(tmpdir, small_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+@pytest.mark.parametrize('xmi, typesystem_xml', [
+    (pytest.lazy_fixture('small_xmi'), pytest.lazy_fixture('small_typesystem_xml')),
+    (pytest.lazy_fixture('cas_with_inheritance_xmi'), pytest.lazy_fixture('typesystem_with_inheritance_xml')),
+])
+def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
+    cas = load_cas_from_xmi(xmi, typesystem=typesystem)
     path = tmpdir.join('cas.xml')
 
     with open(path, 'wb') as f:
         cas.to_xmi(f)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), small_xmi.encode('utf-8'))
+        assert_xml_equal(actual.read(), xmi.encode('utf-8'))

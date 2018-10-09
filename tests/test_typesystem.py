@@ -41,7 +41,7 @@ def test_type_can_be_created():
     test_type = typesystem.create_type(name='test.Type')
 
     assert test_type.name == 'test.Type'
-    assert test_type.supertypeName == 'uima.cas.AnnotationBase'
+    assert test_type.supertypeName == TypeSystem.ANNOTATION_TYPE_NAME
 
 
 def test_type_can_create_instances():
@@ -67,11 +67,31 @@ def test_type_can_create_instance_with_inherited_fields():
 
     annotation = child_type(parentFeature='parent', childFeature='child')
 
-    assert annotation.parent_feature == 'parent'
-    assert annotation.child_feature == 'child'
+    assert annotation.parentFeature == 'parent'
+    assert annotation.childFeature == 'child'
 
+
+def test_type_inherits_from_annotation_base():
+    typesystem = TypeSystem()
+    test_type = typesystem.create_type(name='test.Type', supertypeName='uima.cas.AnnotationBase')
+
+    annotation = test_type(sofa=42)
+
+    assert annotation.sofa == 42
+
+
+def test_type_inherits_from_annotation():
+    typesystem = TypeSystem()
+    test_type = typesystem.create_type(name='test.Type')
+
+    annotation = test_type(begin=0, end=42, sofa=1337)
+
+    assert annotation.begin == 0
+    assert annotation.end == 42
+    assert annotation.sofa == 1337
 
 # Deserializing
+
 
 def test_deserializing_from_file(small_typesystem_path):
     with open(small_typesystem_path, 'rb') as f:
@@ -133,30 +153,41 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
 
 # Serializing
 
-def test_serializing_small_typesystem_to_string(small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
+@pytest.mark.parametrize('typesystem_xml', [
+    pytest.lazy_fixture('small_typesystem_xml'),
+    pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+])
+def test_serializing_typesystem_to_string(typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
 
     actual_xml = typesystem.to_xml()
 
-    assert_xml_equal(actual_xml, small_typesystem_xml.encode('utf-8'))
+    assert_xml_equal(actual_xml, typesystem_xml.encode('utf-8'))
 
-
-def test_serializing_small_typesystem_to_file_path(tmpdir, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
+@pytest.mark.parametrize('typesystem_xml', [
+    pytest.lazy_fixture('small_typesystem_xml'),
+    pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+])
+def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
     path = tmpdir.join('typesystem.xml')
 
     typesystem.to_xml(path)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), small_typesystem_xml.encode('utf-8'))
+        assert_xml_equal(actual.read(), typesystem_xml.encode('utf-8'))
 
 
-def test_serializing_small_typesystem_to_file(tmpdir, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
+@pytest.mark.parametrize('typesystem_xml', [
+    pytest.lazy_fixture('small_typesystem_xml'),
+    pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+])
+def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
+    typesystem = load_typesystem(typesystem_xml)
     path = tmpdir.join('typesystem.xml')
 
     with open(path, 'wb') as f:
         typesystem.to_xml(f)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), small_typesystem_xml.encode('utf-8'))
+        assert_xml_equal(actual.read(), typesystem_xml.encode('utf-8'))

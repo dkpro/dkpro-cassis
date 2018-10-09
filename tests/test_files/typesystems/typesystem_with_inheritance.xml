@@ -14,6 +14,12 @@
             </features>
         </typeDescription>
         <typeDescription>
+            <name>cassis.Tag</name>
+            <description/>
+            <supertypeName>uima.cas.TOP</supertypeName>
+            <features />
+        </typeDescription>
+        <typeDescription>
             <name>cassis.Parent</name>
             <description/>
             <supertypeName>uima.tcas.Annotation</supertypeName>

@@ -9,6 +9,8 @@ FIXTURE_DIR = os.path.join(
     'test_files'
 )
 
+# Small xmi
+
 @pytest.fixture
 def small_xmi_path():
     return os.path.join(FIXTURE_DIR, 'xmi', 'small_cas.xmi')
@@ -19,6 +21,19 @@ def small_xmi(small_xmi_path):
     with open(small_xmi_path, 'r') as f:
         return f.read()
 
+# CAS with inheritance
+
+@pytest.fixture
+def cas_with_inheritance_xmi_path():
+    return os.path.join(FIXTURE_DIR, 'xmi', 'cas_with_inheritance.xmi')
+
+
+@pytest.fixture
+def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
+    with open(cas_with_inheritance_xmi_path, 'r') as f:
+        return f.read()
+
+# Small type system
 
 @pytest.fixture
 def small_typesystem_path():
@@ -27,6 +42,18 @@ def small_typesystem_path():
 @pytest.fixture
 def small_typesystem_xml(small_typesystem_path):
     with open(small_typesystem_path, 'r') as f:
+        return f.read()
+
+# Type system with inheritance
+
+@pytest.fixture
+def typesystem_with_inheritance_path():
+    return os.path.join(FIXTURE_DIR, 'typesystems', 'typesystem_with_inheritance.xml')
+
+
+@pytest.fixture
+def typesystem_with_inheritance_xml(typesystem_with_inheritance_path):
+    with open(typesystem_with_inheritance_path, 'r') as f:
         return f.read()
 
 

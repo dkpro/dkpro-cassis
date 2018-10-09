@@ -9,6 +9,7 @@ install_requires=[
 test_dependencies = [
     'pytest',
     'lxml-asserts',
+    'pytest-lazy-fixture'
 ]
 
 extras = {

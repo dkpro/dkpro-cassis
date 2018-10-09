@@ -7,6 +7,7 @@
 - Deserializing/serializing UIMA CAS from/to XMI
 - Deserializing/serializing type systems from/to XML
 - Selecting annotations, selecting covered annotations, adding annotations
+- Type inheritance
 
 Some features are still under development, e.g.
 
@@ -19,7 +20,9 @@ Some features are still under development, e.g.
 
 ## Installation
 
-tbd
+To install the package from the master branch using **pip**, just run
+    
+    pip install git+https://github.com/dkpro/dkpro-cassis
 
 ## Usage
 
@@ -51,17 +54,17 @@ with open('typesystem.xml', 'rb') as f:
     typesystem = load_typesystem(f)
     
 with open('cas.xml', 'rb') as f:
-   cas = load_cas_from_xmi(f, typesystem=typesystem)
+    cas = load_cas_from_xmi(f, typesystem=typesystem)
    
 Token = typesystem.get_type('cassis.Token')
 
 tokens = [
-    Token(xmiID=13, sofa=1, begin=0, end=3, id='0', pos='NNP'),
-    Token(xmiID=19, sofa=1, begin=4, end=10, id='1', pos='VBD'),
-    Token(xmiID=25, sofa=1, begin=11, end=14, id='2', pos='IN'),
-    Token(xmiID=31, sofa=1, begin=15, end=18, id='3', pos='DT'),
-    Token(xmiID=37, sofa=1, begin=19, end=24, id='4', pos='NN'),
-    Token(xmiID=43, sofa=1, begin=25, end=26, id='5', pos='.'),
+    Token(begin=0, end=3, id='0', pos='NNP'),
+    Token(begin=4, end=10, id='1', pos='VBD'),
+    Token(begin=11, end=14, id='2', pos='IN'),
+    Token(begin=15, end=18, id='3', pos='DT'),
+    Token(begin=19, end=24, id='4', pos='NN'),
+    Token(begin=25, end=26, id='5', pos='.'),
 ]
 
 for token in tokens:
@@ -77,12 +80,30 @@ with open('typesystem.xml', 'rb') as f:
     typesystem = load_typesystem(f)
     
 with open('cas.xml', 'rb') as f:
-   cas = load_cas_from_xmi(f, typesystem=typesystem)
+    cas = load_cas_from_xmi(f, typesystem=typesystem)
 
 for sentence in cas.select('cassis.Sentence'):
     for token in cas.select_covered('cassis.Token', sentence):
         print(cas.get_covered_text(token))
 ```
+
+### Creating types and adding features
+
+```python
+from cassis import *
+
+typesystem = TypeSystem()
+
+parent_type = typesystem.create_type(name='example.ParentType')
+typesystem.add_feature(type_=parent_type, name='parentFeature', rangeTypeName='String')
+
+child_type = typesystem.create_type(name='example.ChildType', supertypeName=parent_type.name)
+typesystem.add_feature(type_=child_type, name='childFeature', rangeTypeName='Integer')
+
+annotation = child_type(parentFeature='parent', childFeature='child')
+```
+
+When adding new features, these changes are propagated. For example, adding a feature to a parent type makes it available to a child type. Therefore, the type system does not need to be frozen for consistency.
         
 ## Development
 

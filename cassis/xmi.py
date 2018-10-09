@@ -6,7 +6,7 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, Sofa, View
-from cassis.typesystem import Annotation, TypeSystem
+from cassis.typesystem import AnnotationBase, TypeSystem
 
 
 def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSystem()) -> Cas:
@@ -17,7 +17,7 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSyste
         return deserializer.deserialize(source, typesystem=typesystem)
 
 
-class CasXmiDeserializer():
+class CasXmiDeserializer:
 
     def deserialize(self, source: Union[IO, str], typesystem: TypeSystem):
         # namespaces
@@ -83,9 +83,15 @@ class CasXmiDeserializer():
 
         # Map the xmi:id attribute to xmiID
         attributes['xmiID'] = int(attributes.pop('{http://www.omg.org/XMI}id'))
-        attributes['begin'] = int(attributes['begin'])
-        attributes['end'] = int(attributes['end'])
-        attributes['sofa'] = int(attributes['sofa'])
+
+        if 'begin' in attributes:
+            attributes['begin'] = int(attributes['begin'])
+
+        if 'end' in attributes:
+            attributes['end'] = int(attributes['end'])
+
+        if 'sofa' in attributes:
+            attributes['sofa'] = int(attributes['sofa'])
 
         return AnnotationType(**attributes)
 
@@ -125,7 +131,7 @@ class CasXmiSerializer():
 
         xf.write(elem)
 
-    def _serialize_annotation(self, xf: IO, nsmap, annotation: Annotation):
+    def _serialize_annotation(self, xf: IO, nsmap, annotation: AnnotationBase):
         # Create tag with namespace
         parts = annotation.type.split('.')
         prefix = parts[-2]

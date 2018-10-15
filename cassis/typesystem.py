@@ -7,6 +7,44 @@ import attr
 
 from lxml import etree
 
+PREDEFINED_TYPES = {
+    'uima.cas.Integer',
+    'uima.cas.Float',
+    'uima.cas.String',
+    'uima.cas.ArrayBase',
+    'uima.cas.FSArray',
+    'uima.cas.FloatArray',
+    'uima.cas.IntegerArray',
+    'uima.cas.StringArray',
+    'uima.cas.ListBase',
+    'uima.cas.FSList',
+    'uima.cas.EmptyFSList',
+    'uima.cas.NonEmptyFSList',
+    'uima.cas.FloatList',
+    'uima.cas.EmptyFloatList',
+    'uima.cas.NonEmptyFloatList',
+    'uima.cas.IntegerList',
+    'uima.cas.EmptyIntegerList',
+    'uima.cas.NonEmptyIntegerList',
+    'uima.cas.StringList',
+    'uima.cas.EmptyStringList',
+    'uima.cas.NonEmptyStringList',
+    'uima.cas.Boolean',
+    'uima.cas.Byte',
+    'uima.cas.Short',
+    'uima.cas.Long',
+    'uima.cas.Double',
+    'uima.cas.BooleanArray',
+    'uima.cas.ByteArray',
+    'uima.cas.ShortArray',
+    'uima.cas.LongArray',
+    'uima.cas.DoubleArray',
+    'uima.cas.Sofa',
+    'uima.cas.AnnotationBase',
+    'uima.tcas.Annotation',
+    'uima.tcas.DocumentAnnotation',
+}
+
 
 def _string_to_valid_classname(name: str):
     return re.sub('[^a-zA-Z_]', '_', name)
@@ -23,6 +61,7 @@ class Feature:
     name: str = attr.ib()
     rangeTypeName: str = attr.ib()
     description: str = attr.ib(default=None)
+    multipleReferencesAllowed: bool = attr.ib(default=None)
 
 
 @attr.s(slots=True)
@@ -84,11 +123,9 @@ class Type:
     def all_features(self) -> Iterator[Feature]:
         return chain(self.features.values(), self._inherited_features.values())
 
-class TypeSystem:
 
+class TypeSystem:
     TOP_TYPE_NAME = 'uima.cas.TOP'
-    BASE_TYPE_NAME = 'uima.cas.AnnotationBase'
-    ANNOTATION_TYPE_NAME = 'uima.tcas.Annotation'
 
     def __init__(self):
         self._types = {}
@@ -97,12 +134,78 @@ class TypeSystem:
         top = Type(name=TypeSystem.TOP_TYPE_NAME, supertypeName=None)
         self._types[top.name] = top
 
-        annotation_base = self.create_type(name=TypeSystem.BASE_TYPE_NAME, supertypeName=TypeSystem.TOP_TYPE_NAME)
-        self.add_feature(annotation_base, 'sofa', rangeTypeName='uima.cas.Integer')
+        # Primitive types
+        self.create_type(name='uima.cas.Boolean', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Byte', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Short', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Long', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Double', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Integer', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.Float', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.String', supertypeName='uima.cas.TOP')
 
-        annotation = self.create_type(name=TypeSystem.ANNOTATION_TYPE_NAME, supertypeName=annotation_base.name)
-        self.add_feature(annotation, 'begin', rangeTypeName='uima.cas.Integer')
-        self.add_feature(annotation, 'end', rangeTypeName='uima.cas.Integer')
+        # Array
+        self.create_type(name='uima.cas.ArrayBase', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.FSArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.BooleanArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.ByteArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.ShortArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.LongArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.DoubleArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.FloatArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.IntegerArray', supertypeName='uima.cas.ArrayBase')
+        self.create_type(name='uima.cas.StringArray', supertypeName='uima.cas.ArrayBase')
+
+        # List
+        self.create_type(name='uima.cas.ListBase', supertypeName='uima.cas.TOP')
+        self.create_type(name='uima.cas.FSList', supertypeName='uima.cas.ListBase')
+        self.create_type(name='uima.cas.EmptyFSList', supertypeName='uima.cas.FSList')
+        t = self.create_type(name='uima.cas.NonEmptyFSList', supertypeName='uima.cas.FSList')
+        self.add_feature(t, name='head', rangeTypeName='uima.cas.TOP', multipleReferencesAllowed=True)
+        self.add_feature(t, name='tail', rangeTypeName='uima.cas.FSList', multipleReferencesAllowed=True)
+
+        # FloatList
+        self.create_type(name='uima.cas.FloatList', supertypeName='uima.cas.ListBase')
+        self.create_type(name='uima.cas.EmptyFloatList', supertypeName='uima.cas.FloatList')
+        t = self.create_type(name='uima.cas.NonEmptyFloatList', supertypeName='uima.cas.FloatList')
+        self.add_feature(t, name='head', rangeTypeName='uima.cas.Float')
+        self.add_feature(t, name='tail', rangeTypeName='uima.cas.FloatList', multipleReferencesAllowed=True)
+
+        # IntegerList
+        self.create_type(name='uima.cas.IntegerList', supertypeName='uima.cas.ListBase')
+        self.create_type(name='uima.cas.EmptyIntegerList', supertypeName='uima.cas.IntegerList')
+        t = self.create_type(name='uima.cas.NonEmptyIntegerList', supertypeName='uima.cas.IntegerList')
+        self.add_feature(t, name='head', rangeTypeName='uima.cas.Integer')
+        self.add_feature(t, name='tail', rangeTypeName='uima.cas.IntegerList', multipleReferencesAllowed=True)
+
+        # StringList
+        self.create_type(name='uima.cas.StringList', supertypeName='uima.cas.ListBase')
+        self.create_type(name='uima.cas.EmptyStringList', supertypeName='uima.cas.StringList')
+        t = self.create_type(name='uima.cas.NonEmptyStringList', supertypeName='uima.cas.StringList')
+        self.add_feature(t, name='head', rangeTypeName='uima.cas.String')
+        self.add_feature(t, name='tail', rangeTypeName='uima.cas.StringList', multipleReferencesAllowed=True)
+
+        # Sofa
+        t = self.create_type(name='uima.cas.Sofa', supertypeName='uima.cas.TOP')
+        self.add_feature(t, name='sofaNum', rangeTypeName='uima.cas.Integer')
+        self.add_feature(t, name='sofaID', rangeTypeName='uima.cas.String')
+        self.add_feature(t, name='mimeType', rangeTypeName='uima.cas.String')
+        self.add_feature(t, name='sofaArray', rangeTypeName='uima.cas.TOP', multipleReferencesAllowed=True)
+        self.add_feature(t, name='sofaString', rangeTypeName='uima.cas.String')
+        self.add_feature(t, name='sofaURI', rangeTypeName='uima.cas.String')
+
+        # AnnotationBase
+        t = self.create_type(name='uima.cas.AnnotationBase', supertypeName='uima.cas.TOP')
+        self.add_feature(t, name='sofa', rangeTypeName='uima.cas.Sofa')
+
+        # Annotation
+        t = self.create_type(name='uima.tcas.Annotation', supertypeName='uima.cas.AnnotationBase')
+        self.add_feature(t, name='begin', rangeTypeName='uima.cas.Integer')
+        self.add_feature(t, name='end', rangeTypeName='uima.cas.Integer')
+
+        # DocumentAnnotation
+        # t = self.create_type(name='uima.tcas.DocumentAnnotation', supertypeName='uima.tcas.Annotation')
+        # self.add_feature(t, name='language', rangeTypeName='uima.cas.String')
 
     def has_type(self, typename: str):
         """
@@ -115,7 +218,7 @@ class TypeSystem:
         """
         return typename in self._types
 
-    def create_type(self, name: str, supertypeName: str = ANNOTATION_TYPE_NAME, description: str = None) -> Type:
+    def create_type(self, name: str, supertypeName: str = 'uima.tcas.Annotation', description: str = None) -> Type:
         """ Create a new type and return it.
 
         Args:
@@ -158,11 +261,10 @@ class TypeSystem:
 
     def get_types(self) -> Iterator[Type]:
         """ Returns all types of this type system """
-        excluded = set([TypeSystem.TOP_TYPE_NAME, TypeSystem.BASE_TYPE_NAME, TypeSystem.ANNOTATION_TYPE_NAME])
-        return filterfalse(lambda x: x.name in excluded, self._types.values())
+        return filterfalse(lambda x: x.name in PREDEFINED_TYPES, self._types.values())
 
-    def add_feature(self, type_: Type, name: str, rangeTypeName: str, description: str = None):
-        feature = Feature(name=name, rangeTypeName=rangeTypeName, description=description)
+    def add_feature(self, type_: Type, name: str, rangeTypeName: str, description: str = None, multipleReferencesAllowed: bool = None):
+        feature = Feature(name=name, rangeTypeName=rangeTypeName, description=description, multipleReferencesAllowed=multipleReferencesAllowed)
         type_.add_feature(feature)
 
         for child_name in type_.children:
@@ -186,6 +288,7 @@ class TypeSystem:
             return sink.getvalue().decode('utf-8')
         else:
             serializer.serialize(path_or_buf, self)
+
 
 # Deserializing
 
@@ -233,6 +336,7 @@ class TypeSystemDeserializer():
         del context
 
         return typesystem
+
 
 # Serializing
 

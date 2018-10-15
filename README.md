@@ -85,6 +85,9 @@ with open('cas.xml', 'rb') as f:
 for sentence in cas.select('cassis.Sentence'):
     for token in cas.select_covered('cassis.Token', sentence):
         print(cas.get_covered_text(token))
+        
+        # Annotation values can be accessed as properties
+        print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
 ```
 
 ### Creating types and adding features

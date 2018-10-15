@@ -93,25 +93,22 @@ def test_type_inherits_from_annotation():
 # Deserializing
 
 
-def test_deserializing_from_file(small_typesystem_path):
-    with open(small_typesystem_path, 'rb') as f:
+@pytest.mark.parametrize('typesystem_path', [
+    pytest.lazy_fixture('small_typesystem_path'),
+    pytest.lazy_fixture('typesystem_with_inheritance_path'),
+    pytest.lazy_fixture('dkpro_typesystem_path'),
+])
+def test_deserializing_from_file(typesystem_path):
+    with open(typesystem_path, 'rb') as f:
         load_typesystem(f)
 
-
-def test_deserializing_from_string():
-    cas_xmi = '''<?xml version="1.0" encoding="UTF-8"?>
-    <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
-             xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
-        <cas:NULL xmi:id="0"/>
-        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
-        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="26" id="0"/>
-        <cassis:Sentence xmi:id="84" sofa="1" begin="27" end="47" id="1"/>
-        <cas:Sofa xmi:id="1" sofaNum="1" sofaID="mySofa" mimeType="text/plain"
-                  sofaString="Joe waited for the train . The train was late ."/>
-        <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
-    </xmi:XMI>    
-    '''
-    load_typesystem(cas_xmi)
+@pytest.mark.parametrize('typesystem_xml', [
+    pytest.lazy_fixture('small_typesystem_xml'),
+    pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+    pytest.lazy_fixture('dkpro_typesystem_xml'),
+])
+def test_deserializing_from_string(typesystem_xml):
+    load_typesystem(typesystem_xml)
 
 
 def test_deserializing_small_typesystem(small_typesystem_xml):
@@ -156,6 +153,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
 @pytest.mark.parametrize('typesystem_xml', [
     pytest.lazy_fixture('small_typesystem_xml'),
     pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+    pytest.lazy_fixture('dkpro_typesystem_xml'),
 ])
 def test_serializing_typesystem_to_string(typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -167,6 +165,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
 @pytest.mark.parametrize('typesystem_xml', [
     pytest.lazy_fixture('small_typesystem_xml'),
     pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+    pytest.lazy_fixture('dkpro_typesystem_xml'),
 ])
 def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -181,6 +180,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
 @pytest.mark.parametrize('typesystem_xml', [
     pytest.lazy_fixture('small_typesystem_xml'),
     pytest.lazy_fixture('typesystem_with_inheritance_xml'),
+    pytest.lazy_fixture('dkpro_typesystem_xml'),
 ])
 def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)

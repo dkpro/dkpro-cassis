@@ -41,7 +41,7 @@ def test_type_can_be_created():
     test_type = typesystem.create_type(name='test.Type')
 
     assert test_type.name == 'test.Type'
-    assert test_type.supertypeName == TypeSystem.ANNOTATION_TYPE_NAME
+    assert test_type.supertypeName == 'uima.tcas.Annotation'
 
 
 def test_type_can_create_instances():

@@ -1,6 +1,8 @@
+from collections import defaultdict
 from itertools import chain, filterfalse
 from io import BytesIO
 import re
+from toposort import toposort_flatten
 from typing import Callable, Dict, List, IO, Iterator, Set, Union
 
 import attr
@@ -8,6 +10,7 @@ import attr
 from lxml import etree
 
 PREDEFINED_TYPES = {
+    'uima.cas.TOP',
     'uima.cas.Integer',
     'uima.cas.Float',
     'uima.cas.String',
@@ -42,7 +45,6 @@ PREDEFINED_TYPES = {
     'uima.cas.Sofa',
     'uima.cas.AnnotationBase',
     'uima.tcas.Annotation',
-    'uima.tcas.DocumentAnnotation',
 }
 
 
@@ -130,6 +132,9 @@ class TypeSystem:
     def __init__(self):
         self._types = {}
 
+        # The type system of a UIMA CAS has several predefined types. These are
+        # added in the following
+
         # `top` is directly assigned in order to circumvent the inheritance
         top = Type(name=TypeSystem.TOP_TYPE_NAME, supertypeName=None)
         self._types[top.name] = top
@@ -202,10 +207,6 @@ class TypeSystem:
         t = self.create_type(name='uima.tcas.Annotation', supertypeName='uima.cas.AnnotationBase')
         self.add_feature(t, name='begin', rangeTypeName='uima.cas.Integer')
         self.add_feature(t, name='end', rangeTypeName='uima.cas.Integer')
-
-        # DocumentAnnotation
-        # t = self.create_type(name='uima.tcas.DocumentAnnotation', supertypeName='uima.tcas.Annotation')
-        # self.add_feature(t, name='language', rangeTypeName='uima.cas.String')
 
     def has_type(self, typename: str):
         """
@@ -311,31 +312,59 @@ class TypeSystemDeserializer():
         Returns:
             typesystem (TypeSystem):
         """
-        typesystem = TypeSystem()
+
+        # It can be that the types in the xml are listed out-of-order, that means
+        # some type A appears before its supertype. In order to deserialize these
+        # files properly without sacrificing the requirement that the supertype
+        # of a type needs to already be present, we sort the graph of types and
+        # supertypes topologically. This means a supertype will always be inserted
+        # before its children. The inheritance relation is expressed in the
+        # `dependencies` dictionary.
+        types = {}
+        features = defaultdict(list)
+        dependencies = defaultdict(set)
 
         context = etree.iterparse(source, events=('end',), tag=('{*}typeDescription',))
         for event, elem in context:
-            name = elem.find('{*}name').text or None
+            type_name = elem.find('{*}name').text or None
             description = elem.find('{*}description').text or None
             supertypeName = elem.find('{*}supertypeName').text or None
-            features = []
 
-            t = typesystem.create_type(name=name, description=description, supertypeName=supertypeName)
+            types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
+            dependencies[type_name].add(supertypeName)
 
             # Parse features
             for feature_description in elem.iterfind('{*}features/{*}featureDescription'):
-                name = feature_description.find('{*}name').text or None
+                feature_name = feature_description.find('{*}name').text or None
                 rangeTypeName = feature_description.find('{*}rangeTypeName').text or None
                 description = feature_description.find('{*}description').text or None
 
-                typesystem.add_feature(t, name=name, rangeTypeName=rangeTypeName, description=description)
+                f = Feature(name=feature_name, rangeTypeName=rangeTypeName, description=description)
+                features[type_name].append(f)
 
+                # The feature range also uses type information which has to
+                # be included in the dependency relation
+                dependencies[type_name].add(rangeTypeName)
+
+            # Free the XML tree element from memory as it is not needed anymore
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
         del context
 
-        return typesystem
+        ts = TypeSystem()
+        for type_name in toposort_flatten(dependencies):
+            # No need to create predefined types
+            if type_name in PREDEFINED_TYPES:
+                continue
+
+            t = types[type_name]
+            created_type = ts.create_type(name=t.name, description=t.description, supertypeName=t.supertypeName)
+
+            for f in features[t.name]:
+                ts.add_feature(created_type, name=f.name, rangeTypeName=f.rangeTypeName, description=f.description)
+
+        return ts
 
 
 # Serializing

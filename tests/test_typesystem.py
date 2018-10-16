@@ -1,8 +1,7 @@
 import pytest
 
 from tests.fixtures import *
-
-from lxml_asserts import assert_xml_equal
+from tests.util import assert_xml_equal
 
 from cassis import load_typesystem, TypeSystem
 
@@ -160,7 +159,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
 
     actual_xml = typesystem.to_xml()
 
-    assert_xml_equal(actual_xml, typesystem_xml.encode('utf-8'))
+    assert_xml_equal(actual_xml, typesystem_xml)
 
 @pytest.mark.parametrize('typesystem_xml', [
     pytest.lazy_fixture('small_typesystem_xml'),
@@ -174,7 +173,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     typesystem.to_xml(path)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), typesystem_xml.encode('utf-8'))
+        assert_xml_equal(actual, typesystem_xml)
 
 
 @pytest.mark.parametrize('typesystem_xml', [
@@ -190,4 +189,6 @@ def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
         typesystem.to_xml(f)
 
     with open(path, 'rb') as actual:
-        assert_xml_equal(actual.read(), typesystem_xml.encode('utf-8'))
+        assert_xml_equal(actual, typesystem_xml)
+
+

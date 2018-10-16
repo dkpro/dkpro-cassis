@@ -9,6 +9,8 @@ import attr
 
 from lxml import etree
 
+from cassis.util import is_file_like
+
 PREDEFINED_TYPES = {
     'uima.cas.TOP',
     'uima.cas.Integer',
@@ -63,6 +65,7 @@ class Feature:
     name: str = attr.ib()
     rangeTypeName: str = attr.ib()
     description: str = attr.ib(default=None)
+    elementType: str = attr.ib(default=None)
     multipleReferencesAllowed: bool = attr.ib(default=None)
 
 
@@ -264,8 +267,10 @@ class TypeSystem:
         """ Returns all types of this type system """
         return filterfalse(lambda x: x.name in PREDEFINED_TYPES, self._types.values())
 
-    def add_feature(self, type_: Type, name: str, rangeTypeName: str, description: str = None, multipleReferencesAllowed: bool = None):
-        feature = Feature(name=name, rangeTypeName=rangeTypeName, description=description, multipleReferencesAllowed=multipleReferencesAllowed)
+    def add_feature(self, type_: Type, name: str, rangeTypeName: str, elementType: str = None,
+                    description: str = None,  multipleReferencesAllowed: bool = None):
+        feature = Feature(name=name, rangeTypeName=rangeTypeName,  elementType=elementType,
+                          description=description, multipleReferencesAllowed=multipleReferencesAllowed)
         type_.add_feature(feature)
 
         for child_name in type_.children:
@@ -287,11 +292,14 @@ class TypeSystem:
             sink = BytesIO()
             serializer.serialize(sink, self)
             return sink.getvalue().decode('utf-8')
-        else:
+        elif is_file_like(path_or_buf):
             serializer.serialize(path_or_buf, self)
-
+        else:
+            with open(path_or_buf, 'wb') as f:
+                serializer.serialize(f, self)
 
 # Deserializing
+
 
 def load_typesystem(source: Union[IO, str]) -> TypeSystem:
     deserializer = TypeSystemDeserializer()
@@ -301,7 +309,7 @@ def load_typesystem(source: Union[IO, str]) -> TypeSystem:
         return deserializer.deserialize(source)
 
 
-class TypeSystemDeserializer():
+class TypeSystemDeserializer:
 
     def deserialize(self, source: Union[IO, str]) -> TypeSystem:
         """
@@ -326,20 +334,22 @@ class TypeSystemDeserializer():
 
         context = etree.iterparse(source, events=('end',), tag=('{*}typeDescription',))
         for event, elem in context:
-            type_name = elem.find('{*}name').text or None
-            description = elem.find('{*}description').text or None
-            supertypeName = elem.find('{*}supertypeName').text or None
+            type_name = self._get_elem_text(elem.find('{*}name'))
+            description = self._get_elem_text(elem.find('{*}description'))
+            supertypeName = self._get_elem_text(elem.find('{*}supertypeName'))
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
             dependencies[type_name].add(supertypeName)
 
             # Parse features
-            for feature_description in elem.iterfind('{*}features/{*}featureDescription'):
-                feature_name = feature_description.find('{*}name').text or None
-                rangeTypeName = feature_description.find('{*}rangeTypeName').text or None
-                description = feature_description.find('{*}description').text or None
+            for fd in elem.iterfind('{*}features/{*}featureDescription'):
+                feature_name = self._get_elem_text(fd.find('{*}name'))
+                rangeTypeName = self._get_elem_text(fd.find('{*}rangeTypeName'))
+                elementType = self._get_elem_text(fd.find('{*}elementType'))
+                description = self._get_elem_text(fd.find('{*}description'))
 
-                f = Feature(name=feature_name, rangeTypeName=rangeTypeName, description=description)
+                f = Feature(name=feature_name, rangeTypeName=rangeTypeName,
+                            elementType=elementType, description=description)
                 features[type_name].append(f)
 
                 # The feature range also uses type information which has to
@@ -353,7 +363,7 @@ class TypeSystemDeserializer():
         del context
 
         ts = TypeSystem()
-        for type_name in toposort_flatten(dependencies):
+        for type_name in toposort_flatten(dependencies, sort=False):
             # No need to create predefined types
             if type_name in PREDEFINED_TYPES:
                 continue
@@ -362,9 +372,16 @@ class TypeSystemDeserializer():
             created_type = ts.create_type(name=t.name, description=t.description, supertypeName=t.supertypeName)
 
             for f in features[t.name]:
-                ts.add_feature(created_type, name=f.name, rangeTypeName=f.rangeTypeName, description=f.description)
+                ts.add_feature(created_type, name=f.name, rangeTypeName=f.rangeTypeName,
+                               elementType=f.elementType, description=f.description)
 
         return ts
+
+    def _get_elem_text(self, elem: etree.Element) -> str:
+        if elem is not None:
+            return elem.text
+        else:
+            return None
 
 
 # Serializing
@@ -376,7 +393,7 @@ class TypeSystemSerializer:
         with etree.xmlfile(sink) as xf:
             with xf.element('typeSystemDescription', nsmap=nsmap):
                 with xf.element('types'):
-                    for type in typesystem.get_types():
+                    for type in sorted(typesystem.get_types(), key=lambda t: t.name):
                         self._serialize_type(xf, type)
 
     def _serialize_type(self, xf: IO, type: Type):
@@ -391,9 +408,12 @@ class TypeSystemSerializer:
         supertypeName = etree.SubElement(typeDescription, 'supertypeName')
         supertypeName.text = type.supertypeName
 
-        features = etree.SubElement(typeDescription, 'features')
-        for feature in type.features.values():
-            self._serialize_feature(features, feature)
+        # Only create `feature` element if there is at least one feature
+        feature_list = list(type.features.values())
+        if feature_list:
+            features = etree.SubElement(typeDescription, 'features')
+            for feature in feature_list:
+                self._serialize_feature(features, feature)
 
         xf.write(typeDescription)
 
@@ -408,3 +428,7 @@ class TypeSystemSerializer:
 
         rangeTypeName = etree.SubElement(featureDescription, 'rangeTypeName')
         rangeTypeName.text = feature.rangeTypeName
+
+        if feature.elementType is not None:
+            elementType = etree.SubElement(featureDescription, 'elementType')
+            elementType.text = feature.elementType

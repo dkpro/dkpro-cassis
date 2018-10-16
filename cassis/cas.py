@@ -41,22 +41,22 @@ class Cas:
         for annotation in _annotations:
             self._annotations[annotation.type].add(annotation)
 
-        # Handle sofas
-        if sofas is None or len(sofas) == 0:
-            _sofas = [Sofa(sofaNum=1)]
-        else:
-            _sofas = sofas
-
-        for sofa in _sofas:
-            self._sofas[sofa.sofaNum] = sofa
-
-        # Find maximum id
+        # Find maximum id. This has to be done before creating the default sofa
         maximum_xmi_id = 1
-        for obj in chain(_sofas, _annotations):
+        for obj in chain(sofas or [], _annotations):
             if obj.xmiID and obj.xmiID > maximum_xmi_id:
                 maximum_xmi_id = obj.xmiID
 
         self.maximum_xmiID = maximum_xmi_id
+
+        # Handle sofas
+        if sofas is None or len(sofas) == 0:
+            _sofas = [Sofa(sofaNum=1, xmiID=self._get_next_id())]
+        else:
+            _sofas = sofas
+
+        for sofa in _sofas:
+            self._sofas[sofa.xmiID] = sofa
 
     def add_annotation(self, annotation: AnnotationBase):
         """ Adds an annotation to this Cas

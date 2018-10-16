@@ -58,6 +58,19 @@ def typesystem_with_inheritance_xml(typesystem_with_inheritance_path):
 
 
 @pytest.fixture
+def dkpro_typesystem_path():
+    return os.path.join(FIXTURE_DIR, 'typesystems', 'important-dkpro-types.xml')
+
+
+@pytest.fixture
+def dkpro_typesystem_xml(dkpro_typesystem_path):
+    with open(dkpro_typesystem_path, 'r') as f:
+        return f.read()
+
+
+# Annotations
+
+@pytest.fixture
 def tokens(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 

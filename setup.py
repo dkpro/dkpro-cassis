@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 install_requires=[
     'lxml',
     'attrs',
-    'sortedcontainers'
+    'sortedcontainers',
+    'toposort'
 ]
 
 test_dependencies = [

@@ -32,7 +32,7 @@ def test_select_covered(tokens, sentences):
 
 
 def test_get_covered_text_tokens(tokens):
-    sofa = Sofa(sofaNum=1, sofaString="Joe waited for the train . The train was late .")
+    sofa = Sofa(xmiID=1, sofaNum=1, sofaString='Joe waited for the train . The train was late .')
     cas = Cas(annotations=tokens, sofas=[sofa])
 
     actual_text = [cas.get_covered_text(token) for token in tokens]
@@ -42,7 +42,7 @@ def test_get_covered_text_tokens(tokens):
 
 
 def test_get_covered_text_sentences(sentences):
-    sofa = Sofa(sofaNum=1, sofaString="Joe waited for the train . The train was late .")
+    sofa = Sofa(xmiID=1, sofaNum=1, sofaString='Joe waited for the train . The train was late .')
     cas = Cas(annotations=sentences, sofas=[sofa])
 
     actual_text = [cas.get_covered_text(sentence) for sentence in sentences]

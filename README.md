@@ -111,11 +111,14 @@ When adding new features, these changes are propagated. For example, adding a fe
         
 ## Development
 
-The required dependencies are managed by [pipenv](https://docs.pipenv.org/). A virtual environment containing all needed packages for development and production can be created and activated by
+The required dependencies are managed by **pip**. A virtual environment containing all needed packages for development and production can be created and activated by
 
-    pipenv shell
+    virtualenv venv --python=python3 --no-site-packages
+    sourve venv/bin/activate
+    pip install -r requirements.txt
+    pip install -r requirements_dev.txt
 
-. The tests can be run in the current environment by invoking
+The tests can be run in the current environment by invoking
 
     make test
     

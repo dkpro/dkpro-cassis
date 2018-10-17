@@ -27,9 +27,13 @@ class View:
 
 
 class Cas:
-
-    def __init__(self, annotations: List[AnnotationBase] = None, namespaces: Dict[str, str] = None,
-                 sofas: List[Sofa] = None, views: List[View] = None):
+    def __init__(
+        self,
+        annotations: List[AnnotationBase] = None,
+        namespaces: Dict[str, str] = None,
+        sofas: List[Sofa] = None,
+        views: List[View] = None,
+    ):
         self.namespaces = namespaces or {}
         self._sofas = {}
         self.views = views or []
@@ -79,7 +83,7 @@ class Cas:
 
         """
         sofa = self.get_sofa(annotation.sofa)
-        return sofa.sofaString[annotation.begin:annotation.end]
+        return sofa.sofaString[annotation.begin : annotation.end]
 
     def select(self, typename: str) -> Iterator[AnnotationBase]:
         for annotation in self._annotations[typename]:
@@ -154,14 +158,14 @@ class Cas:
         if path_or_buf is None:
             sink = BytesIO()
             serializer.serialize(sink, self)
-            return sink.getvalue().decode('utf-8')
+            return sink.getvalue().decode("utf-8")
         else:
             serializer.serialize(path_or_buf, self)
 
 
 def _sort_func(a: AnnotationBase) -> Tuple[int, int]:
     d = a.__slots__
-    if 'begin' in d and 'end' in d:
+    if "begin" in d and "end" in d:
         return (a.begin, a.end)
     else:
         return (sys.maxsize, sys.maxsize)

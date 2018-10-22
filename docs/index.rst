@@ -4,6 +4,11 @@ Welcome to cassis's documentation!
 .. include:: ../README.rst
     :start-after: cassis
 
+.. toctree::
+   :hidden:
+
+   self
+
 Full Table of Contents
 ======================
 

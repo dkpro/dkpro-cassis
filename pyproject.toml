@@ -8,7 +8,7 @@ author = "Jan-Christoph Klie"
 author-email = "git@mrklie.com"
 home-page = "https://github.com/dkpro/dkpro-cassis"
 requires-python = "~=3.6"
-description-file = "README.md"
+description-file = "README.rst"
 requires = [
     "lxml",
     "attrs",

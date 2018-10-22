@@ -13,4 +13,4 @@ API Reference
 .. autoclass:: cassis.typesystem.Feature
    :members:
    :inherited-members:
-   :automethod: Type(name, supertypeName, description=None)
+   :exclude-members: __init__

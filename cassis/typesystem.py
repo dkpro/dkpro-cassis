@@ -82,9 +82,10 @@ class Type:
     system's `create_type` should be used.
 
     """
-    name: str = attr.ib() #: Type name of this type
-    supertypeName: str = attr.ib() #: Name of the super type
-    description: str = attr.ib(default=None) #: Description of this type
+
+    name: str = attr.ib()  #: Type name of this type
+    supertypeName: str = attr.ib()  #: Name of the super type
+    description: str = attr.ib(default=None)  #: Description of this type
     _children: Set[str] = attr.ib(factory=set)
     _features: Dict[str, Feature] = attr.ib(factory=dict)
     _inherited_features: Dict[str, Feature] = attr.ib(factory=dict)
@@ -93,10 +94,7 @@ class Type:
     def __attrs_post_init__(self):
         """ Build the constructor that can create annotations of this type """
         name = _string_to_valid_classname(self.name)
-        fields = {
-            feature.name: attr.ib(default=None)
-            for feature in chain(self._features.values(), self._inherited_features.values())
-        }
+        fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
         self._constructor = attr.make_class(name, fields, bases=(AnnotationBase,), slots=True)
@@ -147,6 +145,24 @@ class Type:
 
     @property
     def features(self) -> Iterator[Feature]:
+        """ Returns an iterator over the features of this type. Inherited features are excluded. To
+        find these in addition to this types' own features, use `all_features`.
+
+        Returns:
+            An iterator over all features of this type, excluding inherited ones
+
+        """
+        return iter(self._features.values())
+
+    @property
+    def all_features(self) -> Iterator[Feature]:
+        """ Returns an iterator over the features of this type. Inherited features are included. To
+        just retrieve immediate features, use `features`.
+
+        Returns:
+            An iterator over all features of this type, including inherited ones
+
+        """
         return chain(self._features.values(), self._inherited_features.values())
 
 
@@ -264,7 +280,7 @@ class TypeSystem:
             supertype = self.get_type(supertypeName)
             supertype._children.add(name)
 
-            for feature in supertype.features:
+            for feature in supertype.all_features:
                 new_type.add_feature(feature, inherited=True)
 
         self._types[name] = new_type
@@ -305,9 +321,12 @@ class TypeSystem:
             type_: The type to which the feature will be added
             name: The name of the new feature
             rangeTypeName: The feature's rangeTypeName specifies the type of value that the feature can take.
-            elementType: The elementType of a feature is optional, and applies only when the rangeTypeName is uima.cas.FSArray or uima.cas.FSList The elementType specifies what type of value can be assigned as an element of the array or list. 
+            elementType: The elementType of a feature is optional, and applies only when the rangeTypeName
+                is uima.cas.FSArray or uima.cas.FSList The elementType specifies what type of value can be
+                assigned as an element of the array or list.
             description: The description of the new feature
-            multipleReferencesAllowed: Setting this to true indicates that the array or list may be shared, so changes to it may affect other objects in the CAS.
+            multipleReferencesAllowed: Setting this to true indicates that the array or list may be shared,
+                so changes to it may affect other objects in the CAS.
 
         Raises:
             Exception: If a feature with name `name` already exists in `type_`.

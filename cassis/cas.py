@@ -152,6 +152,15 @@ class Cas:
                 yield annotation
 
     def get_sofa(self, sofa_id: int) -> Sofa:
+        """ Finds the sofa with the given id.
+
+        Args:
+            sofa_id: The id of the sofa to find.
+
+        Returns:
+            The sofa with id `sofa_id`
+
+        """
         return self._sofas[sofa_id]
 
     @property

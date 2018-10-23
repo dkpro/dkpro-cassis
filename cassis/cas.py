@@ -2,31 +2,39 @@ from collections import defaultdict
 from io import BytesIO
 from itertools import chain
 import sys
-from typing import Dict, IO, Iterator, List, Union, Tuple
+from typing import Dict, IO, Iterator, List, Union, Tuple, Optional
+from os import PathLike
 
 import attr
 
 from sortedcontainers import SortedKeyList
 
 from cassis.typesystem import AnnotationBase
+from cassis.util import is_file_like
 
 
 @attr.s(slots=True)
 class Sofa:
-    sofaNum: int = attr.ib()
-    xmiID: int = attr.ib(default=None)
-    sofaID: str = attr.ib(default=None)
-    sofaString: str = attr.ib(default=None)
-    mimeType: str = attr.ib(default=None)
+    """Each CAS has one or more Subject of Analysis (SofA)"""
+
+    sofaNum: int = attr.ib()  #: The sofaNum
+    xmiID: int = attr.ib(default=None)  #: The XMI id
+    sofaID: str = attr.ib(default=None)  #: The sofa ID
+    sofaString: str = attr.ib(default=None)  #: The text corresponding to this sofa
+    mimeType: str = attr.ib(default=None)  #: The mime type of the `sofaString`
 
 
 @attr.s(slots=True)
 class View:
-    sofa: int = attr.ib()
-    members: List[int] = attr.ib()
+    """A view into a CAS contains a subset of annotations"""
+
+    sofa: int = attr.ib()  #: The sofa belonging to this view
+    members: List[int] = attr.ib()  #: xmi IDs of the annotations beloning to this view
 
 
 class Cas:
+    """A CAS object is a container for text (sofa) and annotations"""
+
     def __init__(
         self,
         annotations: List[AnnotationBase] = None,
@@ -63,10 +71,11 @@ class Cas:
             self._sofas[sofa.xmiID] = sofa
 
     def add_annotation(self, annotation: AnnotationBase):
-        """ Adds an annotation to this Cas
+        """Adds an annotation to this Cas
 
         Args:
             annotation: The annotation to add
+
         """
         if annotation.xmiID is None:
             annotation.xmiID = self._get_next_id()
@@ -74,23 +83,33 @@ class Cas:
         self._annotations[annotation.type].add(annotation)
 
     def get_covered_text(self, annotation: AnnotationBase) -> str:
-        """ Gets the text that is covered by `annotation`
+        """Gets the text that is covered by `annotation`
 
         Args:
-            annotation:
+            annotation: The annotation whose covered text is to be retreived
 
         Returns:
+            The text covered by `annotation`
 
         """
         sofa = self.get_sofa(annotation.sofa)
         return sofa.sofaString[annotation.begin : annotation.end]
 
     def select(self, typename: str) -> Iterator[AnnotationBase]:
+        """Finds all annotations of type `typename`
+
+        Args:
+            typename: The name of the type whose annotation instances are to be found
+
+        Returns:
+            An iterator over all annotations of type `typename`
+
+        """
         for annotation in self._annotations[typename]:
             yield annotation
 
     def select_covered(self, typename: str, covering_annotation: AnnotationBase) -> Iterator[AnnotationBase]:
-        """ Returns an iterator over covered annotations
+        """Returns an iterator over covered annotations
 
         Return all annotations that are covered
 
@@ -103,6 +122,7 @@ class Cas:
 
         Returns:
             an iterator over covered annotations
+
         """
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
@@ -121,33 +141,50 @@ class Cas:
                 break
 
     def select_all(self) -> Iterator[AnnotationBase]:
-        """ Returns an iterator over all annotations in this Cas
+        """Finds all annotations in this Cas
 
         Returns:
-            an iterator over all annotations in this Cas
+            An iterator over all annotations in this Cas
+
         """
         for annotations in self._annotations.values():
             for annotation in annotations:
                 yield annotation
 
     def get_sofa(self, sofa_id: int) -> Sofa:
+        """ Finds the sofa with the given id.
+
+        Args:
+            sofa_id: The id of the sofa to find.
+
+        Returns:
+            The sofa with id `sofa_id`
+
+        """
         return self._sofas[sofa_id]
 
     @property
     def sofas(self) -> List[Sofa]:
+        """Finds all sofas that this CAS manages
+
+        Returns:
+            The list of all sofas belonging to this CAS
+
+        """
         return list(self._sofas.values())
 
     def _get_next_id(self):
         self.maximum_xmiID += 1
         return self.maximum_xmiID
 
-    def to_xmi(self, path_or_buf: Union[IO, str] = None):
-        """ Creates a string representation of this type system
+    def to_xmi(self, path_or_buf: Union[IO, str, PathLike, None] = None) -> Optional[str]:
+        """Creates a XMI representation of this CAS.
 
         Args:
-            path_or_buf: File path or file-like object, if None is provided the result is returned as a string.
+            path_or_buf: File path or file-like object, if `None` is provided the result is returned as a string.
 
         Returns:
+            If `path_or_buf` is None, then the XMI representation of this CAS is returned as a string
 
         """
         from cassis.xmi import CasXmiSerializer
@@ -159,8 +196,11 @@ class Cas:
             sink = BytesIO()
             serializer.serialize(sink, self)
             return sink.getvalue().decode("utf-8")
-        else:
+        elif is_file_like(path_or_buf):
             serializer.serialize(path_or_buf, self)
+        else:
+            with open(path_or_buf, "wb") as f:
+                serializer.serialize(f, self)
 
 
 def _sort_func(a: AnnotationBase) -> Tuple[int, int]:

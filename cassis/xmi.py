@@ -10,6 +10,18 @@ from cassis.typesystem import AnnotationBase, TypeSystem
 
 
 def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSystem()) -> Cas:
+    """ Loads a CAS from a XMI source.
+
+    Args:
+        source: The XML source. If `source` is a string, then it is assumed to be an XML string.
+            If `source` is a file-like object, then the data is read from it.
+        typesystem: The type system that belongs to this CAS. If `None`, an empty type system is provided.
+
+    Returns:
+        The deserialized CAS
+
+    """
+
     deserializer = CasXmiDeserializer()
     if isinstance(source, str):
         return deserializer.deserialize(BytesIO(source.encode("utf-8")), typesystem=typesystem)

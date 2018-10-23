@@ -1,9 +1,10 @@
 from collections import defaultdict
 from itertools import chain, filterfalse
 from io import BytesIO
+from os import PathLike
 import re
 from toposort import toposort_flatten
-from typing import Callable, Dict, List, IO, Iterator, Set, Union
+from typing import Callable, Dict, List, IO, Iterator, Optional, Set, Union
 
 import attr
 
@@ -56,12 +57,16 @@ def _string_to_valid_classname(name: str):
 
 @attr.s(slots=True)
 class AnnotationBase:
-    type: str = attr.ib()
-    xmiID: int = attr.ib(default=None)
+    """The base class for all annotation instances"""
+
+    type: str = attr.ib()  #: Type name of this annotation instance
+    xmiID: int = attr.ib(default=None)  #: xmiID of this annotation instance
 
 
 @attr.s(slots=True)
 class Feature:
+    """A feature defines one attribute of an annotation"""
+
     name: str = attr.ib()
     rangeTypeName: str = attr.ib()
     description: str = attr.ib(default=None)
@@ -71,27 +76,39 @@ class Feature:
 
 @attr.s(slots=True)
 class Type:
-    name: str = attr.ib()
-    supertypeName: str = attr.ib()
-    children: Set[str] = attr.ib(factory=set)
-    features: Dict[str, Feature] = attr.ib(factory=dict)
-    description: str = attr.ib(default=None)
+    """ Describes types in a type system.
+
+    Instances of this class should not be created by hand, instead the type 
+    system's `create_type` should be used.
+
+    """
+
+    name: str = attr.ib()  #: Type name of this type
+    supertypeName: str = attr.ib()  #: Name of the super type
+    description: str = attr.ib(default=None)  #: Description of this type
+    _children: Set[str] = attr.ib(factory=set)
+    _features: Dict[str, Feature] = attr.ib(factory=dict)
     _inherited_features: Dict[str, Feature] = attr.ib(factory=dict)
     _constructor: Callable[[Dict], AnnotationBase] = attr.ib(init=False, cmp=False, repr=False)
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create annotations of this type """
         name = _string_to_valid_classname(self.name)
-        fields = {
-            feature.name: attr.ib(default=None)
-            for feature in chain(self.features.values(), self._inherited_features.values())
-        }
+        fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
         self._constructor = attr.make_class(name, fields, bases=(AnnotationBase,), slots=True)
 
     def __call__(self, **kwargs) -> AnnotationBase:
-        """ Creates an annotation of this type """
+        """ Creates an annotation of this type 
+        
+        When called with keyword arguments whose keys are the feature names and values are the 
+        respective feature values, then a new annotation instance is created.
+
+        Returns:
+            A new annotation instance of this type.
+
+        """
         return self._constructor(**kwargs)
 
     def get_feature(self, name: str) -> Feature:
@@ -106,7 +123,7 @@ class Type:
         Returns:
             The feature with name `name` or `None` if it does not exist.
         """
-        return self.features.get(name, None)
+        return self._features.get(name, None)
 
     def add_feature(self, feature: Feature, inherited: bool = False):
         """ Add the given feature to his type.
@@ -116,7 +133,7 @@ class Type:
             inherited: Indicates whether this feature is inherited from a parent or not
 
         """
-        target = self.features if not inherited else self._inherited_features
+        target = self._features if not inherited else self._inherited_features
 
         if feature.name in target:
             msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
@@ -127,8 +144,26 @@ class Type:
         self.__attrs_post_init__()
 
     @property
+    def features(self) -> Iterator[Feature]:
+        """ Returns an iterator over the features of this type. Inherited features are excluded. To
+        find these in addition to this types' own features, use `all_features`.
+
+        Returns:
+            An iterator over all features of this type, excluding inherited ones
+
+        """
+        return iter(self._features.values())
+
+    @property
     def all_features(self) -> Iterator[Feature]:
-        return chain(self.features.values(), self._inherited_features.values())
+        """ Returns an iterator over the features of this type. Inherited features are included. To
+        just retrieve immediate features, use `features`.
+
+        Returns:
+            An iterator over all features of this type, including inherited ones
+
+        """
+        return chain(self._features.values(), self._inherited_features.values())
 
 
 class TypeSystem:
@@ -214,18 +249,18 @@ class TypeSystem:
         self.add_feature(t, name="end", rangeTypeName="uima.cas.Integer")
 
     def has_type(self, typename: str):
-        """
+        """ Checks whether this type system contains a type with name `typename`.
 
         Args:
-            typename (str):
+            typename: The name of type whose existence is to be checked.
 
         Returns:
-
+            `True` if a type with `typename` exists, else `False`.
         """
         return typename in self._types
 
     def create_type(self, name: str, supertypeName: str = "uima.tcas.Annotation", description: str = None) -> Type:
-        """ Create a new type and return it.
+        """ Creates a new type and return it.
 
         Args:
             name: The name of the new type
@@ -243,7 +278,7 @@ class TypeSystem:
 
         if supertypeName != TypeSystem.TOP_TYPE_NAME:
             supertype = self.get_type(supertypeName)
-            supertype.children.add(name)
+            supertype._children.add(name)
 
             for feature in supertype.all_features:
                 new_type.add_feature(feature, inherited=True)
@@ -252,13 +287,15 @@ class TypeSystem:
         return new_type
 
     def get_type(self, typename: str) -> Type:
-        """
+        """ Finds a type by name in the type system of this CAS.
 
         Args:
-            typename (str):
+            typename: The name of the type to retreive
 
         Returns:
-
+            The type with name `typename`
+        Raises:
+            Exception: If no type with `typename` could be found.
         """
         if self.has_type(typename):
             return self._types[typename]
@@ -278,6 +315,22 @@ class TypeSystem:
         description: str = None,
         multipleReferencesAllowed: bool = None,
     ):
+        """ Adds a feature to the given type.
+
+        Args:
+            type_: The type to which the feature will be added
+            name: The name of the new feature
+            rangeTypeName: The feature's rangeTypeName specifies the type of value that the feature can take.
+            elementType: The elementType of a feature is optional, and applies only when the rangeTypeName
+                is uima.cas.FSArray or uima.cas.FSList The elementType specifies what type of value can be
+                assigned as an element of the array or list.
+            description: The description of the new feature
+            multipleReferencesAllowed: Setting this to true indicates that the array or list may be shared,
+                so changes to it may affect other objects in the CAS.
+
+        Raises:
+            Exception: If a feature with name `name` already exists in `type_`.
+        """
         feature = Feature(
             name=name,
             rangeTypeName=rangeTypeName,
@@ -287,17 +340,18 @@ class TypeSystem:
         )
         type_.add_feature(feature)
 
-        for child_name in type_.children:
+        for child_name in type_._children:
             child_type = self.get_type(child_name)
             child_type.add_feature(feature, inherited=True)
 
-    def to_xml(self, path_or_buf: Union[IO, str] = None):
-        """ Creates a XML representation of this type system
+    def to_xml(self, path_or_buf: Union[IO, str, PathLike, None] = None) -> Optional[str]:
+        """Creates a XMI representation of this type system.
 
         Args:
-            path_or_buf: File path or file-like object, if None is provided the result is returned as a string.
+            path_or_buf: File path or file-like object, if `None` is provided the result is returned as a string.
 
         Returns:
+            If `path_or_buf` is None, then the XMI representation of this type system is returned as a string.
 
         """
         serializer = TypeSystemSerializer()
@@ -317,6 +371,16 @@ class TypeSystem:
 
 
 def load_typesystem(source: Union[IO, str]) -> TypeSystem:
+    """ Loads a type system from a XML source.
+
+    Args:
+        source: The XML source. If `source` is a string, then it is assumed to be an XML string.
+                If `source` is a file-like object, then the data is read from it.
+
+    Returns:
+        The deserialized type system
+
+    """
     deserializer = TypeSystemDeserializer()
     if isinstance(source, str):
         return deserializer.deserialize(BytesIO(source.encode("utf-8")))
@@ -416,20 +480,20 @@ class TypeSystemSerializer:
                     for type in sorted(typesystem.get_types(), key=lambda t: t.name):
                         self._serialize_type(xf, type)
 
-    def _serialize_type(self, xf: IO, type: Type):
+    def _serialize_type(self, xf: IO, type_: Type):
         typeDescription = etree.Element("typeDescription")
 
         name = etree.SubElement(typeDescription, "name")
-        name.text = type.name
+        name.text = type_.name
 
         description = etree.SubElement(typeDescription, "description")
-        description.text = type.description
+        description.text = type_.description
 
         supertypeName = etree.SubElement(typeDescription, "supertypeName")
-        supertypeName.text = type.supertypeName
+        supertypeName.text = type_.supertypeName
 
-        # Only create `feature` element if there is at least one feature
-        feature_list = list(type.features.values())
+        # Only create the `feature` element if there is at least one feature
+        feature_list = list(type_.features)
         if feature_list:
             features = etree.SubElement(typeDescription, "features")
             for feature in feature_list:

@@ -27,6 +27,7 @@ install_requires=[
 ]
 
 test_dependencies = [
+    "tox",
     "pytest",
     "lxml-asserts",
     "pytest-lazy-fixture"
@@ -44,6 +45,7 @@ doc_dependencies = [
 ]
 
 extras = {
+    "test" : test_dependencies,
     "dev": dev_dependencies,
     "doc": doc_dependencies
 }

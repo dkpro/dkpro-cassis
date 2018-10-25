@@ -3,6 +3,10 @@ cassis
 
 .. image:: https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master
     :target: https://travis-ci.org/dkpro/dkpro-cassis
+
+.. image:: https://readthedocs.org/projects/cassis/badge/?version=latest
+:target: https://cassis.readthedocs.io/en/latest/?badge=latest
+:alt: Documentation Status
     
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black

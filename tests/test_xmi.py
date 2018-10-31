@@ -150,3 +150,14 @@ def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
 
     with open(path, "rb") as actual:
         assert_xml_equal(actual.read(), xmi.encode("utf-8"))
+
+
+def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+
+    actual_xml = cas.to_xmi()
+
+    assert_xml_equal(actual_xml, small_xmi.encode("utf-8"))
+    # Assert that the namespace is only once fully specified
+    assert actual_xml.count('xmlns:cas="http:///uima/cas.ecore"') == 1

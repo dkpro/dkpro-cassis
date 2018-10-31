@@ -134,7 +134,7 @@ class CasXmiSerializer:
 
     def _serialize_cas_null(self, xf: IO, nsmap):
         name = etree.QName(nsmap["cas"], "NULL")
-        elem = etree.Element(name, nsmap=nsmap)
+        elem = etree.Element(name)
 
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
@@ -145,7 +145,7 @@ class CasXmiSerializer:
         parts = annotation.type.split(".")
         prefix = parts[-2]
         name = etree.QName(nsmap[prefix], parts[-1])
-        elem = etree.Element(name, nsmap=nsmap)
+        elem = etree.Element(name)
 
         # Serialize common attributes
         elem.attrib["{http://www.omg.org/XMI}id"] = str(annotation.xmiID)
@@ -163,7 +163,7 @@ class CasXmiSerializer:
 
     def _serialize_sofa(self, xf: IO, nsmap, sofa: Sofa):
         name = etree.QName(nsmap["cas"], "Sofa")
-        elem = etree.Element(name, nsmap=nsmap)
+        elem = etree.Element(name)
 
         elem.attrib["{http://www.omg.org/XMI}id"] = str(sofa.xmiID)
         elem.attrib["sofaNum"] = str(sofa.sofaNum)
@@ -175,7 +175,7 @@ class CasXmiSerializer:
 
     def _serialize_view(self, xf: IO, nsmap, view: View):
         name = etree.QName(nsmap["cas"], "View")
-        elem = etree.Element(name, nsmap=nsmap)
+        elem = etree.Element(name)
 
         elem.attrib["sofa"] = str(view.sofa)
         elem.attrib["members"] = " ".join([str(x) for x in view.members])

@@ -366,7 +366,8 @@ class TypeSystem:
             with path.open("wb") as f:
                 serializer.serialize(f, self)
         else:
-            raise TypeError('`path` needs to be one of [str, None, Path], but was <{0}>'.format(type(path)))
+            raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+
 
 # Deserializing
 

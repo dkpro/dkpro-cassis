@@ -219,3 +219,5 @@ pip-selfcheck.json
 actual.xml
 expected.xml
 difference.diff
+
+xml_issue.py

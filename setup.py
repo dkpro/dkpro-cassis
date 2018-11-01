@@ -17,7 +17,7 @@ DESCRIPTION = "UIMA CAS processing library in Python"
 URL = "https://github.com/dkpro/dkpro-cassis"
 EMAIL = "git@mrklie.com"
 AUTHOR = "Jan-Christoph Klie"
-REQUIRES_PYTHON = ">=3.6.0"
+REQUIRES_PYTHON = ">=3.5.0"
 
 install_requires=[
     "lxml",

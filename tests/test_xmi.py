@@ -1,3 +1,4 @@
+from pathlib import Path
 from tests.fixtures import *
 
 from lxml_asserts import assert_xml_equal
@@ -125,7 +126,7 @@ def test_serializing_cas_to_string(xmi, typesystem_xml):
 def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
-    path = tmpdir.join("cas.xml")
+    path = str(tmpdir.join("cas.xml"))
 
     cas.to_xmi(path)
 
@@ -143,12 +144,11 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
 def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
-    path = tmpdir.join("cas.xml")
+    path = Path(str(tmpdir.join("cas.xml")))
 
-    with open(path, "wb") as f:
-        cas.to_xmi(f)
+    cas.to_xmi(path)
 
-    with open(path, "rb") as actual:
+    with path.open("rb") as actual:
         assert_xml_equal(actual.read(), xmi.encode("utf-8"))
 
 

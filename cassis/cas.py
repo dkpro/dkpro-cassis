@@ -1,35 +1,34 @@
 from collections import defaultdict
 from io import BytesIO
 from itertools import chain
+from pathlib import Path
 import sys
-from typing import Dict, IO, Iterator, List, Union, Tuple, Optional
-from os import PathLike
+from typing import Dict, Iterator, List, Union, Tuple, Optional
 
 import attr
 
 from sortedcontainers import SortedKeyList
 
 from cassis.typesystem import AnnotationBase
-from cassis.util import is_file_like
 
 
 @attr.s(slots=True)
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
 
-    sofaNum: int = attr.ib()  #: The sofaNum
-    xmiID: int = attr.ib(default=None)  #: The XMI id
-    sofaID: str = attr.ib(default=None)  #: The sofa ID
-    sofaString: str = attr.ib(default=None)  #: The text corresponding to this sofa
-    mimeType: str = attr.ib(default=None)  #: The mime type of the `sofaString`
+    sofaNum = attr.ib()  # type: int # The sofaNum
+    xmiID = attr.ib(default=None)  # type: int # The XMI id
+    sofaID = attr.ib(default=None)  # type: str # The sofa ID
+    sofaString = attr.ib(default=None)  # type: str # The text corresponding to this sofa
+    mimeType = attr.ib(default=None)  # type: str # The mime type of the `sofaString`
 
 
 @attr.s(slots=True)
 class View:
     """A view into a CAS contains a subset of annotations"""
 
-    sofa: int = attr.ib()  #: The sofa belonging to this view
-    members: List[int] = attr.ib()  #: xmi IDs of the annotations beloning to this view
+    sofa = attr.ib()  # type: int # The sofa belonging to this view
+    members = attr.ib()  # type: List[int] # xmi IDs of the annotations beloning to this view
 
 
 class Cas:
@@ -177,30 +176,33 @@ class Cas:
         self.maximum_xmiID += 1
         return self.maximum_xmiID
 
-    def to_xmi(self, path_or_buf: Union[IO, str, PathLike, None] = None) -> Optional[str]:
+    def to_xmi(self, path: Union[str, Path, None] = None) -> Optional[str]:
         """Creates a XMI representation of this CAS.
 
         Args:
-            path_or_buf: File path or file-like object, if `None` is provided the result is returned as a string.
+            path: File path, if `None` is provided the result is returned as a string.
 
         Returns:
-            If `path_or_buf` is None, then the XMI representation of this CAS is returned as a string
+            If `path` is None, then the XMI representation of this CAS is returned as a string
 
         """
         from cassis.xmi import CasXmiSerializer
 
         serializer = CasXmiSerializer()
 
-        # If `path_or_buf` is None, then serialize to a string and return it
-        if path_or_buf is None:
+        # If `path` is None, then serialize to a string and return it
+        if path is None:
             sink = BytesIO()
             serializer.serialize(sink, self)
             return sink.getvalue().decode("utf-8")
-        elif is_file_like(path_or_buf):
-            serializer.serialize(path_or_buf, self)
-        else:
-            with open(path_or_buf, "wb") as f:
+        elif isinstance(path, str):
+            with open(path, "wb") as f:
                 serializer.serialize(f, self)
+        elif isinstance(path, Path):
+            with path.open("wb") as f:
+                serializer.serialize(f, self)
+        else:
+            raise TypeError('`path` needs to be one of [str, None, Path], but was <{0}>'.format(type(path)))
 
 
 def _sort_func(a: AnnotationBase) -> Tuple[int, int]:

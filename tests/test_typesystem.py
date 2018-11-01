@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from tests.fixtures import *
@@ -187,11 +189,11 @@ def test_serializing_typesystem_to_string(typesystem_xml):
 )
 def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
-    path = tmpdir.join("typesystem.xml")
+    path = Path(str(tmpdir.join("typesystem.xml")))
 
     typesystem.to_xml(path)
 
-    with open(path, "rb") as actual:
+    with path.open("rb") as actual:
         assert_xml_equal(actual, typesystem_xml)
 
 
@@ -205,10 +207,9 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
 )
 def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
-    path = tmpdir.join("typesystem.xml")
+    path = str(tmpdir.join("typesystem.xml"))
 
-    with open(path, "wb") as f:
-        typesystem.to_xml(f)
+    typesystem.to_xml(path)
 
     with open(path, "rb") as actual:
         assert_xml_equal(actual, typesystem_xml)

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import chain, filterfalse
 from io import BytesIO
-from os import PathLike
+from pathlib import Path
 import re
 from toposort import toposort_flatten
 from typing import Callable, Dict, List, IO, Iterator, Optional, Set, Union
@@ -9,8 +9,6 @@ from typing import Callable, Dict, List, IO, Iterator, Optional, Set, Union
 import attr
 
 from lxml import etree
-
-from cassis.util import is_file_like
 
 PREDEFINED_TYPES = {
     "uima.cas.TOP",
@@ -59,19 +57,19 @@ def _string_to_valid_classname(name: str):
 class AnnotationBase:
     """The base class for all annotation instances"""
 
-    type: str = attr.ib()  #: Type name of this annotation instance
-    xmiID: int = attr.ib(default=None)  #: xmiID of this annotation instance
+    type = attr.ib()  # str: Type name of this annotation instance
+    xmiID = attr.ib(default=None)  # int: xmiID of this annotation instance
 
 
 @attr.s(slots=True)
 class Feature:
     """A feature defines one attribute of an annotation"""
 
-    name: str = attr.ib()
-    rangeTypeName: str = attr.ib()
-    description: str = attr.ib(default=None)
-    elementType: str = attr.ib(default=None)
-    multipleReferencesAllowed: bool = attr.ib(default=None)
+    name = attr.ib()  # type: str
+    rangeTypeName = attr.ib()  # type: str
+    description = attr.ib(default=None)  # type: str
+    elementType = attr.ib(default=None)  # type: str
+    multipleReferencesAllowed = attr.ib(default=None)  # type: bool
 
 
 @attr.s(slots=True)
@@ -83,13 +81,13 @@ class Type:
 
     """
 
-    name: str = attr.ib()  #: Type name of this type
-    supertypeName: str = attr.ib()  #: Name of the super type
-    description: str = attr.ib(default=None)  #: Description of this type
-    _children: Set[str] = attr.ib(factory=set)
-    _features: Dict[str, Feature] = attr.ib(factory=dict)
-    _inherited_features: Dict[str, Feature] = attr.ib(factory=dict)
-    _constructor: Callable[[Dict], AnnotationBase] = attr.ib(init=False, cmp=False, repr=False)
+    name = attr.ib()  # type: str #: Type name of this type
+    supertypeName = attr.ib()  # type: str # : Name of the super type
+    description = attr.ib(default=None)  # type: str #: Description of this type
+    _children = attr.ib(factory=set)  # type: Set[str]
+    _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
+    _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
+    _constructor = attr.ib(init=False, cmp=False, repr=False)  # type: Callable[[Dict], AnnotationBase]
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create annotations of this type """
@@ -344,28 +342,31 @@ class TypeSystem:
             child_type = self.get_type(child_name)
             child_type.add_feature(feature, inherited=True)
 
-    def to_xml(self, path_or_buf: Union[IO, str, PathLike, None] = None) -> Optional[str]:
+    def to_xml(self, path: Union[str, Path, None] = None) -> Optional[str]:
         """Creates a XMI representation of this type system.
 
         Args:
-            path_or_buf: File path or file-like object, if `None` is provided the result is returned as a string.
+            path: File path or file-like object, if `None` is provided the result is returned as a string.
 
         Returns:
-            If `path_or_buf` is None, then the XMI representation of this type system is returned as a string.
+            If `path` is None, then the XML representation of this type system is returned as a string.
 
         """
         serializer = TypeSystemSerializer()
 
-        if path_or_buf is None:
+        # If `path` is None, then serialize to a string and return it
+        if path is None:
             sink = BytesIO()
             serializer.serialize(sink, self)
             return sink.getvalue().decode("utf-8")
-        elif is_file_like(path_or_buf):
-            serializer.serialize(path_or_buf, self)
-        else:
-            with open(path_or_buf, "wb") as f:
+        elif isinstance(path, str):
+            with open(path, "wb") as f:
                 serializer.serialize(f, self)
-
+        elif isinstance(path, Path):
+            with path.open("wb") as f:
+                serializer.serialize(f, self)
+        else:
+            raise TypeError('`path` needs to be one of [str, None, Path], but was <{0}>'.format(type(path)))
 
 # Deserializing
 

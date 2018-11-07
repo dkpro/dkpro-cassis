@@ -40,37 +40,34 @@ class CasXmiDeserializer:
         TAG_CAS_SOFA = NS_CAS + "Sofa"
         TAG_CAS_VIEW = NS_CAS + "View"
 
-        namespaces = {}
         sofas = []
         views = []
         annotations = []
 
-        context = etree.iterparse(source, events=("start-ns", "end"))
+        context = etree.iterparse(source, events=("end", ))
 
         for event, elem in context:
-            if event == "start-ns":
-                ns, url = elem
-                namespaces[ns] = url
-            elif event == "end":
-                if elem.tag == TAG_XMI:
-                    # Ignore the closing 'xmi:XMI' tag
-                    pass
-                elif elem.tag == TAG_CAS_NULL:
-                    pass
-                elif elem.tag == TAG_CAS_SOFA:
-                    sofa = self._parse_sofa(elem)
-                    sofas.append(sofa)
-                elif elem.tag == TAG_CAS_VIEW:
-                    view = self._parse_view(elem)
-                    views.append(view)
-                else:
-                    annotation = self._parse_annotation(typesystem, elem)
-                    annotations.append(annotation)
+            assert event == "end"
 
-                # Free already processed elements
-                self._clear_elem(elem)
+            if elem.tag == TAG_XMI:
+                # Ignore the closing 'xmi:XMI' tag
+                pass
+            elif elem.tag == TAG_CAS_NULL:
+                pass
+            elif elem.tag == TAG_CAS_SOFA:
+                sofa = self._parse_sofa(elem)
+                sofas.append(sofa)
+            elif elem.tag == TAG_CAS_VIEW:
+                view = self._parse_view(elem)
+                views.append(view)
+            else:
+                annotation = self._parse_annotation(typesystem, elem)
+                annotations.append(annotation)
 
-        return Cas(annotations=annotations, namespaces=namespaces, sofas=sofas, views=views)
+            # Free already processed elements
+            self._clear_elem(elem)
+
+        return Cas(annotations=annotations, sofas=sofas, views=views)
 
     def _parse_sofa(self, elem) -> Sofa:
         attributes = dict(elem.attrib)
@@ -116,36 +113,57 @@ class CasXmiDeserializer:
 class CasXmiSerializer:
     _COMMON_FIELD_NAMES = {"xmiID", "sofa", "begin", "end", "type"}
 
-    def serialize(self, sink: Union[IO, str], cas: Cas):
-        nsmap = cas.namespaces
+    def __init__(self):
+        self._nsmap = {
+            "xmi": "http://www.omg.org/XMI",
+            "cas": "http:///uima/cas.ecore",
+        }
+
+    def serialize(self, sink: Union[IO, str], cas: Cas, pretty_print=True):
         xmi_attrs = {"{http://www.omg.org/XMI}version": "2.0"}
-        with etree.xmlfile(sink) as xf:
-            with xf.element("xmi:XMI", nsmap=nsmap, **xmi_attrs):
-                self._serialize_cas_null(xf, nsmap)
 
-                for annotation in cas.select_all():
-                    self._serialize_annotation(xf, nsmap, annotation)
+        root = etree.Element(etree.QName(self._nsmap["xmi"], "XMI"), nsmap=self._nsmap, **xmi_attrs)
 
-                for sofa in cas.sofas:
-                    self._serialize_sofa(xf, nsmap, sofa)
+        self._serialize_cas_null(root)
 
-                for view in cas.views:
-                    self._serialize_view(xf, nsmap, view)
+        for annotation in cas.select_all():
+            self._serialize_annotation(root, annotation)
 
-    def _serialize_cas_null(self, xf: IO, nsmap):
-        name = etree.QName(nsmap["cas"], "NULL")
-        elem = etree.Element(name)
+        for sofa in cas.sofas:
+            self._serialize_sofa(root, sofa)
+
+        for view in cas.views:
+            self._serialize_view(root, view)
+
+        doc = etree.ElementTree(root)
+        etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
+
+        doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
+
+    def _serialize_cas_null(self, root: etree.Element):
+        name = etree.QName(self._nsmap["cas"], "NULL")
+        elem = etree.SubElement(root, name)
 
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
-        xf.write(elem)
-
-    def _serialize_annotation(self, xf: IO, nsmap, annotation: AnnotationBase):
-        # Create tag with namespace
+    def _serialize_annotation(self, root: etree.Element, annotation: AnnotationBase):
+        # The type name is a Java package, e.g. `org.myproj.Foo`.
         parts = annotation.type.split(".")
+
+        # The cas prefix is the last component of the CAS namespace, which is the second to last
+        # element of the type (the last part is the type name without package name), e.g. `myproj`
         prefix = parts[-2]
-        name = etree.QName(nsmap[prefix], parts[-1])
-        elem = etree.Element(name)
+        typename = parts[-1]
+
+        # If the prefix has not been seen yet, compute the namespace from the type name and add it
+        if prefix not in self._nsmap:
+            # The CAS type namespace is converted to an XML namespace URI by the following rule:
+            # replace all dots with slashes, prepend http:///, and append .ecore.
+            url = 'http:///' + '/'.join(parts[:-1]) + '.ecore'
+            self._nsmap[prefix] = url
+
+        name = etree.QName(self._nsmap[prefix], typename)
+        elem = etree.SubElement(root, name)
 
         # Serialize common attributes
         elem.attrib["{http://www.omg.org/XMI}id"] = str(annotation.xmiID)
@@ -157,13 +175,14 @@ class CasXmiSerializer:
         fields = attr.fields_dict(annotation.__class__)
         for field_name in fields:
             if field_name not in CasXmiSerializer._COMMON_FIELD_NAMES:
-                elem.attrib[field_name] = str(getattr(annotation, field_name))
+                # Skip over 'None' features
+                value = getattr(annotation, field_name)
+                if value:
+                    elem.attrib[field_name] = str(value)
 
-        xf.write(elem)
-
-    def _serialize_sofa(self, xf: IO, nsmap, sofa: Sofa):
-        name = etree.QName(nsmap["cas"], "Sofa")
-        elem = etree.Element(name)
+    def _serialize_sofa(self, root: etree.Element, sofa: Sofa):
+        name = etree.QName(self._nsmap["cas"], "Sofa")
+        elem = etree.SubElement(root, name)
 
         elem.attrib["{http://www.omg.org/XMI}id"] = str(sofa.xmiID)
         elem.attrib["sofaNum"] = str(sofa.sofaNum)
@@ -171,13 +190,9 @@ class CasXmiSerializer:
         elem.attrib["mimeType"] = str(sofa.mimeType)
         elem.attrib["sofaString"] = str(sofa.sofaString)
 
-        xf.write(elem)
-
-    def _serialize_view(self, xf: IO, nsmap, view: View):
-        name = etree.QName(nsmap["cas"], "View")
-        elem = etree.Element(name)
+    def _serialize_view(self, root: etree.Element, view: View):
+        name = etree.QName(self._nsmap["cas"], "View")
+        elem = etree.SubElement(root, name)
 
         elem.attrib["sofa"] = str(view.sofa)
         elem.attrib["members"] = " ".join([str(x) for x in view.members])
-
-        xf.write(elem)

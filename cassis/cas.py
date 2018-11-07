@@ -37,11 +37,9 @@ class Cas:
     def __init__(
         self,
         annotations: List[AnnotationBase] = None,
-        namespaces: Dict[str, str] = None,
         sofas: List[Sofa] = None,
         views: List[View] = None,
     ):
-        self.namespaces = namespaces or {}
         self._sofas = {}
         self.views = views or []
         # Annotations are sorted by begin index first (smaller first). If begin
@@ -176,11 +174,13 @@ class Cas:
         self.maximum_xmiID += 1
         return self.maximum_xmiID
 
-    def to_xmi(self, path: Union[str, Path, None] = None) -> Optional[str]:
+    def to_xmi(self, path: Union[str, Path, None] = None, pretty_print:bool=False) -> Optional[str]:
         """Creates a XMI representation of this CAS.
 
         Args:
-            path: File path, if `None` is provided the result is returned as a string.
+            path: File path, if `None` is provided the result is returned as a string
+            pretty_print: `True` if the resulting XML should be pretty-printed, else `False`
+
 
         Returns:
             If `path` is None, then the XMI representation of this CAS is returned as a string
@@ -193,14 +193,14 @@ class Cas:
         # If `path` is None, then serialize to a string and return it
         if path is None:
             sink = BytesIO()
-            serializer.serialize(sink, self)
+            serializer.serialize(sink, self, pretty_print=pretty_print)
             return sink.getvalue().decode("utf-8")
         elif isinstance(path, str):
             with open(path, "wb") as f:
-                serializer.serialize(f, self)
+                serializer.serialize(f, self, pretty_print=pretty_print)
         elif isinstance(path, Path):
             with path.open("wb") as f:
-                serializer.serialize(f, self)
+                serializer.serialize(f, self, pretty_print=pretty_print)
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 

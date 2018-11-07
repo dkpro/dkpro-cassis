@@ -1,7 +1,7 @@
 from pathlib import Path
 from tests.fixtures import *
 
-from lxml_asserts import assert_xml_equal
+from tests.util import assert_xml_equal
 
 from cassis import *
 
@@ -30,20 +30,6 @@ def test_deserializing_from_string(small_typesystem_xml):
     </xmi:XMI>    
     """
     load_cas_from_xmi(cas_xmi, typesystem=typesystem)
-
-
-def test_namespaces_are_parsed(small_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
-
-    expected_namespaces = {
-        "xmi": "http://www.omg.org/XMI",
-        "cas": "http:///uima/cas.ecore",
-        "cassis": "http:///cassis.ecore",
-        "tcas": "http:///uima/tcas.ecore",
-    }
-    assert cas.namespaces == expected_namespaces
 
 
 def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
@@ -113,7 +99,7 @@ def test_serializing_cas_to_string(xmi, typesystem_xml):
 
     actual_xml = cas.to_xmi()
 
-    assert_xml_equal(actual_xml, xmi.encode("utf-8"))
+    assert_xml_equal(actual_xml, xmi)
 
 
 @pytest.mark.parametrize(
@@ -130,8 +116,8 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
 
     cas.to_xmi(path)
 
-    with open(path, "rb") as actual:
-        assert_xml_equal(actual.read(), xmi.encode("utf-8"))
+    with open(path, "r") as actual:
+        assert_xml_equal(actual.read(), xmi)
 
 
 @pytest.mark.parametrize(
@@ -148,8 +134,8 @@ def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
 
     cas.to_xmi(path)
 
-    with path.open("rb") as actual:
-        assert_xml_equal(actual.read(), xmi.encode("utf-8"))
+    with path.open("r") as actual:
+        assert_xml_equal(actual.read(), xmi)
 
 
 def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml):
@@ -158,6 +144,18 @@ def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml)
 
     actual_xml = cas.to_xmi()
 
-    assert_xml_equal(actual_xml, small_xmi.encode("utf-8"))
+    assert_xml_equal(actual_xml, small_xmi)
     # Assert that the namespace is only once fully specified
     assert actual_xml.count('xmlns:cas="http:///uima/cas.ecore"') == 1
+    assert actual_xml.count('ns0') == 0
+
+
+def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+    TokenType = typesystem.get_type("cassis.Token")
+    cas.add_annotation(TokenType(xmiID=13, sofa=1, begin=0, end=3, id=None, pos=None))
+
+    actual_xml = cas.to_xmi()
+
+    assert actual_xml.count('"None') == 0

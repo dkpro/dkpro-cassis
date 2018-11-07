@@ -1,3 +1,4 @@
+from collections import defaultdict
 from io import BytesIO
 from typing import IO, Union
 
@@ -44,7 +45,7 @@ class CasXmiDeserializer:
         views = []
         annotations = []
 
-        context = etree.iterparse(source, events=("end", ))
+        context = etree.iterparse(source, events=("end",))
 
         for event, elem in context:
             assert event == "end"
@@ -114,10 +115,9 @@ class CasXmiSerializer:
     _COMMON_FIELD_NAMES = {"xmiID", "sofa", "begin", "end", "type"}
 
     def __init__(self):
-        self._nsmap = {
-            "xmi": "http://www.omg.org/XMI",
-            "cas": "http:///uima/cas.ecore",
-        }
+        self._nsmap = {"xmi": "http://www.omg.org/XMI", "cas": "http:///uima/cas.ecore"}
+        self._urls_to_prefixes = {}
+        self._duplicate_namespaces = defaultdict(int)
 
     def serialize(self, sink: Union[IO, str], cas: Cas, pretty_print=True):
         xmi_attrs = {"{http://www.omg.org/XMI}version": "2.0"}
@@ -126,7 +126,7 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
-        for annotation in cas.select_all():
+        for annotation in sorted(cas.select_all(), key=lambda a: a.type):
             self._serialize_annotation(root, annotation)
 
         for sofa in cas.sofas:
@@ -150,17 +150,26 @@ class CasXmiSerializer:
         # The type name is a Java package, e.g. `org.myproj.Foo`.
         parts = annotation.type.split(".")
 
+        # The CAS type namespace is converted to an XML namespace URI by the following rule:
+        # replace all dots with slashes, prepend http:///, and append .ecore.
+        url = "http:///" + "/".join(parts[:-1]) + ".ecore"
+
         # The cas prefix is the last component of the CAS namespace, which is the second to last
         # element of the type (the last part is the type name without package name), e.g. `myproj`
         prefix = parts[-2]
         typename = parts[-1]
 
-        # If the prefix has not been seen yet, compute the namespace from the type name and add it
-        if prefix not in self._nsmap:
-            # The CAS type namespace is converted to an XML namespace URI by the following rule:
-            # replace all dots with slashes, prepend http:///, and append .ecore.
-            url = 'http:///' + '/'.join(parts[:-1]) + '.ecore'
+        # If the url has not been seen yet, compute the namespace and add it
+        if url not in self._urls_to_prefixes:
+            # If the prefix already exists, but maps to a different url, then add it with
+            # a number at the end, e.g. `type0`
+            if prefix in self._nsmap:
+                suffix = self._duplicate_namespaces[prefix]
+                self._duplicate_namespaces[prefix] += 1
+                prefix = prefix + str(suffix)
+
             self._nsmap[prefix] = url
+            self._urls_to_prefixes[url] = prefix
 
         name = etree.QName(self._nsmap[prefix], typename)
         elem = etree.SubElement(root, name)

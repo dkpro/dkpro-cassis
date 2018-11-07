@@ -173,5 +173,5 @@ def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_di
     actual_xmi = cas.to_xmi()
 
     root = etree.fromstring(actual_xmi.encode("utf-8"))
-    assert root.nsmap["test"] == "http:///foo/test.ecore"
-    assert root.nsmap["test0"] == "http:///bar/test.ecore"
+    assert root.nsmap["test"] == "http:///bar/test.ecore"
+    assert root.nsmap["test0"] == "http:///foo/test.ecore"

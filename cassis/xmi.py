@@ -126,7 +126,7 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
-        for annotation in cas.select_all():
+        for annotation in sorted(cas.select_all(), key=lambda a: a.type):
             self._serialize_annotation(root, annotation)
 
         for sofa in cas.sofas:

@@ -1,10 +1,11 @@
 from pathlib import Path
-from tests.fixtures import *
 
-from tests.util import assert_xml_equal
+from lxml import etree
 
 from cassis import *
 
+from tests.util import assert_xml_equal
+from tests.fixtures import *
 
 # Deserializing
 
@@ -147,7 +148,7 @@ def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml)
     assert_xml_equal(actual_xml, small_xmi)
     # Assert that the namespace is only once fully specified
     assert actual_xml.count('xmlns:cas="http:///uima/cas.ecore"') == 1
-    assert actual_xml.count('ns0') == 0
+    assert actual_xml.count("ns0") == 0
 
 
 def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
@@ -159,3 +160,18 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
     actual_xml = cas.to_xmi()
 
     assert actual_xml.count('"None') == 0
+
+
+def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_disambiguated():
+    typesystem = TypeSystem()
+    cas = Cas()
+    FooType = typesystem.create_type("foo.test.Foo")
+    BarType = typesystem.create_type("bar.test.Bar")
+
+    cas.add_annotation(FooType())
+    cas.add_annotation(BarType())
+    actual_xmi = cas.to_xmi()
+
+    root = etree.fromstring(actual_xmi.encode("utf-8"))
+    assert root.nsmap["test"] == "http:///foo/test.ecore"
+    assert root.nsmap["test0"] == "http:///bar/test.ecore"

@@ -34,12 +34,7 @@ class View:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(
-        self,
-        annotations: List[AnnotationBase] = None,
-        sofas: List[Sofa] = None,
-        views: List[View] = None,
-    ):
+    def __init__(self, annotations: List[AnnotationBase] = None, sofas: List[Sofa] = None, views: List[View] = None):
         self._sofas = {}
         self.views = views or []
         # Annotations are sorted by begin index first (smaller first). If begin
@@ -174,7 +169,7 @@ class Cas:
         self.maximum_xmiID += 1
         return self.maximum_xmiID
 
-    def to_xmi(self, path: Union[str, Path, None] = None, pretty_print:bool=False) -> Optional[str]:
+    def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a XMI representation of this CAS.
 
         Args:

@@ -126,7 +126,7 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
-        for annotation in sorted(cas.select_all(), key=lambda a: a.type):
+        for annotation in sorted(cas.select_all(), key=lambda a: a.xmiID):
             self._serialize_annotation(root, annotation)
 
         for sofa in cas.sofas:
@@ -156,20 +156,24 @@ class CasXmiSerializer:
 
         # The cas prefix is the last component of the CAS namespace, which is the second to last
         # element of the type (the last part is the type name without package name), e.g. `myproj`
-        prefix = parts[-2]
+        raw_prefix = parts[-2]
         typename = parts[-1]
 
         # If the url has not been seen yet, compute the namespace and add it
         if url not in self._urls_to_prefixes:
             # If the prefix already exists, but maps to a different url, then add it with
             # a number at the end, e.g. `type0`
-            if prefix in self._nsmap:
-                suffix = self._duplicate_namespaces[prefix]
-                self._duplicate_namespaces[prefix] += 1
-                prefix = prefix + str(suffix)
 
-            self._nsmap[prefix] = url
-            self._urls_to_prefixes[url] = prefix
+            new_prefix = raw_prefix
+            if raw_prefix in self._nsmap:
+                suffix = self._duplicate_namespaces[raw_prefix]
+                self._duplicate_namespaces[raw_prefix] += 1
+                new_prefix = raw_prefix + str(suffix)
+
+            self._nsmap[new_prefix] = url
+            self._urls_to_prefixes[url] = new_prefix
+
+        prefix = self._urls_to_prefixes[url]
 
         name = etree.QName(self._nsmap[prefix], typename)
         elem = etree.SubElement(root, name)

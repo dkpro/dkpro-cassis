@@ -3,92 +3,198 @@ from io import BytesIO
 from itertools import chain
 from pathlib import Path
 import sys
-from typing import Dict, Iterator, List, Union, Tuple, Optional
+from typing import Dict, Iterable, Iterator, List, Union, Tuple, Optional
 
 import attr
+from attr import validators
 
-from sortedcontainers import SortedKeyList
+from sortedcontainers import SortedList, SortedKeyList
 
 from cassis.typesystem import AnnotationBase
+
+_validator_optional_string = validators.optional(validators.instance_of(str))
+
+
+class IdGenerator:
+    def __init__(self, initial_id: int = 1):
+        self._next_id = initial_id
+
+    def generate_id(self) -> int:
+        result = self._next_id
+        self._next_id += 1
+        return result
 
 
 @attr.s(slots=True)
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
 
-    sofaNum = attr.ib()  # type: int # The sofaNum
-    xmiID = attr.ib(default=None)  # type: int # The XMI id
-    sofaID = attr.ib(default=None)  # type: str # The sofa ID
-    sofaString = attr.ib(default=None)  # type: str # The text corresponding to this sofa
-    mimeType = attr.ib(default=None)  # type: str # The mime type of the `sofaString`
+    #: int: The sofaNum
+    sofaNum = attr.ib(validator=validators.instance_of(int))
+
+    #: int: The XMI id
+    xmiID = attr.ib(validator=validators.instance_of(int))
+
+    #: str: The name of the sofa, i.e. the sofa ID
+    sofaID = attr.ib(validator=validators.instance_of(str))
+
+    #: str: The text corresponding to this sofa
+    sofaString = attr.ib(default=None, validator=_validator_optional_string)
+
+    #: str: The mime type of `sofaString`
+    mimeType = attr.ib(default=None, validator=_validator_optional_string)
 
 
-@attr.s(slots=True)
 class View:
-    """A view into a CAS contains a subset of annotations"""
+    """A view into a CAS contains a subset of feature structures and annotations."""
 
-    sofa = attr.ib()  # type: int # The sofa belonging to this view
-    members = attr.ib()  # type: List[int] # xmi IDs of the annotations beloning to this view
+    def __init__(self, sofa: Sofa):
+        """ Creates a new view for the given sofa.
+
+        Args:
+            sofa: The sofa associated with this view.
+        """
+        self.sofa = sofa
+
+        # Annotations are sorted by begin index first (smaller first). If begin
+        # is equal, sort by end index, smaller first. This is the same as
+        # comparing a Python tuple of (begin, end)
+        self._type_index = defaultdict(lambda: SortedKeyList(key=_sort_func))
+
+    @property
+    def type_index(self) -> Dict[str, SortedList]:
+        """ Returns an index mapping type names to annotations of this type.
+
+        Returns:
+            A dictionary mapping type names to annotations of this type.
+        """
+        return self._type_index
+
+    def add_annotation_to_index(self, annotation):
+        self._type_index[annotation.type].add(annotation)
+
+    def get_all_annotations(self) -> Iterator[AnnotationBase]:
+        """ Gets all the annotations in this view.
+
+        Returns:
+            An iterator over all annotations in this view.
+
+        """
+        for annotations_by_type in self._type_index.values():
+            yield from annotations_by_type
 
 
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(self, annotations: List[AnnotationBase] = None, sofas: List[Sofa] = None, views: List[View] = None):
+    def __init__(self):
+        # When new attributes are added, they also need to be added in Cas::_copy. The copying
+        # relies on the fact that all the members of the Cas are mutable references. It is not
+        # possible right now to add not-mutable references because the view functionality heavily
+        # relies on this functionality.
         self._sofas = {}
-        self.views = views or []
-        # Annotations are sorted by begin index first (smaller first). If begin
-        #  is equal, sort by end index, smaller first. This is the same as
-        # comparing a Python tuple of (begin, end)
-        self._annotations = defaultdict(lambda: SortedKeyList(key=_sort_func))
-        _annotations = annotations or []
-        for annotation in _annotations:
-            self._annotations[annotation.type].add(annotation)
+        self._views = {}
 
-        # Find maximum id. This has to be done before creating the default sofa
-        maximum_xmi_id = 1
-        for obj in chain(sofas or [], _annotations):
-            if obj.xmiID and obj.xmiID > maximum_xmi_id:
-                maximum_xmi_id = obj.xmiID
+        self._xmi_id_generator = IdGenerator()
+        self._sofa_num_generator = IdGenerator()
 
-        self.maximum_xmiID = maximum_xmi_id
+        # Every CAS comes with a an initial view called `_InitialView`
+        self._add_view("_InitialView")
+        self._current_view = self._views["_InitialView"]  # type: View
 
-        # Handle sofas
-        if sofas is None or len(sofas) == 0:
-            _sofas = [Sofa(sofaNum=1, xmiID=self._get_next_id())]
-        else:
-            _sofas = sofas
-
-        for sofa in _sofas:
-            self._sofas[sofa.xmiID] = sofa
-
-    def add_annotation(self, annotation: AnnotationBase):
-        """Adds an annotation to this Cas
+    def create_view(self, name: str) -> "Cas":
+        """ Create a view and its underlying Sofa (subject of analysis).
 
         Args:
-            annotation: The annotation to add
+            name: The name of the view. This is the same as the associated Sofa name.
+
+        Returns:
+            The newly created view.
+
+        Raises:
+            ValueError: If a view with `name` already exists.
+        """
+        if name in self._views:
+            raise ValueError("A view with name [{name}] already exists!".format(name=name))
+
+        self._add_view(name)
+        return self.get_view(name)
+
+    def _add_view(self, name: str):
+        # Create sofa
+        sofa = Sofa(xmiID=self._get_next_xmi_id(), sofaNum=self._get_next_sofa_num(), sofaID=name)
+
+        # Create view
+        view = View(sofa=sofa)
+
+        self._views[name] = view
+        self._sofas[name] = sofa
+
+    def get_view(self, name: str) -> "Cas":
+        """ Gets an existing view.
+
+        Args:
+            name: The name of the view. This is the same as the associated Sofa name.
+
+        Returns:
+            The view corresponding to `name`
+        """
+        if name in self._views:
+            # Make a shallow copy of this CAS and just change the current view.
+            result = self._copy()
+            result._current_view = self._views[name]
+            return result
+        else:
+            raise KeyError("There is no view with name [{view}] in this CAS!".format(view=name))
+
+    @property
+    def views(self) -> List[View]:
+        """Finds all views that this CAS manages.
+
+        Returns:
+            The list of all views belonging to this CAS.
 
         """
-        if annotation.xmiID is None:
-            annotation.xmiID = self._get_next_id()
+        return list(self._views.values())
 
-        self._annotations[annotation.type].add(annotation)
-
-    def get_covered_text(self, annotation: AnnotationBase) -> str:
-        """Gets the text that is covered by `annotation`
+    def add_annotation(self, annotation: AnnotationBase):
+        """Adds an annotation to this Cas.
 
         Args:
-            annotation: The annotation whose covered text is to be retreived
+            annotation: The annotation to add.
+
+        """
+        annotation.xmiID = self._get_next_xmi_id()
+        if isinstance(annotation, AnnotationBase):
+            annotation.sofa = self.get_sofa().xmiID
+
+        self._current_view.add_annotation_to_index(annotation)
+
+    def add_annotations(self, annotations: Iterable[AnnotationBase]):
+        """ Adds several annotations at once to this CAS.
+
+        Args:
+            annotations: An iterable of annotations to add.
+
+        """
+        for annotation in annotations:
+            self.add_annotation(annotation)
+
+    def get_covered_text(self, annotation: AnnotationBase) -> str:
+        """ Gets the text that is covered by `annotation`.
+
+        Args:
+            annotation: The annotation whose covered text is to be retrieved.
 
         Returns:
             The text covered by `annotation`
 
         """
-        sofa = self.get_sofa(annotation.sofa)
+        sofa = self.get_sofa()
         return sofa.sofaString[annotation.begin : annotation.end]
 
     def select(self, typename: str) -> Iterator[AnnotationBase]:
-        """Finds all annotations of type `typename`
+        """ Finds all annotations of type `typename`
 
         Args:
             typename: The name of the type whose annotation instances are to be found
@@ -97,7 +203,7 @@ class Cas:
             An iterator over all annotations of type `typename`
 
         """
-        for annotation in self._annotations[typename]:
+        for annotation in self._current_view.type_index[typename]:
             yield annotation
 
     def select_covered(self, typename: str, covering_annotation: AnnotationBase) -> Iterator[AnnotationBase]:
@@ -119,7 +225,7 @@ class Cas:
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
-        annotations = self._annotations[typename]
+        annotations = self._current_view.type_index[typename]
 
         # The entry point is the index of the first annotation whose `begin`
         # is equal or higher than the `begin` of the covering annotation
@@ -139,21 +245,17 @@ class Cas:
             An iterator over all annotations in this Cas
 
         """
-        for annotations in self._annotations.values():
-            for annotation in annotations:
-                yield annotation
+        return self._current_view.get_all_annotations()
 
-    def get_sofa(self, sofa_id: int) -> Sofa:
-        """ Finds the sofa with the given id.
+    # Sofa
 
-        Args:
-            sofa_id: The id of the sofa to find.
+    def get_sofa(self) -> Sofa:
+        """ Get the Sofa feature structure associated with this CAS view.
 
         Returns:
-            The sofa with id `sofa_id`
-
+            The sofa associated with this CAS view.
         """
-        return self._sofas[sofa_id]
+        return self._current_view.sofa
 
     @property
     def sofas(self) -> List[Sofa]:
@@ -165,9 +267,21 @@ class Cas:
         """
         return list(self._sofas.values())
 
-    def _get_next_id(self):
-        self.maximum_xmiID += 1
-        return self.maximum_xmiID
+    @property
+    def sofa_string(self) -> str:
+        return self.get_sofa().sofaString
+
+    @sofa_string.setter
+    def sofa_string(self, value: str):
+        self.get_sofa().sofaString = value
+
+    @property
+    def sofa_mime(self) -> str:
+        return self.get_sofa().mimeType
+
+    @sofa_mime.setter
+    def sofa_mime(self, value: str):
+        self.get_sofa().mimeType = value
 
     def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a XMI representation of this CAS.
@@ -198,6 +312,21 @@ class Cas:
                 serializer.serialize(f, self, pretty_print=pretty_print)
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+
+    def _get_next_xmi_id(self) -> int:
+        return self._xmi_id_generator.generate_id()
+
+    def _get_next_sofa_num(self) -> int:
+        return self._sofa_num_generator.generate_id()
+
+    def _copy(self) -> "Cas":
+        result = Cas()
+        result._views = self._views
+        result._sofas = self._sofas
+        result._current_view = self._current_view
+        result._sofa_num_generator = self._sofa_num_generator
+        result._xmi_id_generator = self._xmi_id_generator
+        return result
 
 
 def _sort_func(a: AnnotationBase) -> Tuple[int, int]:

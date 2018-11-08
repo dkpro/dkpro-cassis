@@ -27,7 +27,7 @@ def test_deserializing_from_string(small_typesystem_xml):
         <cassis:Sentence xmi:id="84" sofa="1" begin="27" end="47" id="1"/>
         <cas:Sofa xmi:id="1" sofaNum="1" sofaID="mySofa" mimeType="text/plain"
                   sofaString="Joe waited for the train . The train was late ."/>
-        <cas:View sofa="1" members="8 13 19 25 31 37 43 49 55 61 67 73 79 84"/>
+        <cas:View sofa="1" members="8 79 84"/>
     </xmi:XMI>    
     """
     load_cas_from_xmi(cas_xmi, typesystem=typesystem)
@@ -41,47 +41,76 @@ def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
         Sofa(
             xmiID=1,
             sofaNum=1,
-            sofaID="mySofa",
+            sofaID="_InitialView",
             mimeType="text/plain",
             sofaString="Joe waited for the train . The train was late .",
         )
     ]
-    assert cas.sofas == expected_sofas
+    assert expected_sofas == cas.sofas
 
 
 def test_views_are_parsed(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+    cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
+    <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+             xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
+        <cas:NULL xmi:id="0"/>
+        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
+        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="5" id="0"/>
+        <cassis:Sentence xmi:id="84" sofa="2" begin="3" end="7" id="1"/>
+        <cas:Sofa xmi:id="1" sofaNum="1" sofaID="sofa1" mimeType="text/plain"
+                  sofaString="Joe waited for the train ."/>
+        <cas:View sofa="1" members="8 79"/>
+        <cas:Sofa xmi:id="2" sofaNum="2" sofaID="sofa2" mimeType="text/plain"
+                  sofaString="The train was late ."/>
+        <cas:View sofa="2" members="84"/>
+    </xmi:XMI>    
+    """
+    cas = load_cas_from_xmi(cas_xmi, typesystem=typesystem)
 
-    expected_views = [View(sofa=1, members=[8, 13, 19, 25, 31, 37, 43, 49, 55, 61, 67, 73, 79, 84])]
-    assert cas.views == expected_views
+    view1 = cas.get_view("sofa1")
+    view2 = cas.get_view("sofa2")
+    assert 2 == len(list(view1.select_all()))
+    assert 1 == len(list(view2.select_all()))
 
 
-def test_simple_features_are_parsed(small_xmi, small_typesystem_xml):
+def test_simple_features_are_parsed(tokens, sentences, small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
 
     TokenType = typesystem.get_type("cassis.Token")
     SentenceType = typesystem.get_type("cassis.Sentence")
-    expected_tokens = [
-        TokenType(xmiID=13, sofa=1, begin=0, end=3, id="0", pos="NNP"),
-        TokenType(xmiID=19, sofa=1, begin=4, end=10, id="1", pos="VBD"),
-        TokenType(xmiID=25, sofa=1, begin=11, end=14, id="2", pos="IN"),
-        TokenType(xmiID=31, sofa=1, begin=15, end=18, id="3", pos="DT"),
-        TokenType(xmiID=37, sofa=1, begin=19, end=24, id="4", pos="NN"),
-        TokenType(xmiID=43, sofa=1, begin=25, end=26, id="5", pos="."),
-        TokenType(xmiID=49, sofa=1, begin=27, end=30, id="6", pos="DT"),
-        TokenType(xmiID=55, sofa=1, begin=31, end=36, id="7", pos="NN"),
-        TokenType(xmiID=61, sofa=1, begin=37, end=40, id="8", pos="VBD"),
-        TokenType(xmiID=67, sofa=1, begin=41, end=45, id="9", pos="JJ"),
-        TokenType(xmiID=73, sofa=1, begin=46, end=47, id="10", pos="."),
-    ]
-    expected_sentences = [
-        SentenceType(xmiID=79, sofa=1, begin=0, end=26, id="0"),
-        SentenceType(xmiID=84, sofa=1, begin=27, end=47, id="1"),
-    ]
-    assert list(cas.select(TokenType.name)) == expected_tokens
-    assert list(cas.select(SentenceType.name)) == expected_sentences
+
+    actual_tokens = list(cas.select(TokenType.name))
+    actual_sentences = list(cas.select(SentenceType.name))
+    assert tokens == actual_tokens
+    assert sentences == actual_sentences
+
+
+def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    TokenType = typesystem.get_type("cassis.Token")
+
+    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+    cas.add_annotation(TokenType(begin=0, end=3, id="0", pos="NNP"))
+
+    xmi = cas.to_xmi()
+    load_cas_from_xmi(xmi, typesystem=typesystem)
+
+    # Check that view contains unique ids
+    root = etree.fromstring(xmi.encode("utf-8"))
+    member_ids = [0]
+    fs_ids = []
+    for view in root.xpath("//cas:View", namespaces=root.nsmap):
+        member_ids.extend([int(x) for x in view.attrib["members"].split(" ")])
+        member_ids.append(int(view.attrib["sofa"]))
+
+    for xmi_id in root.xpath("//@xmi:id", namespaces=root.nsmap):
+        fs_ids.append(int(xmi_id))
+
+    assert len(set(member_ids)) == len(member_ids)
+    assert len(set(fs_ids)) == len(fs_ids)
+    assert set(member_ids) == set(fs_ids)
 
 
 # Serializing

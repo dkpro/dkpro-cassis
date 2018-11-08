@@ -1,6 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
-from typing import IO, Union
+from typing import IO, Union, List
 
 import attr
 
@@ -8,6 +8,14 @@ from lxml import etree
 
 from cassis.cas import Cas, Sofa, View
 from cassis.typesystem import AnnotationBase, TypeSystem
+
+
+@attr.s
+class ProtoView:
+    """ A view element from XMI. """
+
+    sofa = attr.ib(validator=attr.validators.instance_of(int))  # type: int
+    members = attr.ib(factory=list)  # type: List[int]
 
 
 def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSystem()) -> Cas:
@@ -42,8 +50,8 @@ class CasXmiDeserializer:
         TAG_CAS_VIEW = NS_CAS + "View"
 
         sofas = []
-        views = []
-        annotations = []
+        views = {}
+        annotations = {}
 
         context = etree.iterparse(source, events=("end",))
 
@@ -59,16 +67,36 @@ class CasXmiDeserializer:
                 sofa = self._parse_sofa(elem)
                 sofas.append(sofa)
             elif elem.tag == TAG_CAS_VIEW:
-                view = self._parse_view(elem)
-                views.append(view)
+                proto_view = self._parse_view(elem)
+                views[proto_view.sofa] = proto_view
             else:
                 annotation = self._parse_annotation(typesystem, elem)
-                annotations.append(annotation)
+                annotations[annotation.xmiID] = annotation
 
-            # Free already processed elements
+            # Free already processed elements from memory
             self._clear_elem(elem)
 
-        return Cas(annotations=annotations, sofas=sofas, views=views)
+        if len(sofas) != len(views):
+            raise RuntimeError("Number of views and sofas is not equal!")
+
+        cas = Cas()
+        for sofa in sofas:
+            proto_view = views[sofa.xmiID]
+
+            if sofa.sofaID == "_InitialView":
+                view = cas.get_view("_InitialView")
+            else:
+                view = cas.create_view(sofa.sofaID)
+
+            view.sofa_string = sofa.sofaString
+            view.sofa_mime = sofa.mimeType
+
+            for member_id in proto_view.members:
+                annotation = annotations[member_id]
+
+                view.add_annotation(annotation)
+
+        return cas
 
     def _parse_sofa(self, elem) -> Sofa:
         attributes = dict(elem.attrib)
@@ -76,11 +104,13 @@ class CasXmiDeserializer:
         attributes["sofaNum"] = int(attributes["sofaNum"])
         return Sofa(**attributes)
 
-    def _parse_view(self, elem) -> View:
+    def _parse_view(self, elem) -> ProtoView:
         attributes = elem.attrib
         sofa = int(attributes["sofa"])
         members = [int(e) for e in attributes.get("members", "").split(" ")]
-        return View(sofa=sofa, members=members)
+        result = ProtoView(sofa=sofa, members=members)
+        attr.validate(result)
+        return result
 
     def _parse_annotation(self, typesystem: TypeSystem, elem):
         # Strip the http prefix, replace / with ., remove the ecore part
@@ -207,5 +237,5 @@ class CasXmiSerializer:
         name = etree.QName(self._nsmap["cas"], "View")
         elem = etree.SubElement(root, name)
 
-        elem.attrib["sofa"] = str(view.sofa)
-        elem.attrib["members"] = " ".join([str(x) for x in view.members])
+        elem.attrib["sofa"] = str(view.sofa.xmiID)
+        elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))

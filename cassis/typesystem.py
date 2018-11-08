@@ -53,12 +53,15 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z_]", "_", name)
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, cmp=False)
 class AnnotationBase:
     """The base class for all annotation instances"""
 
     type = attr.ib()  # str: Type name of this annotation instance
     xmiID = attr.ib(default=None)  # int: xmiID of this annotation instance
+
+    def __eq__(self, other):
+        return self.__slots__ == other.__slots__
 
 
 @attr.s(slots=True)
@@ -95,7 +98,7 @@ class Type:
         fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
-        self._constructor = attr.make_class(name, fields, bases=(AnnotationBase,), slots=True)
+        self._constructor = attr.make_class(name, fields, bases=(AnnotationBase,), slots=True, cmp=False)
 
     def __call__(self, **kwargs) -> AnnotationBase:
         """ Creates an annotation of this type 

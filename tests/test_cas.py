@@ -41,12 +41,16 @@ def test_create_view_throws_if_view_already_exists():
 def test_get_view_finds_existing_view():
     cas = Cas()
     cas.create_view("testView")
+    cas.sofa_string = "Initial"
 
     view = cas.get_view("testView")
+    view.sofa_string = "testView42"
 
     sofa = view.get_sofa()
     attr.validate(sofa)
     assert sofa.sofaID == "testView"
+    assert cas.sofa_string == "Initial"
+    assert view.sofa_string == "testView42"
 
 
 def test_get_view_throws_if_view_does_not_exist():

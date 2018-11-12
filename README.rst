@@ -19,6 +19,7 @@ Python. Currently supported features are:
 -  Selecting annotations, selecting covered annotations, adding
    annotations
 -  Type inheritance
+-  sofa support
 
 Some features are still under development, e.g.
 
@@ -28,7 +29,6 @@ Some features are still under development, e.g.
 -  type unmarshalling from string to the actual type specified in the
    type system
 -  reference, array and list features
--  complete sofa support
 
 Installation
 ------------
@@ -42,13 +42,13 @@ To install the package from the master branch using **pip**, just run
 Usage
 -----
 
-Example CAS XMI and types system files can be found under ``tests\test_files``.
+Example CAS XMI and types system files can be found under :code:`tests\test_files`.
 
 Loading a CAS
 ~~~~~~~~~~~~~
 
 A CAS can be deserialized from XMI either by reading from a file or
-string using ``load_cas_from_xmi``.
+string using :code:`load_cas_from_xmi`.
 
 .. code:: python
 
@@ -63,8 +63,8 @@ string using ``load_cas_from_xmi``.
 Adding annotations
 ~~~~~~~~~~~~~~~~~~
 
-Given a type system with a type ``cassis.Token`` that has an ``id`` and
-``pos`` feature, annotations can be added in the following:
+Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
+:code:`pos` feature, annotations can be added in the following:
 
 .. code:: python
 
@@ -130,6 +130,59 @@ Creating types and adding features
 When adding new features, these changes are propagated. For example,
 adding a feature to a parent type makes it available to a child type.
 Therefore, the type system does not need to be frozen for consistency.
+
+Sofa support
+~~~~~~~~~~~~
+
+A Sofa represents some form of an unstructured artifact that is processed in a UIMA pipeline. It contains for instance the document text. Currently, new Sofas can be created. This is automatically done when creating a new view. Basic properties of the Sofa can be read and written:
+
+.. code:: python
+
+    cas = Cas()
+    cas.sofa_string = "Joe waited for the train . The train was late ."
+    cas.sofa_mime = "text/plain"
+
+    print(cas.sofa_string)
+    print(cas.sofa_mime)
+
+Managing views
+~~~~~~~~~~~~~~
+
+A view into a CAS contains a subset of feature structures and annotations. One view corresponds to exactly one Sofa. It can also be used to query and alter information about the Sofa, e.g. the document text. Annotations added to one view are not visible in another view.  A view Views can be created and changed. A view has the same methods and attributes as a :code:`Cas` .
+
+.. code:: python
+
+    from cassis import *
+
+    with open('typesystem.xml', 'rb') as f:
+        typesystem = load_typesystem(f)
+    Token = typesystem.get_type('cassis.Token')
+
+    # This creates automatically the view `_InitialView`
+    cas = Cas()
+    cas.sofa_string = "I like cheese ."
+
+    cas.add_annotations([
+        Token(begin=0, end=1),
+        Token(begin=2, end=6),
+        Token(begin=7, end=13),
+        Token(begin=14, end=15)
+    ])
+
+    print([cas.get_covered_text(x) for x in cas.select_all()])
+
+    # Create a new view and work on it.
+    view = cas.create_view('testView')
+    view.sofa_string = "I like blackcurrant ."
+
+    view.add_annotations([
+        Token(begin=0, end=1),
+        Token(begin=2, end=6),
+        Token(begin=7, end=19),
+        Token(begin=20, end=21)
+    ])
+
+    print([view.get_covered_text(x) for x in view.select_all()])
 
 Development
 -----------

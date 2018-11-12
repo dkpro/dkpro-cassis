@@ -269,18 +269,40 @@ class Cas:
 
     @property
     def sofa_string(self) -> str:
+        """ The sofa string contains the document text.
+
+        Returns: The sofa string.
+
+        """
         return self.get_sofa().sofaString
 
     @sofa_string.setter
     def sofa_string(self, value: str):
+        """ Sets the sofa string to `value`.
+
+        Args:
+            value: The new sofa string.
+
+        """
         self.get_sofa().sofaString = value
 
     @property
     def sofa_mime(self) -> str:
+        """ The sofa mime contains the MIME type of the document text.
+
+        Returns: The sofa MIME type.
+
+        """
         return self.get_sofa().mimeType
 
     @sofa_mime.setter
     def sofa_mime(self, value: str):
+        """ Sets the sofa MIME type to `value`.
+
+        Args:
+            value: The new sofa MIME type.
+
+        """
         self.get_sofa().mimeType = value
 
     def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:

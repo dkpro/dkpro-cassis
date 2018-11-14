@@ -30,7 +30,9 @@ test_dependencies = [
     "tox",
     "pytest",
     "lxml-asserts",
-    "pytest-lazy-fixture"
+    "pytest-lazy-fixture",
+    "codecov",
+    "pytest-cov",
 ]
 
 dev_dependencies = [

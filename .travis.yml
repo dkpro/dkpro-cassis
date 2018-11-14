@@ -7,4 +7,8 @@ python:
 
 install: 
     - pip install --upgrade -e .[test]
-script: pytest
+script: 
+    - pytest --cov=./
+
+after_success:
+    - codecov

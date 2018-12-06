@@ -2,17 +2,29 @@ dkpro-cassis
 ============
 
 .. image:: https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master
-    :target: https://travis-ci.org/dkpro/dkpro-cassis
+  :target: https://travis-ci.org/dkpro/dkpro-cassis
 
 .. image:: https://readthedocs.org/projects/cassis/badge/?version=latest
-    :target: https://cassis.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-    
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/ambv/black
+  :target: https://cassis.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
 
 .. image:: https://codecov.io/gh/dkpro/dkpro-cassis/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/dkpro/dkpro-cassis
+
+.. image:: https://img.shields.io/pypi/l/dkpro-cassis.svg
+  :alt: PyPI - License
+  :target: https://pypi.org/project/dkpro-cassis/
+
+.. image:: https://img.shields.io/pypi/pyversions/dkpro-cassis.svg
+  :alt: PyPI - Python Version
+  :target: https://pypi.org/project/dkpro-cassis/
+
+.. image:: https://img.shields.io/pypi/v/dkpro-cassis.svg
+  :alt: PyPI
+  :target: https://pypi.org/project/dkpro-cassis/
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+  :target: https://github.com/ambv/black
 
 DKPro **cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in
 Python. Currently supported features are:
@@ -36,11 +48,9 @@ Some features are still under development, e.g.
 Installation
 ------------
 
-To install the package from the master branch using **pip**, just run
+To install the package with :code:`pip`, just run
 
-::
-
-    pip install git+https://github.com/dkpro/dkpro-cassis
+    pip install dkpro-cassis
 
 Usage
 -----
@@ -212,7 +222,4 @@ or in a clean environment via
 
     tox
 
-.. |Build Status| image:: https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master
-   :target: https://travis-ci.org/dkpro/dkpro-cassis
-.. |Code style: black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/ambv/black
+

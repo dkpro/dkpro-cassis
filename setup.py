@@ -16,7 +16,7 @@ NAME = "dkpro-cassis"
 DESCRIPTION = "UIMA CAS processing library in Python"
 HOMEPAGE = "https://dkpro.github.io"
 EMAIL = "dkpro-core-user@googlegroups.com"
-AUTHOR = "Jan-Christoph Klie"
+AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.5.0"
 
 install_requires=[
@@ -120,7 +120,7 @@ setup(
     author=AUTHOR,
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
-    url=URL,
+    url=HOMEPAGE,
     packages=find_packages(exclude="tests"),
     keywords="uima dkpro cas xmi",
 

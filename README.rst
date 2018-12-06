@@ -1,5 +1,5 @@
-cassis
-======
+dkpro-cassis
+============
 
 .. image:: https://travis-ci.org/dkpro/dkpro-cassis.svg?branch=master
     :target: https://travis-ci.org/dkpro/dkpro-cassis
@@ -14,7 +14,7 @@ cassis
 .. image:: https://codecov.io/gh/dkpro/dkpro-cassis/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/dkpro/dkpro-cassis
 
-**cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in
+DKPro **cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in
 Python. Currently supported features are:
 
 -  Deserializing/serializing UIMA CAS from/to XMI

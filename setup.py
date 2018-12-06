@@ -12,11 +12,11 @@ from shutil import rmtree
 from setuptools import setup, Command, find_packages
 
 # Package meta-data.
-NAME = "cassis"
+NAME = "dkpro-cassis"
 DESCRIPTION = "UIMA CAS processing library in Python"
-URL = "https://github.com/dkpro/dkpro-cassis"
-EMAIL = "git@mrklie.com"
-AUTHOR = "Jan-Christoph Klie"
+HOMEPAGE = "https://dkpro.github.io"
+EMAIL = "dkpro-core-user@googlegroups.com"
+AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.5.0"
 
 install_requires=[
@@ -60,7 +60,7 @@ extras = {
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Import the README and use it as the long-description.
-# Note: this will only work if "README.md" is present in your MANIFEST.in file!
+# Note: this will only work if "README.rst" is present in your MANIFEST.in file!
 try:
     with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
         long_description = "\n" + f.read()
@@ -69,7 +69,7 @@ except FileNotFoundError:
 
 # Load the package"s __version__.py module as a dictionary.
 about = {}
-with open(os.path.join(here, NAME, "__version__.py")) as f:
+with open(os.path.join(here, "cassis", "__version__.py")) as f:
     exec(f.read(), about)
 
 
@@ -120,9 +120,9 @@ setup(
     author=AUTHOR,
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
-    url=URL,
+    url=HOMEPAGE,
     packages=find_packages(exclude="tests"),
-    keywords="uima cas xmi",
+    keywords="uima dkpro cas xmi",
 
     project_urls={
         "Bug Tracker": "https://github.com/dkpro/dkpro-cassis/issues",
@@ -141,9 +141,11 @@ setup(
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
+        "Framework :: DKPro",
+        "Framework :: UIMA",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Software Development :: Libraries",

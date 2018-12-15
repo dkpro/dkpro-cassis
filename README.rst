@@ -26,20 +26,19 @@ dkpro-cassis
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
   :target: https://github.com/ambv/black
 
-DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation
-of the *Common Analysis System* (CAS) as defined by the `UIMA <https://uima.apache.org>`_
-framework. The CAS is a data structure representing an object to be enrichted
-with annotations (the co-called *Subject of Analysis*, short *SofA*).
+DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation of the *Common Analysis System* (CAS)
+as defined by the `UIMA <https://uima.apache.org>`_ framework. The CAS is a data structure representing an object to
+be enrichted with annotations (the co-called *Subject of Analysis*, short *SofA*).
 
-This library enables the creation and manipulation of CAS objects and their
-associated type systems as well as loading and saving CAS objects in the 
-`CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
-in Python programs. This can faciliate in particular the integration
-of Python-based Natural Language Processing (e.g. `spacy <https://spacy.io>`_ or 
-`NLTK <https://www.nltk.org>`_) and Machine Learning librarys (e.g. `scikit-learn <https://scikit-learn.org/stable/>`_ 
-or `Keras <https://keras.io>`_) in UIMA-based text analysis workflows. 
+This library enables the creation and manipulation of CAS objects and their associated type systems as well as loading
+and saving CAS objects in the `CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
+in Python programs. This can ease in particular the integration of Python-based Natural Language Processing (e.g.
+`spacy <https://spacy.io>`_ or `NLTK <https://www.nltk.org>`_) and Machine Learning librarys (e.g.
+`scikit-learn <https://scikit-learn.org/stable/>`_ or `Keras <https://keras.io>`_) in UIMA-based text analysis workflows.
 
-An example of cassis in action is the `spacy recommender for INCEpTION <https://github.com/inception-project/external-recommender-spacy>`_, which wraps the spacy NLP library as a web service which can be used in conjunction with the `INCEpTION <https://inception-project.github.io>`_ text annotation platform to automatically generate annotation suggestions.
+An example of cassis in action is the `spacy recommender for INCEpTION <https://github.com/inception-project/external-recommender-spacy>`_,
+which wraps the spacy NLP library as a web service which can be used in conjunction with the `INCEpTION <https://inception-project.github.io>`_
+text annotation platform to automatically generate annotation suggestions.
 
 Features
 ------------
@@ -165,7 +164,9 @@ Therefore, the type system does not need to be frozen for consistency.
 Sofa support
 ~~~~~~~~~~~~
 
-A Sofa represents some form of an unstructured artifact that is processed in a UIMA pipeline. It contains for instance the document text. Currently, new Sofas can be created. This is automatically done when creating a new view. Basic properties of the Sofa can be read and written:
+A Sofa represents some form of an unstructured artifact that is processed in a UIMA pipeline. It contains for instance
+the document text. Currently, new Sofas can be created. This is automatically done when creating a new view. Basic
+properties of the Sofa can be read and written:
 
 .. code:: python
 
@@ -179,7 +180,10 @@ A Sofa represents some form of an unstructured artifact that is processed in a U
 Managing views
 ~~~~~~~~~~~~~~
 
-A view into a CAS contains a subset of feature structures and annotations. One view corresponds to exactly one Sofa. It can also be used to query and alter information about the Sofa, e.g. the document text. Annotations added to one view are not visible in another view.  A view Views can be created and changed. A view has the same methods and attributes as a :code:`Cas` .
+A view into a CAS contains a subset of feature structures and annotations. One view corresponds to exactly one Sofa. It
+can also be used to query and alter information about the Sofa, e.g. the document text. Annotations added to one view
+are not visible in another view.  A view Views can be created and changed. A view has the same methods and attributes
+as a :code:`Cas` .
 
 .. code:: python
 

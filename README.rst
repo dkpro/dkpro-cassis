@@ -26,15 +26,33 @@ dkpro-cassis
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
   :target: https://github.com/ambv/black
 
-DKPro **cassis** (pronunciation: [ka.sis]) is a UIMA CAS utility library in
-Python. Currently supported features are:
+DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation
+of the *Common Analysis System* (CAS) as defined by the `UIMA <https://uima.apache.org>`_
+framework. The CAS is a data structure representing an object to be enrichted
+with annotations (the co-called *Subject of Analysis*, short *SofA*).
 
+This library enables the creation and manipulation of CAS objects and their
+associated type systems as well as loading and saving CAS objects in the 
+`CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
+in Python programs. This can faciliate in particular the integration
+of Python-based Natural Language Processing (e.g. `spacy <https://spacy.io>`_ or 
+`NLTK <https://www.nltk.org>`_) and Machine Learning librarys (e.g. `scikit-learn <https://scikit-learn.org/stable/>`_ 
+or `Keras <https://keras.io>`_) in UIMA-based text analysis workflows. 
+
+An example of cassis in action is the `spacy recommender for INCEpTION <https://github.com/inception-project/external-recommender-spacy>`_, which wraps the spacy NLP library as a web service which can be used in conjunction with the `INCEpTION <https://inception-project.github.io>`_ text annotation platform to automatically generate annotation suggestions.
+
+Features
+------------
+
+Currently supported features are:
+
+-  Text SofAs
 -  Deserializing/serializing UIMA CAS from/to XMI
 -  Deserializing/serializing type systems from/to XML
 -  Selecting annotations, selecting covered annotations, adding
    annotations
 -  Type inheritance
--  sofa support
+-  Multiple SofA support
 
 Some features are still under development, e.g.
 

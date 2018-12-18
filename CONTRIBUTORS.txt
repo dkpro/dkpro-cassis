@@ -10,7 +10,7 @@
 # After the name, one or more mail addresses may be specified in pointy brackets and one or more
 # GitHub IDs may be specified in square brackets.
 #
-# See also https://github.com/dkpro/dkpro-pycas/blob/master/CONTRIBUTING.md
+# See also https://github.com/dkpro/dkpro-cassis/blob/master/CONTRIBUTING.md
 
 # Please keep the list sorted.
 

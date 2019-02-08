@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
+    <types>
+        <typeDescription>
+            <name>ArtifactID</name>
+            <description>A unique artifact identifier.</description>
+            <supertypeName>uima.cas.TOP</supertypeName>
+            <features>
+                <featureDescription>
+                    <name>artifactID</name>
+                    <description>A unique identification string for the artifact. This should be the file name for files,
+            or the unique identifier used in a database if the document source is a database
+            collection reader.</description>
+                    <rangeTypeName>uima.cas.String</rangeTypeName>
+                </featureDescription>
+            </features>
+        </typeDescription>
+        <typeDescription>
+            <name>ArtifactMetadata</name>
+            <description>A piece of metadata about the artifact in the form of a key value pair.</description>
+            <supertypeName>uima.cas.TOP</supertypeName>
+            <features>
+                <featureDescription>
+                    <name>key</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.String</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>value</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.String</rangeTypeName>
+                </featureDescription>
+            </features>
+        </typeDescription>
+    </types>
+</typeSystemDescription>

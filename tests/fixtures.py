@@ -62,6 +62,21 @@ def small_typesystem_with_predefined_types_xml(small_typesystem_with_predefined_
         return f.read()
 
 
+# Type system with types without namespace
+# https://github.com/dkpro/dkpro-cassis/issues/43
+
+
+@pytest.fixture
+def typesystem_has_types_with_no_namespace_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_has_types_with_no_namespace.xml")
+
+
+@pytest.fixture
+def typesystem_has_types_with_no_namespace_xml(typesystem_has_types_with_no_namespace_path):
+    with open(typesystem_has_types_with_no_namespace_path, "r") as f:
+        return f.read()
+
+
 # Type system with inheritance
 
 

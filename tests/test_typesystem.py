@@ -7,6 +7,13 @@ from tests.util import assert_xml_equal
 
 from cassis import load_typesystem, TypeSystem
 
+TYPESYSTEM_FIXTURES = [
+    pytest.lazy_fixture("small_typesystem_xml"),
+    pytest.lazy_fixture("typesystem_with_inheritance_xml"),
+    pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
+    pytest.lazy_fixture("dkpro_typesystem_xml"),
+    pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
+]
 
 # Feature
 
@@ -165,15 +172,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
 # Serializing
 
 
-@pytest.mark.parametrize(
-    "typesystem_xml",
-    [
-        pytest.lazy_fixture("small_typesystem_xml"),
-        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
-        pytest.lazy_fixture("typesystem_with_inheritance_xml"),
-        pytest.lazy_fixture("dkpro_typesystem_xml"),
-    ],
-)
+@pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_string(typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
 

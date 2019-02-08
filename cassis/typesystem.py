@@ -281,7 +281,6 @@ class TypeSystem:
             The newly created type
         """
         if self.has_type(name) and name not in PREDEFINED_TYPES:
-            print(name)
             msg = "Type with name [{0}] already exists!".format(name)
             raise ValueError(msg)
 

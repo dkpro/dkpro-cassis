@@ -117,10 +117,6 @@ class CasXmiDeserializer:
         # TODO: Error checking
         typename = elem.tag[9:].replace("/", ".").replace("ecore}", "")
 
-        print(typename)
-        for t in typesystem.get_types():
-            print(t)
-
         AnnotationType = typesystem.get_type(typename)
         attributes = dict(elem.attrib)
 

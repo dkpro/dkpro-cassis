@@ -2,18 +2,6 @@
 <typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
     <types>
         <typeDescription>
-            <name>uima.tcas.DocumentAnnotation</name>
-            <description/>
-            <supertypeName>uima.tcas.Annotation</supertypeName>
-            <features>
-                <featureDescription>
-                    <name>language</name>
-                    <description/>
-                    <rangeTypeName>uima.cas.String</rangeTypeName>
-                </featureDescription>
-            </features>
-        </typeDescription>
-        <typeDescription>
             <name>cassis.Token</name>
             <description/>
             <supertypeName>uima.tcas.Annotation</supertypeName>

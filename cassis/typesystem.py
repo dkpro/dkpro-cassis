@@ -46,6 +46,7 @@ PREDEFINED_TYPES = {
     "uima.cas.Sofa",
     "uima.cas.AnnotationBase",
     "uima.tcas.Annotation",
+    "uima.tcas.DocumentAnnotation",
 }
 
 
@@ -173,6 +174,10 @@ class TypeSystem:
     def __init__(self):
         self._types = {}
 
+        # We store types that are predefined but still defined in the typesystem here
+        # In order to restore them when serializing
+        self._predefined_types = set()
+
         # The type system of a UIMA CAS has several predefined types. These are
         # added in the following
 
@@ -249,6 +254,10 @@ class TypeSystem:
         self.add_feature(t, name="begin", rangeTypeName="uima.cas.Integer")
         self.add_feature(t, name="end", rangeTypeName="uima.cas.Integer")
 
+        # DocumentAnnotation
+        t = self.create_type(name="uima.tcas.DocumentAnnotation", supertypeName="uima.tcas.Annotation")
+        self.add_feature(t, name="language", rangeTypeName="uima.cas.String")
+
     def has_type(self, typename: str):
         """ Checks whether this type system contains a type with name `typename`.
 
@@ -271,7 +280,8 @@ class TypeSystem:
         Returns:
             The newly created type
         """
-        if self.has_type(name):
+        if self.has_type(name) and name not in PREDEFINED_TYPES:
+            print(name)
             msg = "Type with name [{0}] already exists!".format(name)
             raise ValueError(msg)
 
@@ -371,6 +381,9 @@ class TypeSystem:
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
+    def _defines_predefined_type(self, type_name):
+        self._predefined_types.add(type_name)
+
 
 # Deserializing
 
@@ -417,22 +430,27 @@ class TypeSystemDeserializer:
 
         context = etree.iterparse(source, events=("end",), tag=("{*}typeDescription",))
         for event, elem in context:
-            type_name = self._get_elem_text(elem.find("{*}name"))
-            description = self._get_elem_text(elem.find("{*}description"))
-            supertypeName = self._get_elem_text(elem.find("{*}supertypeName"))
+            type_name = self._get_elem_as_str(elem.find("{*}name"))
+            description = self._get_elem_as_str(elem.find("{*}description"))
+            supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
             dependencies[type_name].add(supertypeName)
 
             # Parse features
             for fd in elem.iterfind("{*}features/{*}featureDescription"):
-                feature_name = self._get_elem_text(fd.find("{*}name"))
-                rangeTypeName = self._get_elem_text(fd.find("{*}rangeTypeName"))
-                elementType = self._get_elem_text(fd.find("{*}elementType"))
-                description = self._get_elem_text(fd.find("{*}description"))
+                feature_name = self._get_elem_as_str(fd.find("{*}name"))
+                rangeTypeName = self._get_elem_as_str(fd.find("{*}rangeTypeName"))
+                description = self._get_elem_as_str(fd.find("{*}description"))
+                multipleReferencesAllowed = self._get_elem_as_bool(fd.find("{*}multipleReferencesAllowed"))
+                elementType = self._get_elem_as_str(fd.find("{*}elementType"))
 
                 f = Feature(
-                    name=feature_name, rangeTypeName=rangeTypeName, elementType=elementType, description=description
+                    name=feature_name,
+                    rangeTypeName=rangeTypeName,
+                    description=description,
+                    multipleReferencesAllowed=multipleReferencesAllowed,
+                    elementType=elementType,
                 )
                 features[type_name].append(f)
 
@@ -447,8 +465,32 @@ class TypeSystemDeserializer:
         del context
 
         ts = TypeSystem()
+
+        # Some CAS handling libraries add predefined types to the typesystem XML, e.g. DocumentAnnotation.
+        # Here we check that the redefinition of predefined types adheres to the definition in UIMA
+        for type_name, t in types.items():
+            if type_name in PREDEFINED_TYPES:
+                pt = ts.get_type(type_name)
+
+                t_features = list(sorted(features[type_name]))
+                pt_features = list(sorted(pt.features))
+
+                if t.supertypeName != pt.supertypeName:
+                    msg = "Redefining predefined type [{0}] with different superType [{1}], expected [{2}]"
+                    raise ValueError(msg.format(type_name, t.supertypeName, pt.supertypeName))
+
+                # We check whether the predefined type is defined the same in UIMA and this typesystem
+                if t_features == pt_features:
+                    # No need to create predefined types, but store them for serialization
+                    ts._defines_predefined_type(type_name)
+                    continue
+                else:
+                    msg = "Redefining predefined type [{0}] with different features: {1} - Have to be {2}"
+                    raise ValueError(msg.format(type_name, t_features, pt_features))
+
+        # Add the types to the type system in order of dependency (parents before children)
         for type_name in toposort_flatten(dependencies, sort=False):
-            # No need to create predefined types
+            # No need to recreate predefined types
             if type_name in PREDEFINED_TYPES:
                 continue
 
@@ -466,9 +508,15 @@ class TypeSystemDeserializer:
 
         return ts
 
-    def _get_elem_text(self, elem: etree.Element) -> str:
+    def _get_elem_as_str(self, elem: etree.Element) -> Optional[str]:
         if elem is not None:
             return elem.text
+        else:
+            return None
+
+    def _get_elem_as_bool(self, elem: etree.Element) -> Optional[bool]:
+        if elem is not None:
+            return bool(elem.text)
         else:
             return None
 
@@ -482,8 +530,14 @@ class TypeSystemSerializer:
         with etree.xmlfile(sink) as xf:
             with xf.element("typeSystemDescription", nsmap=nsmap):
                 with xf.element("types"):
-                    for type in sorted(typesystem.get_types(), key=lambda t: t.name):
-                        self._serialize_type(xf, type)
+                    # In order to export the same types that we imported, we
+                    # also emit the (redundant) predefined types
+                    for predefined_type_name in sorted(typesystem._predefined_types):
+                        predefined_type = typesystem.get_type(predefined_type_name)
+                        self._serialize_type(xf, predefined_type)
+
+                    for type_ in sorted(typesystem.get_types(), key=lambda t: t.name):
+                        self._serialize_type(xf, type_)
 
     def _serialize_type(self, xf: IO, type_: Type):
         typeDescription = etree.Element("typeDescription")
@@ -517,6 +571,10 @@ class TypeSystemSerializer:
 
         rangeTypeName = etree.SubElement(featureDescription, "rangeTypeName")
         rangeTypeName.text = feature.rangeTypeName
+
+        if feature.multipleReferencesAllowed is not None:
+            multipleReferencesAllowed = etree.SubElement(featureDescription, "multipleReferencesAllowed")
+            multipleReferencesAllowed.text = "true" if feature.multipleReferencesAllowed else "false"
 
         if feature.elementType is not None:
             elementType = etree.SubElement(featureDescription, "elementType")

@@ -48,6 +48,20 @@ def small_typesystem_xml(small_typesystem_path):
         return f.read()
 
 
+# Small type system with document annotation
+
+
+@pytest.fixture
+def small_typesystem_with_predefined_types_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "small_typesystem_with_predefined_types.xml")
+
+
+@pytest.fixture
+def small_typesystem_with_predefined_types_xml(small_typesystem_with_predefined_types_path):
+    with open(small_typesystem_with_predefined_types_path, "r") as f:
+        return f.read()
+
+
 # Type system with inheritance
 
 

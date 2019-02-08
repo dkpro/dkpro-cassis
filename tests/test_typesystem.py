@@ -102,6 +102,7 @@ def test_type_inherits_from_annotation():
     "typesystem_path",
     [
         pytest.lazy_fixture("small_typesystem_path"),
+        pytest.lazy_fixture("small_typesystem_with_predefined_types_path"),
         pytest.lazy_fixture("typesystem_with_inheritance_path"),
         pytest.lazy_fixture("dkpro_typesystem_path"),
     ],
@@ -116,6 +117,7 @@ def test_deserializing_from_file(typesystem_path):
     [
         pytest.lazy_fixture("small_typesystem_xml"),
         pytest.lazy_fixture("typesystem_with_inheritance_xml"),
+        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
         pytest.lazy_fixture("dkpro_typesystem_xml"),
     ],
 )
@@ -126,7 +128,7 @@ def test_deserializing_from_string(typesystem_xml):
 def test_deserializing_small_typesystem(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
-    assert len(list(typesystem.get_types())) == 3
+    assert len(list(typesystem.get_types())) == 2
 
     # Assert annotation type
     annotation_type = typesystem.get_type("uima.tcas.DocumentAnnotation")
@@ -167,6 +169,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     "typesystem_xml",
     [
         pytest.lazy_fixture("small_typesystem_xml"),
+        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
         pytest.lazy_fixture("typesystem_with_inheritance_xml"),
         pytest.lazy_fixture("dkpro_typesystem_xml"),
     ],
@@ -183,6 +186,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
     "typesystem_xml",
     [
         pytest.lazy_fixture("small_typesystem_xml"),
+        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
         pytest.lazy_fixture("typesystem_with_inheritance_xml"),
         pytest.lazy_fixture("dkpro_typesystem_xml"),
     ],
@@ -201,6 +205,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     "typesystem_xml",
     [
         pytest.lazy_fixture("small_typesystem_xml"),
+        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
         pytest.lazy_fixture("typesystem_with_inheritance_xml"),
         pytest.lazy_fixture("dkpro_typesystem_xml"),
     ],

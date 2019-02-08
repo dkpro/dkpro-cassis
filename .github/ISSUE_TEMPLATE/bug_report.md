@@ -21,7 +21,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add the error message to help explain your problem.
 
 **Please complete the following information:**
- - Version: [see bottom of the browser screen]
+ - Version: [Please fill in the version number]
  - OS: [e.g. Windows, Linux, OS X]
 
 **Additional context**

@@ -196,7 +196,9 @@ class TypeSystem:
         self.create_type(name="uima.cas.String", supertypeName="uima.cas.TOP")
 
         # Array
-        self.create_type(name="uima.cas.ArrayBase", supertypeName="uima.cas.TOP")
+        t = self.create_type(name="uima.cas.ArrayBase", supertypeName="uima.cas.TOP")
+        self.add_feature(t, name="elements", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+
         self.create_type(name="uima.cas.FSArray", supertypeName="uima.cas.ArrayBase")
         self.create_type(name="uima.cas.BooleanArray", supertypeName="uima.cas.ArrayBase")
         self.create_type(name="uima.cas.ByteArray", supertypeName="uima.cas.ArrayBase")
@@ -430,6 +432,10 @@ class TypeSystemDeserializer:
         context = etree.iterparse(source, events=("end",), tag=("{*}typeDescription",))
         for event, elem in context:
             type_name = self._get_elem_as_str(elem.find("{*}name"))
+
+            if "." not in type_name:
+                type_name = "uima.noNamespace." + type_name
+
             description = self._get_elem_as_str(elem.find("{*}description"))
             supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
 
@@ -542,7 +548,11 @@ class TypeSystemSerializer:
         typeDescription = etree.Element("typeDescription")
 
         name = etree.SubElement(typeDescription, "name")
-        name.text = type_.name
+        type_name = type_.name
+        if type_name.startswith("uima.noNamespace."):
+            type_name = type_name.replace("uima.noNamespace.", "")
+
+        name.text = type_name
 
         description = etree.SubElement(typeDescription, "description")
         description.text = type_.description

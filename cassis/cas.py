@@ -165,7 +165,7 @@ class Cas:
 
         """
         annotation.xmiID = self._get_next_xmi_id()
-        if isinstance(annotation, AnnotationBase):
+        if hasattr(annotation, 'sofa'):
             annotation.sofa = self.get_sofa().xmiID
 
         self._current_view.add_annotation_to_index(annotation)

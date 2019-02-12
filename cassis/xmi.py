@@ -52,6 +52,11 @@ class CasXmiDeserializer:
         sofas = []
         views = {}
         annotations = {}
+        elem_array = []
+        ann = {}
+        elements = defaultdict(list)
+        
+        has_parent = False
 
         context = etree.iterparse(source, events=("end",))
 
@@ -70,8 +75,37 @@ class CasXmiDeserializer:
                 proto_view = self._parse_view(elem)
                 views[proto_view.sofa] = proto_view
             else:
-                annotation = self._parse_annotation(typesystem, elem)
-                annotations[annotation.xmiID] = annotation
+
+                # nested array of features
+                if elem.text and elem.getparent() and '{' not in elem.tag:
+
+                    # add new item to list as they accumulate
+                    elements[elem.tag].append(elem.text)
+
+                    # set flag for later processing of accumulated data
+                    has_parent = True
+
+                # end of annotation with nested array
+                if event == "end" and '{' in elem.tag and has_parent:
+                    assert elem.text
+
+                    # key is parent tag, value is feature defaultdict
+                    ann[elem] = elements
+
+                    annotation = self._parse_annotation(typesystem, ann)
+                    annotations[annotation.xmiID] = annotation
+
+                    # clear
+                    elements.clear()
+                    ann.clear()
+                    elem_array.clear()
+                    has_parent = False
+
+                # annotation with no nested array
+                elif event == 'end' and not has_parent:
+                    
+                    annotation = self._parse_annotation(typesystem, elem)
+                    annotations[annotation.xmiID] = annotation
 
             # Free already processed elements from memory
             self._clear_elem(elem)
@@ -113,12 +147,39 @@ class CasXmiDeserializer:
         return result
 
     def _parse_annotation(self, typesystem: TypeSystem, elem):
-        # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
-        typename = elem.tag[9:].replace("/", ".").replace("ecore}", "")
 
+        # dummy variable
+        x = ''
+        # used to determine if an annotation has a feature array
+        has_features = False
+        
+
+        # iterate through dictionary of annotation with feature array
+        if isinstance(elem, dict):
+
+            for key, value in elem.items():
+                x = key
+                has_features = True
+
+        # normal annotation
+        else:
+            x = elem
+
+        # Strip the http prefix, replace / with ., remove the ecore part
+        typename = x.tag[9:].replace("/", ".").replace("ecore}", "")
+
+        attributes = dict(x.attrib)
         AnnotationType = typesystem.get_type(typename)
-        attributes = dict(elem.attrib)
+
+        # add in "type" fro annotation with feature array
+        if has_features:
+            attributes["type"] = typename
+            for key, value in elem.items():
+                # add in array features
+                for k, v in value.items():
+                    attributes[k] = v
+
 
         # Map the xmi:id attribute to xmiID
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
@@ -239,3 +300,4 @@ class CasXmiSerializer:
 
         elem.attrib["sofa"] = str(view.sofa.xmiID)
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
+

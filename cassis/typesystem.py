@@ -45,13 +45,15 @@ PREDEFINED_TYPES = {
     "uima.cas.DoubleArray",
     "uima.cas.Sofa",
     "uima.cas.AnnotationBase",
+    "org.apache.uima.examples.SourceDocumentInformation",
     "uima.tcas.Annotation",
     "uima.tcas.DocumentAnnotation",
 }
 
 
+# do NOT remove digits from typesystem name
 def _string_to_valid_classname(name: str):
-    return re.sub("[^a-zA-Z_]", "_", name)
+    return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
 @attr.s(slots=True, cmp=False)
@@ -259,6 +261,14 @@ class TypeSystem:
         # DocumentAnnotation
         t = self.create_type(name="uima.tcas.DocumentAnnotation", supertypeName="uima.tcas.Annotation")
         self.add_feature(t, name="language", rangeTypeName="uima.cas.String")
+
+        # SourceDocumentInformation
+        t = self.create_type(name='org.apache.uima.examples.SourceDocumentInformation', supertypeName='uima.tcas.Annotation')
+        self.add_feature(t, name='uri', rangeTypeName='uima.cas.String')
+        self.add_feature(t, name="offsetInSource", rangeTypeName="uima.cas.Integer")
+        self.add_feature(t, name="documentSize", rangeTypeName="uima.cas.Integer")
+        self.add_feature(t, name="lastSegment", rangeTypeName="uima.cas.Integer")
+
 
     def has_type(self, typename: str):
         """ Checks whether this type system contains a type with name `typename`.
@@ -588,3 +598,4 @@ class TypeSystemSerializer:
         if feature.elementType is not None:
             elementType = etree.SubElement(featureDescription, "elementType")
             elementType.text = feature.elementType
+

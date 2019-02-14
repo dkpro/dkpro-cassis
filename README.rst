@@ -229,7 +229,7 @@ created and activated by
 ::
 
     virtualenv venv --python=python3 --no-site-packages
-    sourve venv/bin/activate
+    source venv/bin/activate
     pip install -e ".[test, dev, doc]"
 
 The tests can be run in the current environment by invoking

@@ -55,7 +55,9 @@ class CasXmiDeserializer:
         elem_array = []
         ann = {}
         elements = defaultdict(list)
-        
+        fs_ids = []
+
+        # has festure structure arrasy in snnotation
         has_parent = False
 
         context = etree.iterparse(source, events=("end",))
@@ -77,7 +79,8 @@ class CasXmiDeserializer:
             else:
 
                 # nested array of features
-                if elem.text and elem.getparent() and '{' not in elem.tag:
+                if elem.text is not None and elem.getparent() is not None and '{' not in elem.tag:
+                    #assert len(elem.getchildren()) > 0 
 
                     # add new item to list as they accumulate
                     elements[elem.tag].append(elem.text)
@@ -87,12 +90,13 @@ class CasXmiDeserializer:
 
                 # end of annotation with nested array
                 if event == "end" and '{' in elem.tag and has_parent:
-                    assert elem.text
+                    assert elem.text is not None
 
                     # key is parent tag, value is feature defaultdict
                     ann[elem] = elements
-
-                    annotation = self._parse_annotation(typesystem, ann)
+                    
+                    #print(annotation.xmiID)
+                    annotation, _ = self._parse_annotation(typesystem, ann)
                     annotations[annotation.xmiID] = annotation
 
                     # clear
@@ -103,9 +107,18 @@ class CasXmiDeserializer:
 
                 # annotation with no nested array
                 elif event == 'end' and not has_parent:
-                    
-                    annotation = self._parse_annotation(typesystem, elem)
-                    annotations[annotation.xmiID] = annotation
+                    assert len(elem.getchildren()) == 0 
+
+                    annotation, typename = self._parse_annotation(typesystem, elem)
+
+                    # check for linked feature structures not in view
+                    fs_id, has_fs = self._parse_feature_struct(typesystem, typename, elem)
+
+                    if has_fs:
+                        fs_ids += fs_id
+
+
+                    annotations[annotation.xmiID]  = annotation
 
             # Free already processed elements from memory
             self._clear_elem(elem)
@@ -127,16 +140,22 @@ class CasXmiDeserializer:
 
             for member_id in proto_view.members:
                 annotation = annotations[member_id]
-
                 view.add_annotation(annotation)
 
+        for fs in fs_ids:
+            annotation = annotations[fs]
+            view.add_annotation(annotation)
+
+
         return cas
+
 
     def _parse_sofa(self, elem) -> Sofa:
         attributes = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
         return Sofa(**attributes)
+
 
     def _parse_view(self, elem) -> ProtoView:
         attributes = elem.attrib
@@ -146,14 +165,36 @@ class CasXmiDeserializer:
         attr.validate(result)
         return result
 
+
+    # feature structure linked to array element in an annotation, with id not in view
+    def _parse_feature_struct(self, typesystem: TypeSystem, typename, elem):
+
+        has_fs = False
+        fs_id = []
+
+        attributes = dict(elem.attrib)
+        AnnotationType = typesystem.get_type(typename)
+
+        # test for linked array
+        for f in AnnotationType.all_features:
+            if 'Array' in f.rangeTypeName:
+                has_fs = True
+
+                # make sure key, value exists in data and that the elementType is linked to a type system's xmi.id
+                if attributes.get(f.name) and typesystem.get_type(f.elementType):
+                    fs_id = [ int(i) for i in attributes[f.name].split() ]
+                    pass
+        
+        return fs_id, has_fs
+
+
     def _parse_annotation(self, typesystem: TypeSystem, elem):
         # TODO: Error checking
-
+       
         # dummy variable
         x = ''
-        # used to determine if an annotation has a feature array
+
         has_features = False
-        
 
         # iterate through dictionary of annotation with feature array
         if isinstance(elem, dict):
@@ -170,20 +211,30 @@ class CasXmiDeserializer:
         typename = x.tag[9:].replace("/", ".").replace("ecore}", "")
 
         attributes = dict(x.attrib)
+
+        #print(attributes)
         AnnotationType = typesystem.get_type(typename)
 
-        # add in "type" fro annotation with feature array
+        # test for linked array
+        for f in AnnotationType.all_features:
+            if 'Array' in f.rangeTypeName:
+                # make sure key, value exists in data and that the elementType is linked to a type system's xmi.id
+                if attributes.get(f.name) and typesystem.get_type(f.elementType):
+                    #print(typename, f.name, [ int(i) for i in attributes[f.name].split() ])
+                    test_id = [ int(i) for i in attributes[f.name].split() ]
+                    pass
+
+        # not adding in "type" as it should
         if has_features:
             attributes["type"] = typename
+            # add fs array elements
             for key, value in elem.items():
-                # add in array features
                 for k, v in value.items():
                     attributes[k] = v
 
-
         # Map the xmi:id attribute to xmiID
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
-
+       
         if "begin" in attributes:
             attributes["begin"] = int(attributes["begin"])
 
@@ -193,7 +244,12 @@ class CasXmiDeserializer:
         if "sofa" in attributes:
             attributes["sofa"] = int(attributes["sofa"])
 
-        return AnnotationType(**attributes)
+        # used for linking fs to annotation; see issue #48
+        if "id" in attributes:            
+            attributes["id"] = int(attributes["xmiID"])
+
+        return AnnotationType(**attributes), typename #, test_id
+
 
     def _clear_elem(self, elem):
         """ Frees XML nodes that already have been processed to save memory """

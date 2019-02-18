@@ -10,7 +10,7 @@ from attr import validators
 
 from sortedcontainers import SortedList, SortedKeyList
 
-from cassis.typesystem import AnnotationBase
+from cassis.typesystem import FeatureStructure
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -73,7 +73,7 @@ class View:
     def add_annotation_to_index(self, annotation):
         self._type_index[annotation.type].add(annotation)
 
-    def get_all_annotations(self) -> Iterator[AnnotationBase]:
+    def get_all_annotations(self) -> Iterator[FeatureStructure]:
         """ Gets all the annotations in this view.
 
         Returns:
@@ -157,7 +157,7 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add_annotation(self, annotation: AnnotationBase):
+    def add_annotation(self, annotation: FeatureStructure):
         """Adds an annotation to this Cas.
 
         Args:
@@ -170,7 +170,7 @@ class Cas:
 
         self._current_view.add_annotation_to_index(annotation)
 
-    def add_annotations(self, annotations: Iterable[AnnotationBase]):
+    def add_annotations(self, annotations: Iterable[FeatureStructure]):
         """ Adds several annotations at once to this CAS.
 
         Args:
@@ -180,7 +180,7 @@ class Cas:
         for annotation in annotations:
             self.add_annotation(annotation)
 
-    def get_covered_text(self, annotation: AnnotationBase) -> str:
+    def get_covered_text(self, annotation: FeatureStructure) -> str:
         """ Gets the text that is covered by `annotation`.
 
         Args:
@@ -193,20 +193,20 @@ class Cas:
         sofa = self.get_sofa()
         return sofa.sofaString[annotation.begin : annotation.end]
 
-    def select(self, typename: str) -> Iterator[AnnotationBase]:
+    def select(self, typename: str) -> Iterator[FeatureStructure]:
         """ Finds all annotations of type `typename`
 
         Args:
             typename: The name of the type whose annotation instances are to be found
 
         Returns:
-            An iterator over all annotations of type `typename`
+            An iterator over all feature structures of type `typename`
 
         """
         for annotation in self._current_view.type_index[typename]:
             yield annotation
 
-    def select_covered(self, typename: str, covering_annotation: AnnotationBase) -> Iterator[AnnotationBase]:
+    def select_covered(self, typename: str, covering_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
         """Returns an iterator over covered annotations
 
         Return all annotations that are covered
@@ -238,8 +238,8 @@ class Cas:
             if annotation.begin > c_end:
                 break
 
-    def select_all(self) -> Iterator[AnnotationBase]:
-        """Finds all annotations in this Cas
+    def select_all(self) -> Iterator[FeatureStructure]:
+        """Finds all feature structures in this Cas
 
         Returns:
             An iterator over all annotations in this Cas
@@ -351,7 +351,7 @@ class Cas:
         return result
 
 
-def _sort_func(a: AnnotationBase) -> Tuple[int, int]:
+def _sort_func(a: FeatureStructure) -> Tuple[int, int]:
     d = a.__slots__
     if "begin" in d and "end" in d:
         return (a.begin, a.end)

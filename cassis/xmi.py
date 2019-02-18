@@ -7,7 +7,7 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, Sofa, View
-from cassis.typesystem import AnnotationBase, TypeSystem
+from cassis.typesystem import FeatureStructure, TypeSystem
 
 
 @attr.s
@@ -207,7 +207,7 @@ class CasXmiSerializer:
         self._serialize_cas_null(root)
 
         for annotation in sorted(cas.select_all(), key=lambda a: a.xmiID):
-            self._serialize_annotation(root, annotation)
+            self._serialize_feature_structure(root, annotation)
 
         for sofa in cas.sofas:
             self._serialize_sofa(root, sofa)
@@ -226,9 +226,9 @@ class CasXmiSerializer:
 
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
-    def _serialize_annotation(self, root: etree.Element, annotation: AnnotationBase):
+    def _serialize_feature_structure(self, root: etree.Element, fs: FeatureStructure):
         # The type name is a Java package, e.g. `org.myproj.Foo`.
-        parts = annotation.type.split(".")
+        parts = fs.type.split(".")
 
         # The CAS type namespace is converted to an XML namespace URI by the following rule:
         # replace all dots with slashes, prepend http:///, and append .ecore.
@@ -259,20 +259,20 @@ class CasXmiSerializer:
         elem = etree.SubElement(root, name)
 
         # Serialize common attributes
-        elem.attrib["{http://www.omg.org/XMI}id"] = str(annotation.xmiID)
+        elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Serialize feature attributes
-        fields = attr.fields_dict(annotation.__class__)
+        fields = attr.fields_dict(fs.__class__)
         for field_name in fields:
             if field_name in CasXmiSerializer._COMMON_FIELD_NAMES:
                 continue
 
             # Skip over 'None' features
-            value = getattr(annotation, field_name)
+            value = getattr(fs, field_name)
             if value is None:
                 continue
 
-            if annotation.type == "uima.cas.StringArray":
+            if fs.type == "uima.cas.StringArray":
                 # String arrays need to be serialized to a series of child elements, as strings can
                 # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
                 # serialize it as an attribute, it would look like

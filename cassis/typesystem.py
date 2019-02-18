@@ -55,11 +55,11 @@ def _string_to_valid_classname(name: str):
 
 
 @attr.s(slots=True, cmp=False)
-class AnnotationBase:
-    """The base class for all annotation instances"""
+class FeatureStructure:
+    """The base class for all feature structure instances"""
 
-    type = attr.ib()  # str: Type name of this annotation instance
-    xmiID = attr.ib(default=None)  # int: xmiID of this annotation instance
+    type = attr.ib()  # str: Type name of this feature structure instance
+    xmiID = attr.ib(default=None)  # int: xmiID of this feature structure instance
 
     def __eq__(self, other):
         return self.__slots__ == other.__slots__
@@ -67,7 +67,7 @@ class AnnotationBase:
 
 @attr.s(slots=True)
 class Feature:
-    """A feature defines one attribute of an annotation"""
+    """A feature defines one attribute of a feature structure"""
 
     name = attr.ib()  # type: str
     rangeTypeName = attr.ib()  # type: str
@@ -91,24 +91,24 @@ class Type:
     _children = attr.ib(factory=set)  # type: Set[str]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _constructor = attr.ib(init=False, cmp=False, repr=False)  # type: Callable[[Dict], AnnotationBase]
+    _constructor = attr.ib(init=False, cmp=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
 
     def __attrs_post_init__(self):
-        """ Build the constructor that can create annotations of this type """
+        """ Build the constructor that can create feature structures of this type """
         name = _string_to_valid_classname(self.name)
         fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
-        self._constructor = attr.make_class(name, fields, bases=(AnnotationBase,), slots=True, cmp=False)
+        self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, cmp=False)
 
-    def __call__(self, **kwargs) -> AnnotationBase:
-        """ Creates an annotation of this type 
+    def __call__(self, **kwargs) -> FeatureStructure:
+        """ Creates an feature structure of this type
         
         When called with keyword arguments whose keys are the feature names and values are the 
-        respective feature values, then a new annotation instance is created.
+        respective feature values, then a new feature structure instance is created.
 
         Returns:
-            A new annotation instance of this type.
+            A new feature structure instance of this type.
 
         """
         return self._constructor(**kwargs)

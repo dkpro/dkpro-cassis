@@ -264,11 +264,32 @@ class CasXmiSerializer:
         # Serialize feature attributes
         fields = attr.fields_dict(annotation.__class__)
         for field_name in fields:
-            if field_name not in CasXmiSerializer._COMMON_FIELD_NAMES:
-                # Skip over 'None' features
-                value = getattr(annotation, field_name)
-                if value is not None:
-                    elem.attrib[field_name] = str(value)
+            if field_name in CasXmiSerializer._COMMON_FIELD_NAMES:
+                continue
+
+            # Skip over 'None' features
+            value = getattr(annotation, field_name)
+            if value is None:
+                continue
+
+            if annotation.type == "uima.cas.StringArray":
+                # String arrays need to be serialized to a series of child elements, as strings can
+                # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
+                # serialize it as an attribute, it would look like
+                #
+                # <my:fs elements="likes cats likes dogs" />
+                #
+                # which looses the information about the whitespace. Instead, we serialize it to
+                #
+                # <my:fs>
+                #   <elements>likes cats</elements>
+                #   <elements>likes dogs</elements>
+                # </my:fs>
+                for e in value:
+                    child = etree.SubElement(elem, field_name)
+                    child.text = e
+            else:
+                elem.attrib[field_name] = str(value)
 
     def _serialize_sofa(self, root: etree.Element, sofa: Sofa):
         name = etree.QName(self._nsmap["cas"], "Sofa")

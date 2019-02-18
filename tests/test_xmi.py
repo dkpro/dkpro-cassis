@@ -9,6 +9,12 @@ from tests.fixtures import *
 
 # Deserializing
 
+FIXTURES = [
+    (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
+    (pytest.lazy_fixture("cas_with_string_array_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+]
+
 
 def test_deserializing_from_file(small_xmi_path, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
@@ -116,13 +122,7 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
 # Serializing
 
 
-@pytest.mark.parametrize(
-    "xmi, typesystem_xml",
-    [
-        (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
-        (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
-    ],
-)
+@pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_string(xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
@@ -132,13 +132,7 @@ def test_serializing_cas_to_string(xmi, typesystem_xml):
     assert_xml_equal(actual_xml, xmi)
 
 
-@pytest.mark.parametrize(
-    "xmi, typesystem_xml",
-    [
-        (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
-        (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
-    ],
-)
+@pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
@@ -150,13 +144,7 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
         assert_xml_equal(actual.read(), xmi)
 
 
-@pytest.mark.parametrize(
-    "xmi, typesystem_xml",
-    [
-        (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
-        (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
-    ],
-)
+@pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)

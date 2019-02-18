@@ -34,6 +34,20 @@ def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
         return f.read()
 
 
+# CAS with string arrays
+
+
+@pytest.fixture
+def cas_with_string_array_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_string_array.xmi")
+
+
+@pytest.fixture
+def cas_with_string_array_xmi(cas_with_string_array_path):
+    with open(cas_with_string_array_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

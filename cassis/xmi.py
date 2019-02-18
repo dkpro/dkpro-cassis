@@ -1,6 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
-from typing import IO, Union, List
+from typing import Dict, IO, Union, List
 
 import attr
 
@@ -49,32 +49,81 @@ class CasXmiDeserializer:
         TAG_CAS_SOFA = NS_CAS + "Sofa"
         TAG_CAS_VIEW = NS_CAS + "View"
 
+        OUTSIDE_FS = 1
+        INSIDE_FS = 2
+        INSIDE_ARRAY = 3
+
         sofas = []
         views = {}
         annotations = {}
+        children = defaultdict(list)
 
-        context = etree.iterparse(source, events=("end",))
+        context = etree.iterparse(source, events=("start", "end"))
+
+        state = OUTSIDE_FS
 
         for event, elem in context:
-            assert event == "end"
-
-            if elem.tag == TAG_XMI:
-                # Ignore the closing 'xmi:XMI' tag
+            if elem.tag == TAG_XMI or elem.tag == TAG_CAS_NULL:
                 pass
-            elif elem.tag == TAG_CAS_NULL:
-                pass
+                # Ignore the 'xmi:XMI' and 'cas:NULL' elements
             elif elem.tag == TAG_CAS_SOFA:
-                sofa = self._parse_sofa(elem)
-                sofas.append(sofa)
+                if event == "end":
+                    sofa = self._parse_sofa(elem)
+                    sofas.append(sofa)
             elif elem.tag == TAG_CAS_VIEW:
-                proto_view = self._parse_view(elem)
-                views[proto_view.sofa] = proto_view
+                if event == "end":
+                    proto_view = self._parse_view(elem)
+                    views[proto_view.sofa] = proto_view
             else:
-                annotation = self._parse_annotation(typesystem, elem)
-                annotations[annotation.xmiID] = annotation
+                """
+                In XMI, array element features can be encoded as
+                
+                <cas:StringArray>
+                    <elements>LNC</elements>
+                    <elements>MTH</elements>
+                    <elements>SNOMEDCT_US</elements>
+                </cas:StringArray>
+                
+                In order to parse this with an incremental XML parser, we need to employ 
+                a simple state machine. It is depicted in the following.
+                            
+                                   "start"               "start"
+                     +-----------+-------->+-----------+-------->+--------+
+                     | Outside   |         | Inside    |         | Inside |
+                +--->+ feature   |         | feature   |         | array  |
+                     | structure |         | structure |         | element|
+                     +-----------+<--------+-----------+<--------+--------+
+                                    "end"                 "end"                                
+                """
+                if event == "start":
+                    if state == OUTSIDE_FS:
+                        # We saw the opening tag of a new feature structure
+                        state = INSIDE_FS
+                    elif state == INSIDE_FS:
+                        # We saw the opening tag of an array element
+                        state = INSIDE_ARRAY
+                    else:
+                        raise RuntimeError("Invalid state transition: [{0}] 'start'".format(state))
+                elif event == "end":
+                    if state == INSIDE_FS:
+                        # We saw the closing tag of a new feature
+                        state = OUTSIDE_FS
+                        annotation = self._parse_annotation(typesystem, elem, children)
+                        annotations[annotation.xmiID] = annotation
+
+                        children.clear()
+                    elif state == INSIDE_ARRAY:
+                        # We saw the closing tag of an array element
+                        children[elem.tag].append(elem.text)
+                        state = INSIDE_FS
+                    else:
+                        raise RuntimeError("Invalid state transition: [{0}] 'end'".format(state))
+                else:
+                    raise RuntimeError("Invalid XML event: [{0}]".format(event))
 
             # Free already processed elements from memory
-            self._clear_elem(elem)
+            if event == "end":
+                self._clear_elem(elem)
 
         if len(sofas) != len(views):
             raise RuntimeError("Number of views and sofas is not equal!")
@@ -112,13 +161,14 @@ class CasXmiDeserializer:
         attr.validate(result)
         return result
 
-    def _parse_annotation(self, typesystem: TypeSystem, elem):
+    def _parse_annotation(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
         # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
         typename = elem.tag[9:].replace("/", ".").replace("ecore}", "")
 
         AnnotationType = typesystem.get_type(typename)
         attributes = dict(elem.attrib)
+        attributes.update(children)
 
         # Map the xmi:id attribute to xmiID
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
@@ -142,7 +192,7 @@ class CasXmiDeserializer:
 
 
 class CasXmiSerializer:
-    _COMMON_FIELD_NAMES = {"xmiID", "sofa", "begin", "end", "type"}
+    _COMMON_FIELD_NAMES = {"xmiID", "type"}
 
     def __init__(self):
         self._nsmap = {"xmi": "http://www.omg.org/XMI", "cas": "http:///uima/cas.ecore"}
@@ -210,9 +260,6 @@ class CasXmiSerializer:
 
         # Serialize common attributes
         elem.attrib["{http://www.omg.org/XMI}id"] = str(annotation.xmiID)
-        elem.attrib["sofa"] = str(annotation.sofa)
-        elem.attrib["begin"] = str(annotation.begin)
-        elem.attrib["end"] = str(annotation.end)
 
         # Serialize feature attributes
         fields = attr.fields_dict(annotation.__class__)
@@ -220,7 +267,7 @@ class CasXmiSerializer:
             if field_name not in CasXmiSerializer._COMMON_FIELD_NAMES:
                 # Skip over 'None' features
                 value = getattr(annotation, field_name)
-                if value:
+                if value is not None:
                     elem.attrib[field_name] = str(value)
 
     def _serialize_sofa(self, root: etree.Element, sofa: Sofa):

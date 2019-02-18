@@ -51,7 +51,7 @@ PREDEFINED_TYPES = {
 
 
 def _string_to_valid_classname(name: str):
-    return re.sub("[^a-zA-Z_]", "_", name)
+    return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
 @attr.s(slots=True, cmp=False)

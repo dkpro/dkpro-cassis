@@ -48,6 +48,20 @@ def cas_with_string_array_xmi(cas_with_string_array_path):
         return f.read()
 
 
+# CAS with references
+
+
+@pytest.fixture
+def cas_with_references_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_references.xmi")
+
+
+@pytest.fixture
+def cas_with_references_xmi(cas_with_references_path):
+    with open(cas_with_references_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 
@@ -105,14 +119,31 @@ def typesystem_with_inheritance_xml(typesystem_with_inheritance_path):
         return f.read()
 
 
+# DKPro types
+
+
 @pytest.fixture
 def dkpro_typesystem_path():
-    return os.path.join(FIXTURE_DIR, "typesystems", "important-dkpro-types.xml")
+    return os.path.join(FIXTURE_DIR, "typesystems", "important_dkpro_types.xml")
 
 
 @pytest.fixture
 def dkpro_typesystem_xml(dkpro_typesystem_path):
     with open(dkpro_typesystem_path, "r") as f:
+        return f.read()
+
+
+# Webanno types
+
+
+@pytest.fixture
+def webanno_typesystem_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "webanno_types.xml")
+
+
+@pytest.fixture
+def webanno_typesystem_xml(webanno_typesystem_path):
+    with open(webanno_typesystem_path, "r") as f:
         return f.read()
 
 

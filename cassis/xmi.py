@@ -55,7 +55,7 @@ class CasXmiDeserializer:
 
         sofas = []
         views = {}
-        annotations = {}
+        feature_structures = {}
         children = defaultdict(list)
 
         context = etree.iterparse(source, events=("start", "end"))
@@ -108,8 +108,8 @@ class CasXmiDeserializer:
                     if state == INSIDE_FS:
                         # We saw the closing tag of a new feature
                         state = OUTSIDE_FS
-                        annotation = self._parse_annotation(typesystem, elem, children)
-                        annotations[annotation.xmiID] = annotation
+                        fs = self._parse_feature_structure(typesystem, elem, children)
+                        feature_structures[fs.xmiID] = fs
 
                         children.clear()
                     elif state == INSIDE_ARRAY:
@@ -128,7 +128,27 @@ class CasXmiDeserializer:
         if len(sofas) != len(views):
             raise RuntimeError("Number of views and sofas is not equal!")
 
-        cas = Cas()
+        # Post-process feature values
+        for xmi_id, fs in feature_structures.items():
+            t = typesystem.get_type(fs.type)
+
+            for feature_name, feature in t._features.items():
+                # TODO: Parse feature values to their real type here, e.g. parse ints or floats
+
+                if typesystem.is_primitive(feature.rangeTypeName):
+                    continue
+
+                # Resolve references here
+                value = getattr(fs, feature_name)
+                if value is None:
+                    continue
+
+                # Resolve references
+                target_id = int(getattr(fs, feature_name))
+                target = feature_structures[target_id]
+                setattr(fs, feature_name, target)
+
+        cas = Cas(typesystem)
         for sofa in sofas:
             proto_view = views[sofa.xmiID]
 
@@ -141,7 +161,7 @@ class CasXmiDeserializer:
             view.sofa_mime = sofa.mimeType
 
             for member_id in proto_view.members:
-                annotation = annotations[member_id]
+                annotation = feature_structures[member_id]
 
                 view.add_annotation(annotation)
 
@@ -161,7 +181,7 @@ class CasXmiDeserializer:
         attr.validate(result)
         return result
 
-    def _parse_annotation(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
+    def _parse_feature_structure(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
         # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
         typename = elem.tag[9:].replace("/", ".").replace("ecore}", "")
@@ -207,7 +227,7 @@ class CasXmiSerializer:
         self._serialize_cas_null(root)
 
         for annotation in sorted(cas.select_all(), key=lambda a: a.xmiID):
-            self._serialize_feature_structure(root, annotation)
+            self._serialize_feature_structure(cas, root, annotation)
 
         for sofa in cas.sofas:
             self._serialize_sofa(root, sofa)
@@ -226,7 +246,7 @@ class CasXmiSerializer:
 
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
-    def _serialize_feature_structure(self, root: etree.Element, fs: FeatureStructure):
+    def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
         # The type name is a Java package, e.g. `org.myproj.Foo`.
         parts = fs.type.split(".")
 
@@ -262,13 +282,15 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Serialize feature attributes
-        fields = attr.fields_dict(fs.__class__)
-        for field_name in fields:
-            if field_name in CasXmiSerializer._COMMON_FIELD_NAMES:
+        t = cas.typesystem.get_type(fs.type)
+        for feature in t.all_features:
+            feature_name = feature.name
+
+            if feature_name in CasXmiSerializer._COMMON_FIELD_NAMES:
                 continue
 
             # Skip over 'None' features
-            value = getattr(fs, field_name)
+            value = getattr(fs, feature_name)
             if value is None:
                 continue
 
@@ -286,10 +308,13 @@ class CasXmiSerializer:
                 #   <elements>likes dogs</elements>
                 # </my:fs>
                 for e in value:
-                    child = etree.SubElement(elem, field_name)
+                    child = etree.SubElement(elem, feature_name)
                     child.text = e
+            elif not feature_name == "sofa" and not cas.typesystem.is_primitive(feature.rangeTypeName):
+                # We need to encode non-primitive features as a reference
+                elem.attrib[feature_name] = str(value.xmiID)
             else:
-                elem.attrib[field_name] = str(value)
+                elem.attrib[feature_name] = str(value)
 
     def _serialize_sofa(self, root: etree.Element, sofa: Sofa):
         name = etree.QName(self._nsmap["cas"], "Sofa")

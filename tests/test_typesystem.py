@@ -102,6 +102,32 @@ def test_type_inherits_from_annotation():
     assert annotation.sofa == 1337
 
 
+@pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.Boolean", True),
+        ("uima.cas.Byte", True),
+        ("uima.cas.Short", True),
+        ("uima.cas.Integer", True),
+        ("uima.cas.Long", True),
+        ("uima.cas.Float", True),
+        ("uima.cas.Double", True),
+        ("uima.cas.String", True),
+        ("uima.cas.NonEmptyFloatList", False),
+        ("uima.cas.IntegerList", False),
+        ("uima.cas.EmptyIntegerList", False),
+        ("uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.StringList", False),
+        ("uima.cas.EmptyStringList", False),
+        ("uima.cas.NonEmptyStringList", False),
+    ],
+)
+def test_is_primitive(type_name: str, expected: bool):
+    typesystem = TypeSystem()
+
+    assert typesystem.is_primitive(type_name) == expected
+
+
 # Deserializing
 
 

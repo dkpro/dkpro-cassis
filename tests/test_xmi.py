@@ -13,6 +13,7 @@ FIXTURES = [
     (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
     (pytest.lazy_fixture("cas_with_string_array_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_references_xmi"), pytest.lazy_fixture("webanno_typesystem_xml")),
 ]
 
 
@@ -119,6 +120,10 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
     assert set(member_ids) == set(fs_ids)
 
 
+def test_deserializing_references_in_attributes_work():
+    pass
+
+
 # Serializing
 
 
@@ -181,7 +186,7 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
 
 def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_disambiguated():
     typesystem = TypeSystem()
-    cas = Cas()
+    cas = Cas(typesystem)
     FooType = typesystem.create_type("foo.test.Foo")
     BarType = typesystem.create_type("bar.test.Bar")
 

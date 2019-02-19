@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI"
+         xmlns:cas="http:///uima/cas.ecore" xmlns:type="http:///de/tudarmstadt/ukp/dkpro/core/api/segmentation/type.ecore"
+         xmlns:custom="http:///webanno/custom.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="17" language="x-unspecified"/>
+    <type:Token xmi:id="3" sofa="1" begin="0" end="4"/>
+    <type:Token xmi:id="4" sofa="1" begin="5" end="7"/>
+    <type:Token xmi:id="5" sofa="1" begin="8" end="9"/>
+    <type:Token xmi:id="6" sofa="1" begin="10" end="14"/>
+    <type:Token xmi:id="7" sofa="1" begin="15" end="16"/>
+    <type:Sentence xmi:id="8" sofa="1" begin="0" end="16"/>
+    <custom:Relation xmi:id="9" sofa="1" begin="15" end="16" Governor="3" Dependent="7" value="nsubj"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="This is a test .&#10;"/>
+    <cas:View sofa="1" members="2 3 4 5 6 7 8 9"/>
+</xmi:XMI>

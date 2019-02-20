@@ -144,9 +144,19 @@ class CasXmiDeserializer:
                     continue
 
                 # Resolve references
-                target_id = int(getattr(fs, feature_name))
-                target = feature_structures[target_id]
-                setattr(fs, feature_name, target)
+                if typesystem.is_collection(feature.rangeTypeName):
+                    # A collection of references is a list of integers separated
+                    # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
+                    targets = []
+                    for ref in value.split():
+                        target_id = int(ref)
+                        target = feature_structures[target_id]
+                        targets.append(target)
+                    setattr(fs, feature_name, targets)
+                else:
+                    target_id = int(value)
+                    target = feature_structures[target_id]
+                    setattr(fs, feature_name, target)
 
         cas = Cas(typesystem)
         for sofa in sofas:
@@ -310,11 +320,14 @@ class CasXmiSerializer:
                 for e in value:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif not feature_name == "sofa" and not cas.typesystem.is_primitive(feature.rangeTypeName):
+            elif feature_name == "sofa" or cas.typesystem.is_primitive(feature.rangeTypeName):
+                elem.attrib[feature_name] = str(value)
+            elif cas.typesystem.is_collection(feature.rangeTypeName):
+                elements = " ".join(str(e.xmiID) for e in value)
+                elem.attrib[feature_name] = elements
+            else:
                 # We need to encode non-primitive features as a reference
                 elem.attrib[feature_name] = str(value.xmiID)
-            else:
-                elem.attrib[feature_name] = str(value)
 
     def _serialize_sofa(self, root: etree.Element, sofa: Sofa):
         name = etree.QName(self._nsmap["cas"], "Sofa")

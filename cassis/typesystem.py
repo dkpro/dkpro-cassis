@@ -60,6 +60,32 @@ PRIMITIVE_TYPES = {
     "uima.cas.String",
 }
 
+COLLECTION_TYPES = {
+    "uima.cas.ArrayBase",
+    "uima.cas.FSArray",
+    "uima.cas.FloatArray",
+    "uima.cas.IntegerArray",
+    "uima.cas.StringArray",
+    "uima.cas.ListBase",
+    "uima.cas.FSList",
+    "uima.cas.EmptyFSList",
+    "uima.cas.NonEmptyFSList",
+    "uima.cas.FloatList",
+    "uima.cas.EmptyFloatList",
+    "uima.cas.NonEmptyFloatList",
+    "uima.cas.IntegerList",
+    "uima.cas.EmptyIntegerList",
+    "uima.cas.NonEmptyIntegerList",
+    "uima.cas.StringList",
+    "uima.cas.EmptyStringList",
+    "uima.cas.NonEmptyStringList",
+    "uima.cas.BooleanArray",
+    "uima.cas.ByteArray",
+    "uima.cas.ShortArray",
+    "uima.cas.LongArray",
+    "uima.cas.DoubleArray",
+}
+
 
 def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
@@ -335,9 +361,19 @@ class TypeSystem:
         Args:
             type_name: The name of the type to query for.
         Returns:
-            Returns true if the type identified by `type_name` is a primitive type, else false
+            Returns True if the type identified by `type_name` is a primitive type, else False
         """
         return type_name in PRIMITIVE_TYPES
+
+    def is_collection(self, type_name: str) -> bool:
+        """ Checks if the type identified by `type_name` is a collection, e.g. list or array.
+
+        Args:
+            type_name: The name of the type to query for.
+        Returns:
+            Returns True if the type identified by `type_name` is a collection type, else False
+        """
+        return type_name in COLLECTION_TYPES
 
     def add_feature(
         self,

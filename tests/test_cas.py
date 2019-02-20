@@ -147,10 +147,10 @@ def test_get_covered_text_sentences(sentences):
 
 
 def test_add_annotation(small_typesystem_xml):
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train ."
     typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type("cassis.Token")
+    cas = Cas(typesystem)
+    cas.sofa_string = "Joe waited for the train ."
 
     tokens = [
         TokenType(begin=0, end=3, id="0", pos="NNP"),
@@ -168,8 +168,8 @@ def test_add_annotation(small_typesystem_xml):
 
 
 def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
-    cas = Cas()
     typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem)
     TokenType = typesystem.get_type("cassis.Token")
 
     tokens = [

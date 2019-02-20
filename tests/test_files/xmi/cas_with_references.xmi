@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+         xmlns:tcas="http:///uima/tcas.ecore"
+         xmlns:type0="http:///de/tudarmstadt/ukp/dkpro/core/api/semantics/type.ecore"
+         xmlns:type="http:///de/tudarmstadt/ukp/dkpro/core/api/segmentation/type.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="29" language="x-unspecified" />
+    <type:Sentence xmi:id="3" sofa="1" begin="0" end="28"/>
+    <type:Token xmi:id="4" sofa="1" begin="0" end="5"/>
+    <type:Token xmi:id="5" sofa="1" begin="6" end="11"/>
+    <type:Token xmi:id="6" sofa="1" begin="12" end="17"/>
+    <type:Token xmi:id="7" sofa="1" begin="18" end="21"/>
+    <type:Token xmi:id="8" sofa="1" begin="22" end="27"/>
+    <type:Token xmi:id="9" sofa="1" begin="27" end="28"/>
+    <type0:SemPred xmi:id="10" sofa="1" begin="12" end="17" arguments="13 14" category="FooCategory"/>
+    <type0:SemArg xmi:id="11" sofa="1" begin="0" end="5"/>
+    <type0:SemArg xmi:id="12" sofa="1" begin="22" end="27"/>
+    <type0:SemArgLink xmi:id="13" role="Bar" target="11"/>
+    <type0:SemArgLink xmi:id="14" role="Baz" target="12"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="Lorem ipsum dolor sit ametr.&#10;"/>
+    <cas:View sofa="1" members="2 3 4 5 6 7 8 9 10 11 12 13 14"/>
+</xmi:XMI>

@@ -13,6 +13,7 @@ FIXTURES = [
     (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
     (pytest.lazy_fixture("cas_with_string_array_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_references_xmi"), pytest.lazy_fixture("webanno_typesystem_xml")),
 ]
 
 
@@ -119,6 +120,34 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
     assert set(member_ids) == set(fs_ids)
 
 
+def test_deserializing_references_in_attributes_work(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    tokens = list(cas.select("de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token"))
+    assert len(tokens) == 6
+
+    # Retrieve semantic predicates
+    sempreds = list(cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred"))
+    assert len(sempreds) == 1
+    sempred = sempreds[0]
+
+    # Retrieve semantic arguments
+    semargs = list(cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemArg"))
+    assert len(semargs) == 2
+
+    # Retrieve semantic argument links
+    semarglinks = list(cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemArgLink"))
+    assert len(semarglinks) == 2
+
+    # Check that the references to the semantic argument links have been resolved
+    assert sempred.arguments == semarglinks
+
+    # Check that the references from the links to the arguments have been resolved
+    assert semarglinks[0].target == semargs[0]
+    assert semarglinks[1].target == semargs[1]
+
+
 # Serializing
 
 
@@ -181,7 +210,7 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
 
 def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_disambiguated():
     typesystem = TypeSystem()
-    cas = Cas()
+    cas = Cas(typesystem)
     FooType = typesystem.create_type("foo.test.Foo")
     BarType = typesystem.create_type("bar.test.Bar")
 

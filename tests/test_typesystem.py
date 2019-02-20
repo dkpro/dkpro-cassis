@@ -102,6 +102,58 @@ def test_type_inherits_from_annotation():
     assert annotation.sofa == 1337
 
 
+@pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.Boolean", True),
+        ("uima.cas.Byte", True),
+        ("uima.cas.Short", True),
+        ("uima.cas.Integer", True),
+        ("uima.cas.Long", True),
+        ("uima.cas.Float", True),
+        ("uima.cas.Double", True),
+        ("uima.cas.String", True),
+        ("uima.cas.NonEmptyFloatList", False),
+        ("uima.cas.IntegerList", False),
+        ("uima.cas.EmptyIntegerList", False),
+        ("uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.StringList", False),
+        ("uima.cas.EmptyStringList", False),
+        ("uima.cas.NonEmptyStringList", False),
+    ],
+)
+def test_is_primitive(type_name: str, expected: bool):
+    typesystem = TypeSystem()
+
+    assert typesystem.is_primitive(type_name) == expected
+
+
+@pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.Boolean", False),
+        ("uima.cas.Byte", False),
+        ("uima.cas.Short", False),
+        ("uima.cas.Integer", False),
+        ("uima.cas.Long", False),
+        ("uima.cas.Float", False),
+        ("uima.cas.Double", False),
+        ("uima.cas.String", False),
+        ("uima.cas.NonEmptyFloatList", True),
+        ("uima.cas.IntegerList", True),
+        ("uima.cas.EmptyIntegerList", True),
+        ("uima.cas.NonEmptyIntegerList", True),
+        ("uima.cas.StringList", True),
+        ("uima.cas.EmptyStringList", True),
+        ("uima.cas.NonEmptyStringList", True),
+    ],
+)
+def test_is_collection(type_name: str, expected: bool):
+    typesystem = TypeSystem()
+
+    assert typesystem.is_collection(type_name) == expected
+
+
 # Deserializing
 
 

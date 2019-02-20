@@ -10,7 +10,7 @@ from attr import validators
 
 from sortedcontainers import SortedList, SortedKeyList
 
-from cassis.typesystem import FeatureStructure
+from cassis.typesystem import FeatureStructure, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -87,7 +87,9 @@ class View:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(self):
+    def __init__(self, typesystem: TypeSystem = TypeSystem()):
+        self._typesystem = typesystem
+
         # When new attributes are added, they also need to be added in Cas::_copy. The copying
         # relies on the fact that all the members of the Cas are mutable references. It is not
         # possible right now to add not-mutable references because the view functionality heavily
@@ -101,6 +103,10 @@ class Cas:
         # Every CAS comes with a an initial view called `_InitialView`
         self._add_view("_InitialView")
         self._current_view = self._views["_InitialView"]  # type: View
+
+    @property
+    def typesystem(self) -> TypeSystem:
+        return self._typesystem
 
     def create_view(self, name: str) -> "Cas":
         """ Create a view and its underlying Sofa (subject of analysis).
@@ -342,7 +348,7 @@ class Cas:
         return self._sofa_num_generator.generate_id()
 
     def _copy(self) -> "Cas":
-        result = Cas()
+        result = Cas(self._typesystem)
         result._views = self._views
         result._sofas = self._sofas
         result._current_view = self._current_view

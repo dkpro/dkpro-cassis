@@ -12,8 +12,13 @@ from lxml import etree
 
 PREDEFINED_TYPES = {
     "uima.cas.TOP",
+    "uima.cas.Boolean",
+    "uima.cas.Byte",
+    "uima.cas.Short",
     "uima.cas.Integer",
+    "uima.cas.Long",
     "uima.cas.Float",
+    "uima.cas.Double",
     "uima.cas.String",
     "uima.cas.ArrayBase",
     "uima.cas.FSArray",
@@ -33,11 +38,6 @@ PREDEFINED_TYPES = {
     "uima.cas.StringList",
     "uima.cas.EmptyStringList",
     "uima.cas.NonEmptyStringList",
-    "uima.cas.Boolean",
-    "uima.cas.Byte",
-    "uima.cas.Short",
-    "uima.cas.Long",
-    "uima.cas.Double",
     "uima.cas.BooleanArray",
     "uima.cas.ByteArray",
     "uima.cas.ShortArray",
@@ -47,6 +47,43 @@ PREDEFINED_TYPES = {
     "uima.cas.AnnotationBase",
     "uima.tcas.Annotation",
     "uima.tcas.DocumentAnnotation",
+}
+
+PRIMITIVE_TYPES = {
+    "uima.cas.Boolean",
+    "uima.cas.Byte",
+    "uima.cas.Short",
+    "uima.cas.Integer",
+    "uima.cas.Long",
+    "uima.cas.Float",
+    "uima.cas.Double",
+    "uima.cas.String",
+}
+
+COLLECTION_TYPES = {
+    "uima.cas.ArrayBase",
+    "uima.cas.FSArray",
+    "uima.cas.FloatArray",
+    "uima.cas.IntegerArray",
+    "uima.cas.StringArray",
+    "uima.cas.ListBase",
+    "uima.cas.FSList",
+    "uima.cas.EmptyFSList",
+    "uima.cas.NonEmptyFSList",
+    "uima.cas.FloatList",
+    "uima.cas.EmptyFloatList",
+    "uima.cas.NonEmptyFloatList",
+    "uima.cas.IntegerList",
+    "uima.cas.EmptyIntegerList",
+    "uima.cas.NonEmptyIntegerList",
+    "uima.cas.StringList",
+    "uima.cas.EmptyStringList",
+    "uima.cas.NonEmptyStringList",
+    "uima.cas.BooleanArray",
+    "uima.cas.ByteArray",
+    "uima.cas.ShortArray",
+    "uima.cas.LongArray",
+    "uima.cas.DoubleArray",
 }
 
 
@@ -189,10 +226,10 @@ class TypeSystem:
         self.create_type(name="uima.cas.Boolean", supertypeName="uima.cas.TOP")
         self.create_type(name="uima.cas.Byte", supertypeName="uima.cas.TOP")
         self.create_type(name="uima.cas.Short", supertypeName="uima.cas.TOP")
-        self.create_type(name="uima.cas.Long", supertypeName="uima.cas.TOP")
-        self.create_type(name="uima.cas.Double", supertypeName="uima.cas.TOP")
         self.create_type(name="uima.cas.Integer", supertypeName="uima.cas.TOP")
+        self.create_type(name="uima.cas.Long", supertypeName="uima.cas.TOP")
         self.create_type(name="uima.cas.Float", supertypeName="uima.cas.TOP")
+        self.create_type(name="uima.cas.Double", supertypeName="uima.cas.TOP")
         self.create_type(name="uima.cas.String", supertypeName="uima.cas.TOP")
 
         # Array
@@ -302,7 +339,7 @@ class TypeSystem:
         """ Finds a type by name in the type system of this CAS.
 
         Args:
-            typename: The name of the type to retreive
+            typename: The name of the type to retrieve
 
         Returns:
             The type with name `typename`
@@ -317,6 +354,26 @@ class TypeSystem:
     def get_types(self) -> Iterator[Type]:
         """ Returns all types of this type system """
         return filterfalse(lambda x: x.name in PREDEFINED_TYPES, self._types.values())
+
+    def is_primitive(self, type_name: str) -> bool:
+        """ Checks if the type identified by `type_name` is a primitive type.
+
+        Args:
+            type_name: The name of the type to query for.
+        Returns:
+            Returns True if the type identified by `type_name` is a primitive type, else False
+        """
+        return type_name in PRIMITIVE_TYPES
+
+    def is_collection(self, type_name: str) -> bool:
+        """ Checks if the type identified by `type_name` is a collection, e.g. list or array.
+
+        Args:
+            type_name: The name of the type to query for.
+        Returns:
+            Returns True if the type identified by `type_name` is a collection type, else False
+        """
+        return type_name in COLLECTION_TYPES
 
     def add_feature(
         self,

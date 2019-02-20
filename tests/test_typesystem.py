@@ -154,6 +154,40 @@ def test_is_collection(type_name: str, expected: bool):
     assert typesystem.is_collection(type_name) == expected
 
 
+@pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.ArrayBase", False),
+        ("uima.cas.FSArray", False),
+        ("uima.cas.FloatArray", True),
+        ("uima.cas.IntegerArray", True),
+        ("uima.cas.StringArray", True),
+        ("uima.cas.ListBase", False),
+        ("uima.cas.FSList", False),
+        ("uima.cas.EmptyFSList", False),
+        ("uima.cas.NonEmptyFSList", False),
+        ("uima.cas.FloatList", True),
+        ("uima.cas.EmptyFloatList", True),
+        ("uima.cas.NonEmptyFloatList", True),
+        ("uima.cas.IntegerList", True),
+        ("uima.cas.EmptyIntegerList", True),
+        ("uima.cas.NonEmptyIntegerList", True),
+        ("uima.cas.StringList", True),
+        ("uima.cas.EmptyStringList", True),
+        ("uima.cas.NonEmptyStringList", True),
+        ("uima.cas.BooleanArray", True),
+        ("uima.cas.ByteArray", True),
+        ("uima.cas.ShortArray", True),
+        ("uima.cas.LongArray", True),
+        ("uima.cas.DoubleArray", True),
+    ],
+)
+def test_is_primitive_collection(type_name: str, expected: bool):
+    typesystem = TypeSystem()
+
+    assert typesystem.is_primitive_collection(type_name) == expected
+
+
 # Deserializing
 
 

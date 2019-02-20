@@ -132,10 +132,14 @@ class CasXmiDeserializer:
         for xmi_id, fs in feature_structures.items():
             t = typesystem.get_type(fs.type)
 
-            for feature_name, feature in t._features.items():
-                # TODO: Parse feature values to their real type here, e.g. parse ints or floats
+            for feature in t.all_features:
+                feature_name = feature.name
 
-                if typesystem.is_primitive(feature.rangeTypeName):
+                if feature_name == "sofa":
+                    continue
+
+                if typesystem.is_primitive(feature.rangeTypeName) or typesystem.is_primitive_collection(fs.type):
+                    # TODO: Parse feature values to their real type here, e.g. parse ints or floats
                     continue
 
                 # Resolve references here

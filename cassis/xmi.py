@@ -190,7 +190,7 @@ class CasXmiDeserializer:
     def _parse_view(self, elem) -> ProtoView:
         attributes = elem.attrib
         sofa = int(attributes["sofa"])
-        members = [int(e) for e in attributes.get("members", "").split(" ")]
+        members = [int(e) for e in attributes.get("members", "").strip().split(" ")]
         result = ProtoView(sofa=sofa, members=members)
         attr.validate(result)
         return result

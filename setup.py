@@ -23,7 +23,8 @@ install_requires=[
     "lxml",
     "attrs",
     "sortedcontainers",
-    "toposort"
+    "toposort",
+    "more-itertools"
 ]
 
 test_dependencies = [

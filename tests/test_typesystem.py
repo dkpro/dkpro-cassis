@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 import pytest
 
@@ -303,3 +304,21 @@ def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
 
     with open(path, "rb") as actual:
         assert_xml_equal(actual, typesystem_xml)
+
+
+# Type system with inheritance and redefined features
+# https://github.com/dkpro/dkpro-cassis/issues/56
+
+
+def test_that_typesystem_with_child_redefining_type_same_warns():
+    path = os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_inheritance_redefined_same.xml")
+    with pytest.warns(UserWarning):
+        with open(path, "rb") as f:
+            load_typesystem(f)
+
+
+def test_that_typesystem_with_child_redefining_type_differently_throws():
+    path = os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_inheritance_redefined_different.xml")
+    with pytest.raises(ValueError):
+        with open(path, "rb") as f:
+            load_typesystem(f)

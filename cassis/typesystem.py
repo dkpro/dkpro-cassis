@@ -5,6 +5,9 @@ from pathlib import Path
 import re
 from toposort import toposort_flatten
 from typing import Callable, Dict, List, IO, Iterator, Optional, Set, Union
+import warnings
+
+from more_itertools import unique_everseen
 
 import attr
 
@@ -171,7 +174,7 @@ class Type:
         """
         return self._constructor(**kwargs)
 
-    def get_feature(self, name: str) -> Feature:
+    def get_feature(self, name: str) -> Optional[Feature]:
         """ Find a feature by name
 
         This returns `None` if this type does not contain a feature
@@ -195,9 +198,22 @@ class Type:
         """
         target = self._features if not inherited else self._inherited_features
 
+        # Check that feature is not defined in on current type
         if feature.name in target:
             msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
             raise ValueError(msg)
+
+        # Check that feature is not redefined on parent type
+        if feature.name in self._inherited_features:
+            redefined_feature = self._inherited_features[feature.name]
+
+            if redefined_feature == feature:
+                msg = "Feature with name [{0}] already exists in parent!".format(feature.name)
+                warnings.warn(msg)
+            else:
+                msg = "Feature with name [{0}] already exists in parent but is redefined!".format(feature.name)
+                raise ValueError(msg)
+
         target[feature.name] = feature
 
         # Recreate constructor to incorporate new features
@@ -223,7 +239,9 @@ class Type:
             An iterator over all features of this type, including inherited ones
 
         """
-        return chain(self._features.values(), self._inherited_features.values())
+
+        # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
+        return unique_everseen(chain(self._features.values(), self._inherited_features.values()))
 
 
 class TypeSystem:

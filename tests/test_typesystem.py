@@ -310,7 +310,6 @@ def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
 # https://github.com/dkpro/dkpro-cassis/issues/56
 
 
-@pytest.fixture
 def test_that_typesystem_with_child_redefining_type_same_warns():
     path = os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_inheritance_redefined_same.xml")
     with pytest.warns(UserWarning):

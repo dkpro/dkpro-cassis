@@ -34,7 +34,7 @@ def test_create_view_throws_if_view_already_exists():
     cas = Cas()
     cas.create_view("testView")
 
-    with pytest.raises(ValueError, message=r"A view with name [testView] already exists!"):
+    with pytest.raises(ValueError, match=r"A view with name \[testView\] already exists!"):
         cas.create_view("testView")
 
 
@@ -56,7 +56,7 @@ def test_get_view_finds_existing_view():
 def test_get_view_throws_if_view_does_not_exist():
     cas = Cas()
 
-    with pytest.raises(KeyError, message=r"There is no view with name [testView] in this CAS!"):
+    with pytest.raises(KeyError, match=r"There is no view with name \[testView\] in this CAS!"):
         cas.get_view("testView")
 
 

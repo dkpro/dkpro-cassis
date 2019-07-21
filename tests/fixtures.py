@@ -119,6 +119,20 @@ def typesystem_with_inheritance_xml(typesystem_with_inheritance_path):
         return f.read()
 
 
+# Type system with redefined DocumentAnnotation
+
+
+@pytest.fixture
+def typesystem_with_redefined_documentannotation_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_redefined_documentannotation.xml")
+
+
+@pytest.fixture
+def typesystem_with_redefined_documentannotation_xml(typesystem_with_redefined_documentannotation_path):
+    with open(typesystem_with_redefined_documentannotation_path, "r") as f:
+        return f.read()
+
+
 # DKPro types
 
 

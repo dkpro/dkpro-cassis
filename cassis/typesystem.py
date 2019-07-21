@@ -13,7 +13,9 @@ import attr
 
 from lxml import etree
 
-PREDEFINED_TYPES = {
+_DOCUMENT_ANNOTATION_TYPE = "uima.tcas.DocumentAnnotation"
+
+_PREDEFINED_TYPES = {
     "uima.cas.TOP",
     "uima.cas.Boolean",
     "uima.cas.Byte",
@@ -49,10 +51,9 @@ PREDEFINED_TYPES = {
     "uima.cas.Sofa",
     "uima.cas.AnnotationBase",
     "uima.tcas.Annotation",
-    "uima.tcas.DocumentAnnotation",
 }
 
-PRIMITIVE_TYPES = {
+_PRIMITIVE_TYPES = {
     "uima.cas.Boolean",
     "uima.cas.Byte",
     "uima.cas.Short",
@@ -63,7 +64,7 @@ PRIMITIVE_TYPES = {
     "uima.cas.String",
 }
 
-COLLECTION_TYPES = {
+_COLLECTION_TYPES = {
     "uima.cas.ArrayBase",
     "uima.cas.FSArray",
     "uima.cas.FloatArray",
@@ -89,8 +90,7 @@ COLLECTION_TYPES = {
     "uima.cas.DoubleArray",
 }
 
-
-PRIMITIVE_COLLECTION_TYPES = {
+_PRIMITIVE_COLLECTION_TYPES = {
     "uima.cas.FloatArray",
     "uima.cas.IntegerArray",
     "uima.cas.StringArray",
@@ -247,7 +247,7 @@ class Type:
 class TypeSystem:
     TOP_TYPE_NAME = "uima.cas.TOP"
 
-    def __init__(self):
+    def __init__(self, add_document_annotation_type: bool = True):
         self._types = {}
 
         # We store types that are predefined but still defined in the typesystem here
@@ -332,9 +332,8 @@ class TypeSystem:
         self.add_feature(t, name="begin", rangeTypeName="uima.cas.Integer")
         self.add_feature(t, name="end", rangeTypeName="uima.cas.Integer")
 
-        # DocumentAnnotation
-        t = self.create_type(name="uima.tcas.DocumentAnnotation", supertypeName="uima.tcas.Annotation")
-        self.add_feature(t, name="language", rangeTypeName="uima.cas.String")
+        if add_document_annotation_type:
+            self._add_document_annotation_type()
 
     def has_type(self, typename: str):
         """ Checks whether this type system contains a type with name `typename`.
@@ -358,7 +357,7 @@ class TypeSystem:
         Returns:
             The newly created type
         """
-        if self.has_type(name) and name not in PREDEFINED_TYPES:
+        if self.has_type(name) and name not in _PREDEFINED_TYPES:
             msg = "Type with name [{0}] already exists!".format(name)
             raise ValueError(msg)
 
@@ -392,7 +391,7 @@ class TypeSystem:
 
     def get_types(self) -> Iterator[Type]:
         """ Returns all types of this type system """
-        return filterfalse(lambda x: x.name in PREDEFINED_TYPES, self._types.values())
+        return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 
     def is_primitive(self, type_name: str) -> bool:
         """ Checks if the type identified by `type_name` is a primitive type.
@@ -402,7 +401,7 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive type, else False
         """
-        return type_name in PRIMITIVE_TYPES
+        return type_name in _PRIMITIVE_TYPES
 
     def is_collection(self, type_name: str) -> bool:
         """ Checks if the type identified by `type_name` is a collection, e.g. list or array.
@@ -412,7 +411,7 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a collection type, else False
         """
-        return type_name in COLLECTION_TYPES
+        return type_name in _COLLECTION_TYPES
 
     def is_primitive_collection(self, type_name) -> bool:
         """ Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.
@@ -422,7 +421,7 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive collection type, else False
         """
-        return type_name in PRIMITIVE_COLLECTION_TYPES
+        return type_name in _PRIMITIVE_COLLECTION_TYPES
 
     def add_feature(
         self,
@@ -490,6 +489,10 @@ class TypeSystem:
 
     def _defines_predefined_type(self, type_name):
         self._predefined_types.add(type_name)
+
+    def _add_document_annotation_type(self):
+        t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
+        self.add_feature(t, name="language", rangeTypeName="uima.cas.String")
 
 
 # Deserializing
@@ -575,12 +578,12 @@ class TypeSystemDeserializer:
                 del elem.getparent()[0]
         del context
 
-        ts = TypeSystem()
+        ts = TypeSystem(add_document_annotation_type=False)
 
-        # Some CAS handling libraries add predefined types to the typesystem XML, e.g. DocumentAnnotation.
+        # Some CAS handling libraries add predefined types to the typesystem XML.
         # Here we check that the redefinition of predefined types adheres to the definition in UIMA
         for type_name, t in types.items():
-            if type_name in PREDEFINED_TYPES:
+            if type_name in _PREDEFINED_TYPES:
                 pt = ts.get_type(type_name)
 
                 t_features = list(sorted(features[type_name]))
@@ -602,7 +605,7 @@ class TypeSystemDeserializer:
         # Add the types to the type system in order of dependency (parents before children)
         for type_name in toposort_flatten(dependencies, sort=False):
             # No need to recreate predefined types
-            if type_name in PREDEFINED_TYPES:
+            if type_name in _PREDEFINED_TYPES:
                 continue
 
             t = types[type_name]
@@ -616,6 +619,15 @@ class TypeSystemDeserializer:
                     elementType=f.elementType,
                     description=f.description,
                 )
+
+        # DocumentAnnotation is not a predefined UIMA type, but some applications assume that it exists.
+        # It can be defined by users with custom fields. In case the loaded type system did not define
+        # it, we add the standard DocumentAnnotation type. In case it is already defined, we add it to
+        # the list of redefined predefined types so that is written back on serialization.
+        if not ts.has_type(_DOCUMENT_ANNOTATION_TYPE):
+            ts._add_document_annotation_type()
+        else:
+            ts._defines_predefined_type(_DOCUMENT_ANNOTATION_TYPE)
 
         return ts
 
@@ -648,6 +660,12 @@ class TypeSystemSerializer:
                         self._serialize_type(xf, predefined_type)
 
                     for type_ in sorted(typesystem.get_types(), key=lambda t: t.name):
+                        # We do not want to serialize our implicitly added DocumentAnnotation.
+                        # If it was defined by the user, it is in `typesystem._predefined_types`
+                        # and serialized in the loop before.
+                        if type_.name == _DOCUMENT_ANNOTATION_TYPE:
+                            continue
+
                         self._serialize_type(xf, type_)
 
     def _serialize_type(self, xf: IO, type_: Type):

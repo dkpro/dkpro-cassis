@@ -14,6 +14,7 @@ TYPESYSTEM_FIXTURES = [
     pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
     pytest.lazy_fixture("dkpro_typesystem_xml"),
     pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
+    pytest.lazy_fixture("typesystem_with_redefined_documentannotation_xml"),
 ]
 
 # Feature
@@ -206,15 +207,7 @@ def test_deserializing_from_file(typesystem_path):
         load_typesystem(f)
 
 
-@pytest.mark.parametrize(
-    "typesystem_xml",
-    [
-        pytest.lazy_fixture("small_typesystem_xml"),
-        pytest.lazy_fixture("typesystem_with_inheritance_xml"),
-        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
-        pytest.lazy_fixture("dkpro_typesystem_xml"),
-    ],
-)
+@pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_deserializing_from_string(typesystem_xml):
     load_typesystem(typesystem_xml)
 
@@ -222,7 +215,9 @@ def test_deserializing_from_string(typesystem_xml):
 def test_deserializing_small_typesystem(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
-    assert len(list(typesystem.get_types())) == 2
+    # There are two types in the type system and we implicitly
+    # define DocumentAnnotation
+    assert len(list(typesystem.get_types())) == 3
 
     # Assert annotation type
     annotation_type = typesystem.get_type("uima.tcas.DocumentAnnotation")
@@ -268,15 +263,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
     assert_xml_equal(actual_xml, typesystem_xml)
 
 
-@pytest.mark.parametrize(
-    "typesystem_xml",
-    [
-        pytest.lazy_fixture("small_typesystem_xml"),
-        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
-        pytest.lazy_fixture("typesystem_with_inheritance_xml"),
-        pytest.lazy_fixture("dkpro_typesystem_xml"),
-    ],
-)
+@pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     path = Path(str(tmpdir.join("typesystem.xml")))
@@ -287,15 +274,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
         assert_xml_equal(actual, typesystem_xml)
 
 
-@pytest.mark.parametrize(
-    "typesystem_xml",
-    [
-        pytest.lazy_fixture("small_typesystem_xml"),
-        pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
-        pytest.lazy_fixture("typesystem_with_inheritance_xml"),
-        pytest.lazy_fixture("dkpro_typesystem_xml"),
-    ],
-)
+@pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
     path = str(tmpdir.join("typesystem.xml"))
@@ -322,3 +301,17 @@ def test_that_typesystem_with_child_redefining_type_differently_throws():
     with pytest.raises(ValueError):
         with open(path, "rb") as f:
             load_typesystem(f)
+
+
+# DocumentAnnotation support
+# https://github.com/dkpro/dkpro-cassis/issues/56
+
+
+def test_that_typesystem_with_redefined_documentation_annotation_works(
+        typesystem_with_redefined_documentannotation_xml
+):
+    typesystem = load_typesystem(typesystem_with_redefined_documentannotation_xml)
+
+    actual_xml = typesystem.to_xml()
+
+    assert_xml_equal(actual_xml, typesystem_with_redefined_documentannotation_xml)

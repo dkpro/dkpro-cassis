@@ -15,6 +15,8 @@ TYPESYSTEM_FIXTURES = [
     pytest.lazy_fixture("dkpro_typesystem_xml"),
     pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
     pytest.lazy_fixture("typesystem_with_redefined_documentannotation_xml"),
+    pytest.lazy_fixture("webanno_typesystem_xml"),
+    pytest.lazy_fixture("inception_typesystem_xml"),
 ]
 
 # Feature
@@ -308,7 +310,7 @@ def test_that_typesystem_with_child_redefining_type_differently_throws():
 
 
 def test_that_typesystem_with_redefined_documentation_annotation_works(
-        typesystem_with_redefined_documentannotation_xml
+    typesystem_with_redefined_documentannotation_xml
 ):
     typesystem = load_typesystem(typesystem_with_redefined_documentannotation_xml)
 

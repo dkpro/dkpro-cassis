@@ -161,6 +161,20 @@ def webanno_typesystem_xml(webanno_typesystem_path):
         return f.read()
 
 
+# INCEpTION types
+
+
+@pytest.fixture
+def inception_typesystem_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "inception_typesystem.xml")
+
+
+@pytest.fixture
+def inception_typesystem_xml(inception_typesystem_path):
+    with open(inception_typesystem_path, "r") as f:
+        return f.read()
+
+
 # Annotations
 
 

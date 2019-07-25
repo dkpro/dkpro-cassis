@@ -536,7 +536,7 @@ class TypeSystemDeserializer:
         # `dependencies` dictionary.
         types = {}
         features = defaultdict(list)
-        dependencies = defaultdict(set)
+        type_dependencies = defaultdict(set)
 
         context = etree.iterparse(source, events=("end",), tag=("{*}typeDescription",))
         for event, elem in context:
@@ -549,7 +549,7 @@ class TypeSystemDeserializer:
             supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
-            dependencies[type_name].add(supertypeName)
+            type_dependencies[type_name].add(supertypeName)
 
             # Parse features
             for fd in elem.iterfind("{*}features/{*}featureDescription"):
@@ -567,10 +567,6 @@ class TypeSystemDeserializer:
                     elementType=elementType,
                 )
                 features[type_name].append(f)
-
-                # The feature range also uses type information which has to
-                # be included in the dependency relation
-                dependencies[type_name].add(rangeTypeName)
 
             # Free the XML tree element from memory as it is not needed anymore
             elem.clear()
@@ -603,21 +599,22 @@ class TypeSystemDeserializer:
                     raise ValueError(msg.format(type_name, t_features, pt_features))
 
         # Add the types to the type system in order of dependency (parents before children)
-        for type_name in toposort_flatten(dependencies, sort=False):
+        created_types = []
+        for type_name in toposort_flatten(type_dependencies, sort=False):
             # No need to recreate predefined types
             if type_name in _PREDEFINED_TYPES:
                 continue
 
             t = types[type_name]
             created_type = ts.create_type(name=t.name, description=t.description, supertypeName=t.supertypeName)
+            created_types.append(created_type)
 
+        # Add the features to the type AFTER we create all the types to not cause circular references
+        # between type references in inheritance and type references in range or element type.
+        for t in created_types:
             for f in features[t.name]:
                 ts.add_feature(
-                    created_type,
-                    name=f.name,
-                    rangeTypeName=f.rangeTypeName,
-                    elementType=f.elementType,
-                    description=f.description,
+                    t, name=f.name, rangeTypeName=f.rangeTypeName, elementType=f.elementType, description=f.description
                 )
 
         # DocumentAnnotation is not a predefined UIMA type, but some applications assume that it exists.

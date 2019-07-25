@@ -1,14 +1,24 @@
+dist: xenial
 language: python
 
 python:
  - "3.5"
  - "3.6"
- - "3.7-dev"
+ - "3.7"
+ - "3.8-dev"
 
 install: 
     - pip install --upgrade -e .[test]
 script: 
     - pytest --cov=./
+
+deploy:
+  provider: pypi
+  user: "jcklie"
+  password:
+    secure: "GvS76cupX+c1keVJEKKBhXNgxW568NYBWHD13y47zDQhUpsvacy7MwT2qnGAbtK5nlBLhAgufcAKVy8zR10ZzGHCMJjB2pGmeCpdcyqSlDNapT3ta4sNes0GK0TfV4y1PD0IZs0raC0Pg98k60eBTX1Q1V0SJCNUBp01rIoqlP1ZTQiNFjQtlpkgtvdZlmQSrxGyfoyEMG7Jr54t57Daa5PR8Y5m/6P6a3zlGWr9PITzWFTVXIhtY9fZsswP2qBZDMwoFrxTWxO2rt7gD3PXcJjtPaJN6hANVuk6yPfqW0vhHR1F+mR6LSMw3dc4v6v/l/RoG8NSgY+2vO4acXFX949Sbt/rxhY8bFmxdyktLPGOoB+iBBBlBPxHFj/0/Ezxph0xsUSqA2y11PHBNHECKPjsWdookQ5Xberwtw+GuTWy7gMUvf4qWEOZMCMfQRNA4uCkLlC8h174WlB5mUJZuKB+l4H236Sq4ItJK+ALKMzmoeDAy6IfT0aeZVl2JWU8jN6/gLeX0r50L4ylhzl/mu1sStQ1lEKoVEM0p/zFD+Z3c2ADX4hNvLKxQ3fexGwnMWFae7hOmO9XleBkEMHDFUjz/Hb+Z0+HD9lA5g927pYQ8Ojz0YuoHWtK9fC/Zmyea5E18DDVaCI5wjhoMC8xiSWvcLaWFcjJsN6Hv0yoF6c="
+  on:
+    tags: true
 
 after_success:
     - codecov

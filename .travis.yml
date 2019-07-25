@@ -1,24 +1,19 @@
 dist: xenial
 language: python
-
 python:
- - "3.5"
- - "3.6"
- - "3.7"
- - "3.8-dev"
-
-install: 
-    - pip install --upgrade -e .[test]
-script: 
-    - pytest --cov=./
-
+- '3.5'
+- '3.6'
+- '3.7'
+install:
+- pip install --upgrade -e .[test]
+script:
+- pytest --cov=./
 deploy:
   provider: pypi
-  user: "jcklie"
+  user: jcklie
   password:
-    secure: "GvS76cupX+c1keVJEKKBhXNgxW568NYBWHD13y47zDQhUpsvacy7MwT2qnGAbtK5nlBLhAgufcAKVy8zR10ZzGHCMJjB2pGmeCpdcyqSlDNapT3ta4sNes0GK0TfV4y1PD0IZs0raC0Pg98k60eBTX1Q1V0SJCNUBp01rIoqlP1ZTQiNFjQtlpkgtvdZlmQSrxGyfoyEMG7Jr54t57Daa5PR8Y5m/6P6a3zlGWr9PITzWFTVXIhtY9fZsswP2qBZDMwoFrxTWxO2rt7gD3PXcJjtPaJN6hANVuk6yPfqW0vhHR1F+mR6LSMw3dc4v6v/l/RoG8NSgY+2vO4acXFX949Sbt/rxhY8bFmxdyktLPGOoB+iBBBlBPxHFj/0/Ezxph0xsUSqA2y11PHBNHECKPjsWdookQ5Xberwtw+GuTWy7gMUvf4qWEOZMCMfQRNA4uCkLlC8h174WlB5mUJZuKB+l4H236Sq4ItJK+ALKMzmoeDAy6IfT0aeZVl2JWU8jN6/gLeX0r50L4ylhzl/mu1sStQ1lEKoVEM0p/zFD+Z3c2ADX4hNvLKxQ3fexGwnMWFae7hOmO9XleBkEMHDFUjz/Hb+Z0+HD9lA5g927pYQ8Ojz0YuoHWtK9fC/Zmyea5E18DDVaCI5wjhoMC8xiSWvcLaWFcjJsN6Hv0yoF6c="
+    secure: X3CAzSzt2nSmt4Q24MWlMFigyb0DAfkhGYxa2YaZQH3uTgMg7L/6QswTyevutHhEfhN/sgRvU7tsGvamRX6QA4r39wfFS1ovknQsANHIGb+tul4dSNfvs4UGlUkGma6D1MnT4kR28Ek69obBCzMbwGu0JVOhH+/GxHTEaufynfp7ELDZeNFgD7uS9eiuA05Q4FGdRhbBUZBVYJcW8g7KZlPzHfDNW2MMpynCUpBnD/rDl6kFnq8SfQN/FMlB16N2yjFkm4T6v2+naDf8L28wm10BZY/b1EbO3ShqLaYMGQSWJajHZFofZejOed5aQJPHKLeqJZl8b8ewzyWld27AeI/6te4PygZwgJipdbcWTd8b19zcY/a/nxTN+ap56On1f7tak9kXrlkwIu5a3fRQRKSmnibhc6hCUElwjaiMDP8XCR4kcMZ2ahebsIKifxAdziWreOmRoqNzKr3nXcE3JfW+pW9i9EqstI43tf2eB1s/PfxGUj15zZkNCxJv82Et+al48j+tCvmnYjfNtq9FrnE74K1yqQULkTjAYTHYgIYoe9EN5wBPmQwfMDO9eHMjVxDltgqcba6orP8Pm6Cw/VBQg27b/eauZ3CBo9lhgpNPbvkl6zlXa2zg6Zeq1OpNPoMKNTLUBumyY6vwF96SDTawILHRSqz8K312mk2Iugs=
   on:
     tags: true
-
 after_success:
-    - codecov
+- codecov

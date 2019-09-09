@@ -62,6 +62,20 @@ def cas_with_references_xmi(cas_with_references_path):
         return f.read()
 
 
+# CAS with non-indexed FS
+
+
+@pytest.fixture
+def cas_with_nonindexed_fs_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_nonindexed_fs.xmi")
+
+
+@pytest.fixture
+def cas_with_nonindexed_fs_xmi(cas_with_nonindexed_fs_path):
+    with open(cas_with_nonindexed_fs_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

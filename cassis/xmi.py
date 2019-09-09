@@ -1,6 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
-from typing import Dict, IO, Union, List
+from typing import Dict, IO, Union, List, Set
 
 import attr
 
@@ -240,7 +240,7 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
-        for annotation in sorted(cas.select_all(), key=lambda a: a.xmiID):
+        for annotation in sorted(self._find_all_fs(cas), key=lambda a: a.xmiID):
             self._serialize_feature_structure(cas, root, annotation)
 
         for sofa in cas.sofas:
@@ -253,6 +253,38 @@ class CasXmiSerializer:
         etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
 
         doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
+
+    def _find_all_fs(self, cas: Cas) -> List[FeatureStructure]:
+        all_fs = {}
+        openlist = list(cas.select_all())
+        ts = cas.typesystem
+        while openlist:
+            fs = openlist.pop(0)
+            all_fs[fs.xmiID] = fs
+
+            t = ts.get_type(fs.type)
+            for feature in t.all_features:
+                feature_name = feature.name
+
+                if feature_name == "sofa":
+                    continue
+
+                if ts.is_primitive(feature.rangeTypeName) or ts.is_primitive_collection(fs.type):
+                    continue
+                elif ts.is_collection(feature.rangeTypeName):
+                    lst = getattr(fs, feature_name)
+                    for referenced_fs in lst:
+                        if referenced_fs.xmiID not in all_fs:
+                            openlist.append(referenced_fs)
+                else:
+                    referenced_fs = getattr(fs, feature_name)
+                    if referenced_fs is None:
+                        continue
+
+                    if referenced_fs.xmiID not in all_fs:
+                        openlist.append(referenced_fs)
+
+        return list(all_fs.values())
 
     def _serialize_cas_null(self, root: etree.Element):
         name = etree.QName(self._nsmap["cas"], "NULL")

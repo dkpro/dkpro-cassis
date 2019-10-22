@@ -152,7 +152,7 @@ class Type:
     _children = attr.ib(factory=set)  # type: Set[str]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _constructor = attr.ib(init=False, cmp=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _constructor = attr.ib(init=False, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create feature structures of this type """

@@ -76,7 +76,7 @@ def cas_with_nonindexed_fs_xmi(cas_with_nonindexed_fs_path):
         return f.read()
 
 
-# CAS with references
+# CAS with empty array references
 
 
 @pytest.fixture

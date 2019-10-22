@@ -403,15 +403,19 @@ class TypeSystem:
         """
         return type_name in _PRIMITIVE_TYPES
 
-    def is_collection(self, type_name: str) -> bool:
-        """ Checks if the type identified by `type_name` is a collection, e.g. list or array.
+    def is_collection(self, type_name: str, feature: Feature) -> bool:
+        """ Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
 
         Args:
-            type_name: The name of the type to query for.
+            type_name: The type name to which the feature belongs.
+            feature: The feature to query for.
         Returns:
-            Returns True if the type identified by `type_name` is a collection type, else False
+            Returns True if the given feature is a collection type, else False
         """
-        return type_name in _COLLECTION_TYPES
+        if type_name in _COLLECTION_TYPES and feature.name == "elements":
+            return True
+        else:
+            return feature.rangeTypeName in _COLLECTION_TYPES
 
     def is_primitive_collection(self, type_name) -> bool:
         """ Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.

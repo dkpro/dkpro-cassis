@@ -12,6 +12,8 @@ from sortedcontainers import SortedList, SortedKeyList
 
 from cassis.typesystem import FeatureStructure, TypeSystem
 
+import deprecation
+
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
 
@@ -178,7 +180,7 @@ class Cas:
         """
         annotation.xmiID = self._get_next_xmi_id()
         if hasattr(annotation, "sofa"):
-            annotation.sofa = self.get_sofa().xmiID
+            annotation.sofa = self.get_sofa()
 
         self._current_view.add_annotation_to_index(annotation)
 
@@ -192,6 +194,7 @@ class Cas:
         for annotation in annotations:
             self.add_annotation(annotation)
 
+    @deprecation.deprecated()
     def get_covered_text(self, annotation: FeatureStructure) -> str:
         """ Gets the text that is covered by `annotation`.
 

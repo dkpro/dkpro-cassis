@@ -24,7 +24,8 @@ install_requires = [
     "attrs>=19.3.0",
     "sortedcontainers",
     "toposort",
-    "more-itertools"
+    "more-itertools",
+    "deprecation"
 ]
 
 test_dependencies = [

@@ -363,7 +363,9 @@ class CasXmiSerializer:
                 for e in value:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif feature_name == "sofa" or cas.typesystem.is_primitive(feature.rangeTypeName):
+            elif feature_name == "sofa":
+                elem.attrib[feature_name] = str(value.xmiID)
+            elif cas.typesystem.is_primitive(feature.rangeTypeName):
                 elem.attrib[feature_name] = str(value)
             elif cas.typesystem.is_collection(feature.rangeTypeName):
                 elements = " ".join(str(e.xmiID) for e in value)

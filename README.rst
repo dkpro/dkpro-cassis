@@ -135,7 +135,7 @@ Selecting annotations
 
     for sentence in cas.select('cassis.Sentence'):
         for token in cas.select_covered('cassis.Token', sentence):
-            print(cas.get_covered_text(token))
+            print(token.get_covered_text())
             
             # Annotation values can be accessed as properties
             print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
@@ -206,7 +206,7 @@ as a :code:`Cas` .
         Token(begin=14, end=15)
     ])
 
-    print([cas.get_covered_text(x) for x in cas.select_all()])
+    print([x.get_covered_text() for x in cas.select_all()])
 
     # Create a new view and work on it.
     view = cas.create_view('testView')
@@ -219,7 +219,7 @@ as a :code:`Cas` .
         Token(begin=20, end=21)
     ])
 
-    print([view.get_covered_text(x) for x in view.select_all()])
+    print([x.get_covered_text() for x in view.select_all()])
 
 Development
 -----------

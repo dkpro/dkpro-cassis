@@ -45,22 +45,22 @@ Features
 
 Currently supported features are:
 
--  Text SofAs
--  Deserializing/serializing UIMA CAS from/to XMI
--  Deserializing/serializing type systems from/to XML
--  Selecting annotations, selecting covered annotations, adding
-   annotations
--  Type inheritance
--  Multiple SofA support
+- Text SofAs
+- Deserializing/serializing UIMA CAS from/to XMI
+- Deserializing/serializing type systems from/to XML
+- Selecting annotations, selecting covered annotations, adding
+  annotations
+- Type inheritance
+- Multiple SofA support
+- Type system can be changed after loading
+- Reference, array and list features
 
 Some features are still under development, e.g.
 
--  feature encoding as XML elements (right now only XML attributes work)
--  proper type checking
--  XML/XMI schema validation
--  type unmarshalling from string to the actual type specified in the
-   type system
--  reference, array and list features
+- Feature encoding as XML elements (right now only XML attributes work)
+- Proper type checking
+- XML/XMI schema validation
+- Type unmarshalling from string to the actual type specified in the type system
 
 Installation
 ------------
@@ -160,6 +160,8 @@ Creating types and adding features
 When adding new features, these changes are propagated. For example,
 adding a feature to a parent type makes it available to a child type.
 Therefore, the type system does not need to be frozen for consistency.
+The type system can be changed even after loading, it is not frozen
+like in UIMAj.
 
 Sofa support
 ~~~~~~~~~~~~

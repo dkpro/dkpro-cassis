@@ -240,8 +240,9 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
-        for annotation in sorted(self._find_all_fs(cas), key=lambda a: a.xmiID):
-            self._serialize_feature_structure(cas, root, annotation)
+        # Find all fs, even the ones that are not directly added to a sofa
+        for fs in sorted(self._find_all_fs(cas), key=lambda a: a.xmiID):
+            self._serialize_feature_structure(cas, root, fs)
 
         for sofa in cas.sofas:
             self._serialize_sofa(root, sofa)
@@ -255,6 +256,9 @@ class CasXmiSerializer:
         doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
 
     def _find_all_fs(self, cas: Cas) -> List[FeatureStructure]:
+        """ This function traverses the whole CAS in order to find all directly and indirectly referenced
+        feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
+        referenced by another feature structure as a feature. """
         all_fs = {}
         openlist = list(cas.select_all())
         ts = cas.typesystem
@@ -273,6 +277,9 @@ class CasXmiSerializer:
                     continue
                 elif ts.is_collection(feature.rangeTypeName):
                     lst = getattr(fs, feature_name)
+                    if lst is None:
+                        continue
+
                     for referenced_fs in lst:
                         if referenced_fs.xmiID not in all_fs:
                             openlist.append(referenced_fs)

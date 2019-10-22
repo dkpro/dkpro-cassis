@@ -1,0 +1,16 @@
+<xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmlns:type="http:///de/tudarmstadt/ukp/dkpro/core/api/metadata/type.ecore" xmlns:type0="http:///de/tudarmstadt/ukp/dkpro/core/api/segmentation/type.ecore" xmi:version="2.0">
+  <cas:NULL xmi:id="0"/>
+  <type:DocumentMetaData xmi:id="2" documentTitle="test_file.txt" documentId="test_file.txt" documentUri="file:/export/repository/project/20/document/13151/source/test_file.txt" collectionId="file:/export/repository/project/20/document/13151/source/" documentBaseUri="file:/export/repository/project/20/document/13151/source/" isLastSegment="false" begin="0" end="22" sofa="1" language="x-unspecified"/>
+  <type0:Sentence xmi:id="3" begin="0" end="22" sofa="1"/>
+  <type0:Token xmi:id="4" begin="0" end="4" sofa="1"/>
+  <type0:Token xmi:id="5" begin="5" end="6" sofa="1"/>
+  <type0:Token xmi:id="6" begin="7" end="12" sofa="1"/>
+  <type0:Token xmi:id="7" begin="13" end="17" sofa="1"/>
+  <type0:Token xmi:id="8" begin="18" end="22" sofa="1"/>
+  <type:TagsetDescription xmi:id="9" layer="de.tudarmstadt.ukp.dkpro.core.api.syntax.type.dependency.Dependency" name="UD Universal Dependencies" input="false" begin="0" end="0" sofa="1"/>
+  <type:TagsetDescription xmi:id="10" layer="de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity" name="Named Entity tags" input="false" begin="0" end="0" sofa="1"/>
+  <type:TagsetDescription xmi:id="11" layer="de.tudarmstadt.ukp.dkpro.core.api.transform.type.SofaChangeAnnotation" name="Operation" input="false" begin="0" end="0" sofa="1"/>
+  <type:TagsetDescription xmi:id="12" layer="de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS" name="UD Universal POS tags" input="false" begin="0" end="0" sofa="1"/>
+  <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="just a short test file"/>
+  <cas:View sofa="1" members="2 3 4 5 6 7 8 9 10 11 12"/>
+</xmi:XMI>

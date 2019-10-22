@@ -19,9 +19,9 @@ EMAIL = "dkpro-core-user@googlegroups.com"
 AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.5.0"
 
-install_requires=[
+install_requires = [
     "lxml",
-    "attrs",
+    "attrs>=19.3.0",
     "sortedcontainers",
     "toposort",
     "more-itertools"
@@ -29,7 +29,7 @@ install_requires=[
 
 test_dependencies = [
     "tox",
-    "pytest",
+    "pytest>=5.2.1",
     "lxml-asserts",
     "pytest-lazy-fixture",
     "codecov",

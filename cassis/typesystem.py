@@ -125,7 +125,7 @@ class FeatureStructure:
     def __eq__(self, other):
         return self.__slots__ == other.__slots__
 
-    def get_covered_text(self):
+    def get_covered_text(self) -> str:
         """ Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
 
         Returns:

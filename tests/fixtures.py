@@ -210,28 +210,43 @@ def inception_typesystem_xml(inception_typesystem_path):
 def tokens(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
+    cas = Cas(typesystem)
+    cas.sofa_string = "Joe waited for the train . The train was late ."
+
     TokenType = typesystem.get_type("cassis.Token")
-    return [
-        TokenType(xmiID=3, sofa=1, begin=0, end=3, id="0", pos="NNP"),
-        TokenType(xmiID=4, sofa=1, begin=4, end=10, id="1", pos="VBD"),
-        TokenType(xmiID=5, sofa=1, begin=11, end=14, id="2", pos="IN"),
-        TokenType(xmiID=6, sofa=1, begin=15, end=18, id="3", pos="DT"),
-        TokenType(xmiID=7, sofa=1, begin=19, end=24, id="4", pos="NN"),
-        TokenType(xmiID=8, sofa=1, begin=25, end=26, id="5", pos="."),
-        TokenType(xmiID=9, sofa=1, begin=27, end=30, id="6", pos="DT"),
-        TokenType(xmiID=10, sofa=1, begin=31, end=36, id="7", pos="NN"),
-        TokenType(xmiID=11, sofa=1, begin=37, end=40, id="8", pos="VBD"),
-        TokenType(xmiID=12, sofa=1, begin=41, end=45, id="9", pos="JJ"),
-        TokenType(xmiID=13, sofa=1, begin=46, end=47, id="10", pos="."),
+    tokens = [
+        TokenType(begin=0, end=3, id="0", pos="NNP"),
+        TokenType(begin=4, end=10, id="1", pos="VBD"),
+        TokenType(begin=11, end=14, id="2", pos="IN"),
+        TokenType(begin=15, end=18, id="3", pos="DT"),
+        TokenType(begin=19, end=24, id="4", pos="NN"),
+        TokenType(begin=25, end=26, id="5", pos="."),
+        TokenType(begin=27, end=30, id="6", pos="DT"),
+        TokenType(begin=31, end=36, id="7", pos="NN"),
+        TokenType(begin=37, end=40, id="8", pos="VBD"),
+        TokenType(begin=41, end=45, id="9", pos="JJ"),
+        TokenType(begin=46, end=47, id="10", pos="."),
     ]
 
+    for token in tokens:
+        cas.add_annotation(token)
+
+    return tokens
 
 @pytest.fixture
 def sentences(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     SentenceType = typesystem.get_type("cassis.Sentence")
 
-    return [
-        SentenceType(xmiID=14, sofa=1, begin=0, end=26, id="0"),
-        SentenceType(xmiID=15, sofa=1, begin=27, end=47, id="1"),
+    cas = Cas(typesystem)
+    cas.sofa_string = "Joe waited for the train . The train was late ."
+
+    sentences = [
+        SentenceType(begin=0, end=26, id="0"),
+        SentenceType(begin=27, end=47, id="1"),
     ]
+
+    for sentence in sentences:
+        cas.add_annotation(sentence)
+
+    return sentences

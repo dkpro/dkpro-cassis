@@ -125,6 +125,18 @@ class FeatureStructure:
     def __eq__(self, other):
         return self.__slots__ == other.__slots__
 
+    def get_covered_text(self):
+        """ Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
+
+        Returns:
+            The text covered by the annotation
+
+        """
+        if hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end"):
+            return self.sofa.sofaString[self.begin : self.end]
+        else:
+            raise NotImplementedError()
+
 
 @attr.s(slots=True)
 class Feature:

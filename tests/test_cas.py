@@ -153,11 +153,31 @@ def test_get_covered_text_tokens(tokens):
     assert actual_text == expected_text
 
 
+def test_FeatureStructure_get_covered_text_tokens(tokens):
+    cas = Cas()
+    cas.sofa_string = "Joe waited for the train . The train was late ."
+
+    actual_text = [token.get_covered_text() for token in tokens]
+
+    expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
+    assert actual_text == expected_text
+
+
 def test_get_covered_text_sentences(sentences):
     cas = Cas()
     cas.sofa_string = "Joe waited for the train . The train was late ."
 
     actual_text = [cas.get_covered_text(sentence) for sentence in sentences]
+
+    expected_text = ["Joe waited for the train .", "The train was late ."]
+    assert actual_text == expected_text
+
+
+def test_FeatureStructure_get_covered_text_sentences(sentences):
+    cas = Cas()
+    cas.sofa_string = "Joe waited for the train . The train was late ."
+
+    actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]
     assert actual_text == expected_text

@@ -139,9 +139,9 @@ class CasXmiDeserializer:
                     continue
 
                 if (
-                        typesystem.is_primitive(feature.rangeTypeName)
-                        or typesystem.is_primitive_collection(feature.rangeTypeName)
-                        or typesystem.is_primitive_collection(fs.type)
+                    typesystem.is_primitive(feature.rangeTypeName)
+                    or typesystem.is_primitive_collection(feature.rangeTypeName)
+                    or typesystem.is_primitive_collection(fs.type)
                 ):
                     # TODO: Parse feature values to their real type here, e.g. parse ints or floats
                     continue

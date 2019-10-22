@@ -164,7 +164,7 @@ def test_is_primitive(type_name: str, expected: bool):
         ("uima.cas.NonEmptyIntegerList", "uima.cas.Integer", False),
         ("uima.cas.StringList", "uima.cas.Long", False),
         ("uima.cas.EmptyStringList", "uima.cas.Float", False),
-        ("uima.cas.NonEmptyStringList", "uima.cas.Double", False)
+        ("uima.cas.NonEmptyStringList", "uima.cas.Double", False),
     ],
 )
 def test_is_collection(type_name: str, feature_name: str, expected: bool):
@@ -176,12 +176,7 @@ def test_is_collection(type_name: str, feature_name: str, expected: bool):
     assert typesystem.is_collection(type_name, feature) == expected
 
 
-@pytest.mark.parametrize(
-    "type_name",
-    [
-        c for c in _COLLECTION_TYPES
-    ],
-)
+@pytest.mark.parametrize("type_name", [c for c in _COLLECTION_TYPES])
 def test_is_collection_for_builtin_collections_with_elements(type_name: str):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)

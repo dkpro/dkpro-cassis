@@ -4,8 +4,19 @@ import attr
 
 from tests.fixtures import *
 
-from cassis.cas import Cas, Sofa, View
-import cassis.typesystem
+from cassis.cas import Cas
+
+# Cas
+
+
+def test_default_typesystem_is_not_shared():
+    # https://github.com/dkpro/dkpro-cassis/issues/67
+    cas1 = Cas()
+    cas2 = Cas()
+
+    t1 = cas1.typesystem.create_type(name="test.Type")
+    t2 = cas2.typesystem.create_type(name="test.Type")
+
 
 # View
 

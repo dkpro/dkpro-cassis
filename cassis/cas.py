@@ -87,8 +87,14 @@ class View:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(self, typesystem: TypeSystem = TypeSystem()):
-        self._typesystem = typesystem
+    def __init__(self, typesystem: TypeSystem = None):
+        """ Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
+        is used which only contains UIMA-predefined types.
+
+        Args:
+            typesystem: The types system to use.
+        """
+        self._typesystem = typesystem if typesystem else TypeSystem()
 
         # When new attributes are added, they also need to be added in Cas::_copy. The copying
         # relies on the fact that all the members of the Cas are mutable references. It is not

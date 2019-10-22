@@ -29,7 +29,7 @@ install_requires = [
 
 test_dependencies = [
     "tox",
-    "pytest",
+    "pytest>=5.2.1",
     "lxml-asserts",
     "pytest-lazy-fixture",
     "codecov",

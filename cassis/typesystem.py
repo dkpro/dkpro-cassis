@@ -160,7 +160,7 @@ class Type:
         fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
-        self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, cmp=False)
+        self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False)
 
     def __call__(self, **kwargs) -> FeatureStructure:
         """ Creates an feature structure of this type

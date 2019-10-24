@@ -35,7 +35,19 @@ def test_feature_can_be_added():
     assert actual_feature.description == "A test feature"
 
 
-def test_feature_adding_throws_if_already_existing():
+def test_feature_adding_warns_if_redefined_identically():
+    typesystem = TypeSystem()
+
+    test_type = typesystem.create_type(name="test.Type")
+
+    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    with pytest.warns(UserWarning):
+        typesystem.add_feature(
+            type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature"
+        )
+
+
+def test_feature_adding_throws_if_redefined_differently():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
@@ -43,7 +55,7 @@ def test_feature_adding_throws_if_already_existing():
 
     with pytest.raises(ValueError):
         typesystem.add_feature(
-            type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature"
+            type_=test_type, name="testFeature", rangeTypeName="Boolean", description="A test feature"
         )
 
 

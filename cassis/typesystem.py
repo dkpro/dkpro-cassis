@@ -115,7 +115,7 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False, order=False)
 class FeatureStructure:
     """The base class for all feature structure instances"""
 
@@ -164,7 +164,7 @@ class Type:
     _children = attr.ib(factory=set)  # type: Set[str]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _constructor = attr.ib(init=False, cmp=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _constructor = attr.ib(init=False, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create feature structures of this type """
@@ -212,8 +212,17 @@ class Type:
 
         # Check that feature is not defined in on current type
         if feature.name in target:
-            msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
-            raise ValueError(msg)
+            redefined_feature = target[feature.name]
+
+            if redefined_feature == feature:
+                msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
+                warnings.warn(msg)
+            else:
+                msg = "Feature with name [{0}] already exists in [{1}] but is redefined differently!".format(
+                    feature.name, self.name
+                )
+                raise ValueError(msg)
+            return
 
         # Check that feature is not redefined on parent type
         if feature.name in self._inherited_features:
@@ -225,6 +234,7 @@ class Type:
             else:
                 msg = "Feature with name [{0}] already exists in parent but is redefined!".format(feature.name)
                 raise ValueError(msg)
+            return
 
         target[feature.name] = feature
 

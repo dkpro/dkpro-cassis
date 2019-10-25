@@ -90,6 +90,14 @@ def test_sofa_mime_can_be_set_and_read():
     assert cas.sofa_mime == "text/plain"
 
 
+def test_sofa_uri_can_be_set_and_read():
+    cas = Cas()
+
+    cas.sofa_uri = "https://raw.githubusercontent.com/dkpro/dkpro-cassis/master/README.rst"
+
+    assert cas.sofa_uri == "https://raw.githubusercontent.com/dkpro/dkpro-cassis/master/README.rst"
+
+
 # Select
 
 

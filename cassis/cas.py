@@ -46,6 +46,9 @@ class Sofa:
     #: str: The mime type of `sofaString`
     mimeType = attr.ib(default=None, validator=_validator_optional_string)
 
+    #: str: The sofa URI, it references remote sofa data
+    sofaURI = attr.ib(default=None, validator=_validator_optional_string)
+
 
 class View:
     """A view into a CAS contains a subset of feature structures and annotations."""
@@ -319,6 +322,25 @@ class Cas:
 
         """
         self.get_sofa().mimeType = value
+
+    @property
+    def sofa_uri(self) -> str:
+        """ The sofa URI references external sofa data.
+
+        Returns: The sofa URI.
+
+        """
+        return self.get_sofa().sofaURI
+
+    @sofa_uri.setter
+    def sofa_uri(self, value: str):
+        """ Sets the sofa URI to `value`.
+
+        Args:
+            value: The new sofa MIME type.
+
+        """
+        self.get_sofa().sofaURI = value
 
     def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a XMI representation of this CAS.

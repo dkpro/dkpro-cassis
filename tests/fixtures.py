@@ -233,6 +233,7 @@ def tokens(small_typesystem_xml):
 
     return tokens
 
+
 @pytest.fixture
 def sentences(small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
@@ -241,10 +242,7 @@ def sentences(small_typesystem_xml):
     cas = Cas(typesystem)
     cas.sofa_string = "Joe waited for the train . The train was late ."
 
-    sentences = [
-        SentenceType(begin=0, end=26, id="0"),
-        SentenceType(begin=27, end=47, id="1"),
-    ]
+    sentences = [SentenceType(begin=0, end=26, id="0"), SentenceType(begin=27, end=47, id="1")]
 
     for sentence in sentences:
         cas.add_annotation(sentence)

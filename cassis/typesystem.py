@@ -169,7 +169,7 @@ class Type:
     def __attrs_post_init__(self):
         """ Build the constructor that can create feature structures of this type """
         name = _string_to_valid_classname(self.name)
-        fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
+        fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
         self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False)

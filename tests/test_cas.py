@@ -126,6 +126,28 @@ def test_select_covered(tokens, sentences):
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
 
 
+def test_select_covering(tokens, sentences):
+    cas = Cas()
+    cas.add_annotations(tokens + sentences)
+    actual_first_sentence, actual_second_sentence = sentences
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    for token in tokens_in_first_sentence:
+        result = list(cas.select_covering("cassis.Sentence", token))
+        first_sentence = result[0]
+
+        assert len(result) == 1
+        assert actual_first_sentence == first_sentence
+
+    for token in tokens_in_second_sentence:
+        result = list(cas.select_covering("cassis.Sentence", token))
+        second_sentence = result[0]
+
+        assert len(result) == 1
+        assert actual_second_sentence == second_sentence
+
+
 def test_select_only_returns_annotations_of_current_view(tokens, sentences):
     cas = Cas()
     cas.add_annotations(tokens)

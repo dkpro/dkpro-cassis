@@ -1,6 +1,5 @@
 from collections import defaultdict
 from io import BytesIO
-from itertools import chain
 from pathlib import Path
 import sys
 from typing import Dict, Iterable, Iterator, List, Union, Tuple, Optional
@@ -197,7 +196,7 @@ class Cas:
         for annotation in annotations:
             self.add_annotation(annotation)
 
-    @deprecation.deprecated()
+    @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:
         """ Gets the text that is covered by `annotation`.
 
@@ -212,7 +211,7 @@ class Cas:
         return sofa.sofaString[annotation.begin : annotation.end]
 
     def select(self, typename: str) -> Iterator[FeatureStructure]:
-        """ Finds all annotations of type `typename`
+        """ Finds all annotations of type `typename`.
 
         Args:
             typename: The name of the type whose annotation instances are to be found
@@ -225,7 +224,7 @@ class Cas:
             yield annotation
 
     def select_covered(self, typename: str, covering_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
-        """Returns an iterator over covered annotations
+        """Returns an iterator over covered annotations.
 
         Return all annotations that are covered
 
@@ -255,6 +254,33 @@ class Cas:
 
             if annotation.begin > c_end:
                 break
+
+    def select_covering(self, typename: str, covered_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
+        """Returns an iterator over annotations that cover the given annotation.
+
+        Return all annotations that are covering. This can be potentially be slow.
+
+        Only returns annotations that are fully covering, overlapping annotations
+        are ignored.
+
+        Args:
+            typename: The type name of the annotations to be returned
+            covered_annotation: The name of the annotation which is covered
+
+        Returns:
+            an iterator over covering annotations
+
+        """
+        c_begin = covered_annotation.begin
+        c_end = covered_annotation.end
+
+        annotations = self._current_view.type_index[typename]
+
+        # We iterate over all annotations and check whether the provided annotation
+        # is covered in the current annotation
+        for annotation in annotations:
+            if c_begin >= annotation.begin and c_end <= annotation.end:
+                yield annotation
 
     def select_all(self) -> Iterator[FeatureStructure]:
         """Finds all feature structures in this Cas

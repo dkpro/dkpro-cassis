@@ -25,7 +25,8 @@ install_requires = [
     "sortedcontainers",
     "toposort",
     "more-itertools",
-    "deprecation"
+    "deprecation",
+    "importlib_resources"
 ]
 
 test_dependencies = [
@@ -39,7 +40,8 @@ test_dependencies = [
 
 dev_dependencies = [
     "black",
-    "twine"
+    "twine",
+    "pygments"
 ]
 
 doc_dependencies = [

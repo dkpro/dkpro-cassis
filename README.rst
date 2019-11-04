@@ -221,10 +221,10 @@ as a :code:`Cas` .
 
     print([x.get_covered_text() for x in view.select_all()])
 
-DKPro
------------
+DKPro Core Integration
+----------------------
 
-A CAS using the DKPro Type System can be created via
+A CAS using the DKPro Core Type System can be created via
 
 .. code:: python
 

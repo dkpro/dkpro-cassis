@@ -331,7 +331,7 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
     assert_xml_equal(actual_xml, typesystem_with_redefined_documentannotation_xml)
 
 
-# DKPro Support
+# DKPro Core Support
 
 
 def test_that_dkpro_core_typeystem_can_be_loaded():

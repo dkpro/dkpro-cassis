@@ -18,7 +18,7 @@ class ProtoView:
     members = attr.ib(factory=list)  # type: List[int]
 
 
-def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSystem()) -> Cas:
+def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None) -> Cas:
     """ Loads a CAS from a XMI source.
 
     Args:
@@ -30,6 +30,8 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSyste
         The deserialized CAS
 
     """
+    if typesystem is None:
+        typesystem = TypeSystem()
 
     deserializer = CasXmiDeserializer()
     if isinstance(source, str):

@@ -18,6 +18,15 @@ def test_default_typesystem_is_not_shared():
     t2 = cas2.typesystem.create_type(name="test.Type")
 
 
+def test_default_typesystem_is_not_shared_load_from_xmi(empty_cas_xmi):
+    # https://github.com/dkpro/dkpro-cassis/issues/67
+    cas1 = load_cas_from_xmi(empty_cas_xmi)
+    cas2 = load_cas_from_xmi(empty_cas_xmi)
+
+    t1 = cas1.typesystem.create_type(name="test.Type")
+    t2 = cas2.typesystem.create_type(name="test.Type")
+
+
 # View
 
 

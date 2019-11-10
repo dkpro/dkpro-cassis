@@ -6,6 +6,20 @@ from cassis import *
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files")
 
+# Empty cas
+
+
+@pytest.fixture
+def empty_cas_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "empty_cas.xmi")
+
+
+@pytest.fixture
+def empty_cas_xmi(empty_cas_path):
+    with open(empty_cas_path, "r") as f:
+        return f.read()
+
+
 # Small xmi
 
 

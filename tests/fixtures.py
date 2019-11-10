@@ -39,7 +39,7 @@ def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
 
 @pytest.fixture
 def cas_with_string_array_path():
-    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_string_array.xmi")
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_collections.xmi")
 
 
 @pytest.fixture

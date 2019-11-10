@@ -221,6 +221,25 @@ as a :code:`Cas` .
 
     print([x.get_covered_text() for x in view.select_all()])
 
+Miscellaneous
+-------------
+
+If your type system defines a type called :code:`self`, then it will be made
+available as a member variable `self_` on the respective type:
+
+.. code:: python
+
+    from cassis import *
+
+    typesystem = TypeSystem()
+
+    ExampleType = typesystem.create_type(name='example.Type')
+    typesystem.add_feature(type_=ExampleType, name='self', rangeTypeName='String')
+
+    annotation = ExampleType(self_="Test string")
+
+    print(annotation.self_)
+
 Development
 -----------
 

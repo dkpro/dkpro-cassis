@@ -161,6 +161,20 @@ def typesystem_with_redefined_documentannotation_xml(typesystem_with_redefined_d
         return f.read()
 
 
+# Type system with reserved names as feature names
+
+
+@pytest.fixture
+def typesystem_with_reserved_names_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_reserved_names.xml")
+
+
+@pytest.fixture
+def typesystem_with_reserved_names_xml(typesystem_with_reserved_names_path):
+    with open(typesystem_with_reserved_names_path, "r") as f:
+        return f.read()
+
+
 # DKPro types
 
 

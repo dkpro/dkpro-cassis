@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
+    <types>
+        <typeDescription>
+            <name>self</name>
+            <description/>
+            <supertypeName>uima.tcas.Annotation</supertypeName>
+            <features>
+                <featureDescription>
+                    <name>self</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.Integer</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>super</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.Integer</rangeTypeName>
+                </featureDescription>
+            </features>
+        </typeDescription>
+    </types>
+</typeSystemDescription>

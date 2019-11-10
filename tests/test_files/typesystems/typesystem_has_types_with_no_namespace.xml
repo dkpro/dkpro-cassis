@@ -32,5 +32,11 @@
                 </featureDescription>
             </features>
         </typeDescription>
+        <typeDescription>
+            <name>ChildOfArtifactID</name>
+            <supertypeName>ArtifactID</supertypeName>
+            <description/>
+
+        </typeDescription>
     </types>
 </typeSystemDescription>

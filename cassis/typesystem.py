@@ -563,12 +563,14 @@ class TypeSystemDeserializer:
         context = etree.iterparse(source, events=("end",), tag=("{*}typeDescription",))
         for event, elem in context:
             type_name = self._get_elem_as_str(elem.find("{*}name"))
+            description = self._get_elem_as_str(elem.find("{*}description"))
+            supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
 
             if "." not in type_name:
                 type_name = "uima.noNamespace." + type_name
 
-            description = self._get_elem_as_str(elem.find("{*}description"))
-            supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
+            if "." not in supertypeName:
+                supertypeName = "uima.noNamespace." + supertypeName
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
             type_dependencies[type_name].add(supertypeName)
@@ -700,8 +702,11 @@ class TypeSystemSerializer:
         description = etree.SubElement(typeDescription, "description")
         description.text = type_.description
 
-        supertypeName = etree.SubElement(typeDescription, "supertypeName")
-        supertypeName.text = type_.supertypeName
+        supertype_name_node = etree.SubElement(typeDescription, "supertypeName")
+        supertype_name = type_.supertypeName
+        if supertype_name.startswith("uima.noNamespace."):
+            supertype_name = supertype_name.replace("uima.noNamespace.", "")
+        supertype_name_node.text = supertype_name
 
         # Only create the `feature` element if there is at least one feature
         feature_list = list(type_.features)

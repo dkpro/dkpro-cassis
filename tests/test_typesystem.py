@@ -16,6 +16,7 @@ TYPESYSTEM_FIXTURES = [
     pytest.lazy_fixture("dkpro_typesystem_xml"),
     pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
     pytest.lazy_fixture("typesystem_with_redefined_documentannotation_xml"),
+    pytest.lazy_fixture("typesystem_with_reserved_names_xml"),
     pytest.lazy_fixture("webanno_typesystem_xml"),
     pytest.lazy_fixture("inception_typesystem_xml"),
 ]

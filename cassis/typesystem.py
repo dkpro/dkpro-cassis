@@ -147,6 +147,7 @@ class Feature:
     description = attr.ib(default=None)  # type: str
     elementType = attr.ib(default=None)  # type: str
     multipleReferencesAllowed = attr.ib(default=None)  # type: bool
+    _has_reserved_name = attr.ib(default=False)  # type: bool
 
 
 @attr.s(slots=True)
@@ -474,13 +475,23 @@ class TypeSystem:
         Raises:
             Exception: If a feature with name `name` already exists in `type_`.
         """
+        has_reserved_name = False
+
+        if name == "self":
+            name = "self_"
+            has_reserved_name = True
+            warnings.warn("Trying to add feature `self` which is a reserved name "
+                          "in Python, renamed accessor to 'self_'!")
+
         feature = Feature(
             name=name,
             rangeTypeName=rangeTypeName,
             elementType=elementType,
             description=description,
             multipleReferencesAllowed=multipleReferencesAllowed,
+            has_reserved_name=has_reserved_name
         )
+
         type_.add_feature(feature)
 
         for child_name in type_._children:
@@ -725,7 +736,14 @@ class TypeSystemSerializer:
         featureDescription = etree.SubElement(features, "featureDescription")
 
         name = etree.SubElement(featureDescription, "name")
-        name.text = feature.name
+
+        feature_name = feature.name
+        # If the feature name is a reserved name like `self`, then we added an
+        # underscore to it before so Python can handle it. We now need to remove it.
+        if feature._has_reserved_name:
+            feature_name = feature_name[:-1]
+
+        name.text = feature_name
 
         description = etree.SubElement(featureDescription, "description")
         description.text = feature.description

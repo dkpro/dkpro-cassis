@@ -424,7 +424,12 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive type, else False
         """
-        return type_name in _PRIMITIVE_TYPES
+        if type_name == TypeSystem.TOP_TYPE_NAME:
+            return False
+        elif type_name in _PRIMITIVE_TYPES:
+            return True
+        else:
+            return self.is_primitive(self.get_type(type_name).supertypeName)
 
     def is_collection(self, type_name: str, feature: Feature) -> bool:
         """ Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
@@ -480,8 +485,9 @@ class TypeSystem:
         if name == "self":
             name = "self_"
             has_reserved_name = True
-            warnings.warn("Trying to add feature `self` which is a reserved name "
-                          "in Python, renamed accessor to 'self_'!")
+            warnings.warn(
+                "Trying to add feature `self` which is a reserved name " "in Python, renamed accessor to 'self_'!"
+            )
 
         feature = Feature(
             name=name,
@@ -489,7 +495,7 @@ class TypeSystem:
             elementType=elementType,
             description=description,
             multipleReferencesAllowed=multipleReferencesAllowed,
-            has_reserved_name=has_reserved_name
+            has_reserved_name=has_reserved_name,
         )
 
         type_.add_feature(feature)

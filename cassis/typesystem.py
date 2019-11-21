@@ -163,7 +163,7 @@ class Type:
     name = attr.ib()  # type: str #: Type name of this type
     supertypeName = attr.ib()  # type: str # : Name of the super type
     description = attr.ib(default=None)  # type: str #: Description of this type
-    _children = attr.ib(factory=set)  # type: Set[str]
+    _children = attr.ib(factory=dict)  # type: Dict[str, Type]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _constructor = attr.ib(init=False, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
@@ -242,6 +242,9 @@ class Type:
 
         # Recreate constructor to incorporate new features
         self.__attrs_post_init__()
+
+        for child_type in self._children.values():
+            child_type.add_feature(feature, inherited=True)
 
     @property
     def features(self) -> Iterator[Feature]:
@@ -389,7 +392,7 @@ class TypeSystem:
 
         if supertypeName != TypeSystem.TOP_TYPE_NAME:
             supertype = self.get_type(supertypeName)
-            supertype._children.add(name)
+            supertype._children[name] = new_type
 
             for feature in supertype.all_features:
                 new_type.add_feature(feature, inherited=True)
@@ -500,10 +503,6 @@ class TypeSystem:
         )
 
         type_.add_feature(feature)
-
-        for child_name in type_._children:
-            child_type = self.get_type(child_name)
-            child_type.add_feature(feature, inherited=True)
 
     def to_xml(self, path: Union[str, Path, None] = None) -> Optional[str]:
         """Creates a XMI representation of this type system.

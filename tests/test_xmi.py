@@ -92,6 +92,7 @@ def test_simple_features_are_parsed(tokens, sentences, small_xmi, small_typesyst
 
     actual_tokens = list(cas.select(TokenType.name))
     actual_sentences = list(cas.select(SentenceType.name))
+
     assert tokens == actual_tokens
     assert sentences == actual_sentences
 

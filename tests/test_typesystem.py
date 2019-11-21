@@ -3,6 +3,7 @@ import warnings
 
 import pytest
 
+from cassis.typesystem import Feature, _COLLECTION_TYPES
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -15,6 +16,7 @@ TYPESYSTEM_FIXTURES = [
     pytest.lazy_fixture("dkpro_typesystem_xml"),
     pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
     pytest.lazy_fixture("typesystem_with_redefined_documentannotation_xml"),
+    pytest.lazy_fixture("typesystem_with_reserved_names_xml"),
     pytest.lazy_fixture("webanno_typesystem_xml"),
     pytest.lazy_fixture("inception_typesystem_xml"),
 ]
@@ -145,29 +147,55 @@ def test_is_primitive(type_name: str, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "type_name, expected",
+    "type_name, feature_name, expected",
     [
-        ("uima.cas.Boolean", False),
-        ("uima.cas.Byte", False),
-        ("uima.cas.Short", False),
-        ("uima.cas.Integer", False),
-        ("uima.cas.Long", False),
-        ("uima.cas.Float", False),
-        ("uima.cas.Double", False),
-        ("uima.cas.String", False),
-        ("uima.cas.NonEmptyFloatList", True),
-        ("uima.cas.IntegerList", True),
-        ("uima.cas.EmptyIntegerList", True),
-        ("uima.cas.NonEmptyIntegerList", True),
-        ("uima.cas.StringList", True),
-        ("uima.cas.EmptyStringList", True),
-        ("uima.cas.NonEmptyStringList", True),
+        ("uima.cas.TOP", "uima.cas.Boolean", False),
+        ("uima.cas.TOP", "uima.cas.Byte", False),
+        ("uima.cas.TOP", "uima.cas.Short", False),
+        ("uima.cas.TOP", "uima.cas.Integer", False),
+        ("uima.cas.TOP", "uima.cas.Long", False),
+        ("uima.cas.TOP", "uima.cas.Float", False),
+        ("uima.cas.TOP", "uima.cas.Double", False),
+        ("uima.cas.TOP", "uima.cas.String", False),
+        ("uima.cas.TOP", "uima.cas.NonEmptyFloatList", True),
+        ("uima.cas.TOP", "uima.cas.IntegerList", True),
+        ("uima.cas.TOP", "uima.cas.EmptyIntegerList", True),
+        ("uima.cas.TOP", "uima.cas.NonEmptyIntegerList", True),
+        ("uima.cas.TOP", "uima.cas.StringList", True),
+        ("uima.cas.TOP", "uima.cas.EmptyStringList", True),
+        ("uima.cas.TOP", "uima.cas.NonEmptyStringList", True),
+        ("uima.cas.TOP", "uima.cas.NonEmptyFloatList", True),
+        ("uima.cas.TOP", "uima.cas.IntegerList", True),
+        ("uima.cas.TOP", "uima.cas.EmptyIntegerList", True),
+        ("uima.cas.TOP", "uima.cas.NonEmptyIntegerList", True),
+        ("uima.cas.TOP", "uima.cas.StringList", True),
+        ("uima.cas.TOP", "uima.cas.EmptyStringList", True),
+        ("uima.cas.TOP", "uima.cas.NonEmptyStringList", True),
+        ("uima.cas.NonEmptyFloatList", "uima.cas.Boolean", False),
+        ("uima.cas.IntegerList", "uima.cas.Byte", False),
+        ("uima.cas.EmptyIntegerList", "uima.cas.Short", False),
+        ("uima.cas.NonEmptyIntegerList", "uima.cas.Integer", False),
+        ("uima.cas.StringList", "uima.cas.Long", False),
+        ("uima.cas.EmptyStringList", "uima.cas.Float", False),
+        ("uima.cas.NonEmptyStringList", "uima.cas.Double", False),
     ],
 )
-def test_is_collection(type_name: str, expected: bool):
+def test_is_collection(type_name: str, feature_name: str, expected: bool):
     typesystem = TypeSystem()
+    t = typesystem.get_type(type_name)
+    feature = Feature("test_feature", rangeTypeName=feature_name)
+    t.add_feature(feature)
 
-    assert typesystem.is_collection(type_name) == expected
+    assert typesystem.is_collection(type_name, feature) == expected
+
+
+@pytest.mark.parametrize("type_name", [c for c in _COLLECTION_TYPES])
+def test_is_collection_for_builtin_collections_with_elements(type_name: str):
+    typesystem = TypeSystem()
+    t = typesystem.get_type(type_name)
+    feature = Feature("elements", rangeTypeName="uima.cas.TOP")
+
+    assert typesystem.is_collection(type_name, feature) is True
 
 
 @pytest.mark.parametrize(
@@ -322,7 +350,7 @@ def test_that_typesystem_with_child_redefining_type_differently_throws():
 
 
 def test_that_typesystem_with_redefined_documentation_annotation_works(
-    typesystem_with_redefined_documentannotation_xml
+    typesystem_with_redefined_documentannotation_xml,
 ):
     typesystem = load_typesystem(typesystem_with_redefined_documentannotation_xml)
 

@@ -6,6 +6,20 @@ from cassis import *
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files")
 
+# Empty cas
+
+
+@pytest.fixture
+def empty_cas_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "empty_cas.xmi")
+
+
+@pytest.fixture
+def empty_cas_xmi(empty_cas_path):
+    with open(empty_cas_path, "r") as f:
+        return f.read()
+
+
 # Small xmi
 
 
@@ -39,7 +53,7 @@ def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
 
 @pytest.fixture
 def cas_with_string_array_path():
-    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_string_array.xmi")
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_collections.xmi")
 
 
 @pytest.fixture
@@ -158,6 +172,20 @@ def typesystem_with_redefined_documentannotation_path():
 @pytest.fixture
 def typesystem_with_redefined_documentannotation_xml(typesystem_with_redefined_documentannotation_path):
     with open(typesystem_with_redefined_documentannotation_path, "r") as f:
+        return f.read()
+
+
+# Type system with reserved names as feature names
+
+
+@pytest.fixture
+def typesystem_with_reserved_names_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_reserved_names.xml")
+
+
+@pytest.fixture
+def typesystem_with_reserved_names_xml(typesystem_with_reserved_names_path):
+    with open(typesystem_with_reserved_names_path, "r") as f:
         return f.read()
 
 

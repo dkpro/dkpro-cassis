@@ -18,6 +18,15 @@ def test_default_typesystem_is_not_shared():
     t2 = cas2.typesystem.create_type(name="test.Type")
 
 
+def test_default_typesystem_is_not_shared_load_from_xmi(empty_cas_xmi):
+    # https://github.com/dkpro/dkpro-cassis/issues/67
+    cas1 = load_cas_from_xmi(empty_cas_xmi)
+    cas2 = load_cas_from_xmi(empty_cas_xmi)
+
+    t1 = cas1.typesystem.create_type(name="test.Type")
+    t2 = cas2.typesystem.create_type(name="test.Type")
+
+
 # View
 
 
@@ -126,6 +135,28 @@ def test_select_covered(tokens, sentences):
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
 
 
+def test_select_covering(tokens, sentences):
+    cas = Cas()
+    cas.add_annotations(tokens + sentences)
+    actual_first_sentence, actual_second_sentence = sentences
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    for token in tokens_in_first_sentence:
+        result = list(cas.select_covering("cassis.Sentence", token))
+        first_sentence = result[0]
+
+        assert len(result) == 1
+        assert actual_first_sentence == first_sentence
+
+    for token in tokens_in_second_sentence:
+        result = list(cas.select_covering("cassis.Sentence", token))
+        second_sentence = result[0]
+
+        assert len(result) == 1
+        assert actual_second_sentence == second_sentence
+
+
 def test_select_only_returns_annotations_of_current_view(tokens, sentences):
     cas = Cas()
     cas.add_annotations(tokens)
@@ -155,7 +186,7 @@ def test_get_covered_text_tokens(tokens):
     cas = Cas()
     cas.sofa_string = "Joe waited for the train . The train was late ."
 
-    actual_text = [cas.get_covered_text(token) for token in tokens]
+    actual_text = [token.get_covered_text() for token in tokens]
 
     expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
     assert actual_text == expected_text
@@ -175,7 +206,7 @@ def test_get_covered_text_sentences(sentences):
     cas = Cas()
     cas.sofa_string = "Joe waited for the train . The train was late ."
 
-    actual_text = [cas.get_covered_text(sentence) for sentence in sentences]
+    actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]
     assert actual_text == expected_text

@@ -148,6 +148,7 @@ class Feature:
     description = attr.ib(default=None)  # type: str
     elementType = attr.ib(default=None)  # type: str
     multipleReferencesAllowed = attr.ib(default=None)  # type: bool
+    _has_reserved_name = attr.ib(default=False)  # type: bool
 
 
 @attr.s(slots=True)
@@ -170,7 +171,7 @@ class Type:
     def __attrs_post_init__(self):
         """ Build the constructor that can create feature structures of this type """
         name = _string_to_valid_classname(self.name)
-        fields = {feature.name: attr.ib(default=None) for feature in self.all_features}
+        fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
         self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False)
@@ -426,15 +427,19 @@ class TypeSystem:
         """
         return type_name in _PRIMITIVE_TYPES
 
-    def is_collection(self, type_name: str) -> bool:
-        """ Checks if the type identified by `type_name` is a collection, e.g. list or array.
+    def is_collection(self, type_name: str, feature: Feature) -> bool:
+        """ Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
 
         Args:
-            type_name: The name of the type to query for.
+            type_name: The type name to which the feature belongs.
+            feature: The feature to query for.
         Returns:
-            Returns True if the type identified by `type_name` is a collection type, else False
+            Returns True if the given feature is a collection type, else False
         """
-        return type_name in _COLLECTION_TYPES
+        if type_name in _COLLECTION_TYPES and feature.name == "elements":
+            return True
+        else:
+            return feature.rangeTypeName in _COLLECTION_TYPES
 
     def is_primitive_collection(self, type_name) -> bool:
         """ Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.
@@ -471,13 +476,23 @@ class TypeSystem:
         Raises:
             Exception: If a feature with name `name` already exists in `type_`.
         """
+        has_reserved_name = False
+
+        if name == "self":
+            name = "self_"
+            has_reserved_name = True
+            warnings.warn("Trying to add feature `self` which is a reserved name "
+                          "in Python, renamed accessor to 'self_'!")
+
         feature = Feature(
             name=name,
             rangeTypeName=rangeTypeName,
             elementType=elementType,
             description=description,
             multipleReferencesAllowed=multipleReferencesAllowed,
+            has_reserved_name=has_reserved_name
         )
+
         type_.add_feature(feature)
 
         for child_name in type_._children:
@@ -564,12 +579,14 @@ class TypeSystemDeserializer:
         context = etree.iterparse(source, events=("end",), tag=("{*}typeDescription",))
         for event, elem in context:
             type_name = self._get_elem_as_str(elem.find("{*}name"))
+            description = self._get_elem_as_str(elem.find("{*}description"))
+            supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
 
             if "." not in type_name:
                 type_name = "uima.noNamespace." + type_name
 
-            description = self._get_elem_as_str(elem.find("{*}description"))
-            supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
+            if "." not in supertypeName:
+                supertypeName = "uima.noNamespace." + supertypeName
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
             type_dependencies[type_name].add(supertypeName)
@@ -701,8 +718,11 @@ class TypeSystemSerializer:
         description = etree.SubElement(typeDescription, "description")
         description.text = type_.description
 
-        supertypeName = etree.SubElement(typeDescription, "supertypeName")
-        supertypeName.text = type_.supertypeName
+        supertype_name_node = etree.SubElement(typeDescription, "supertypeName")
+        supertype_name = type_.supertypeName
+        if supertype_name.startswith("uima.noNamespace."):
+            supertype_name = supertype_name.replace("uima.noNamespace.", "")
+        supertype_name_node.text = supertype_name
 
         # Only create the `feature` element if there is at least one feature
         feature_list = list(type_.features)
@@ -717,7 +737,14 @@ class TypeSystemSerializer:
         featureDescription = etree.SubElement(features, "featureDescription")
 
         name = etree.SubElement(featureDescription, "name")
-        name.text = feature.name
+
+        feature_name = feature.name
+        # If the feature name is a reserved name like `self`, then we added an
+        # underscore to it before so Python can handle it. We now need to remove it.
+        if feature._has_reserved_name:
+            feature_name = feature_name[:-1]
+
+        name.text = feature_name
 
         description = etree.SubElement(featureDescription, "description")
         description.text = feature.description

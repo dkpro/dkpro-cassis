@@ -18,7 +18,7 @@ class ProtoView:
     members = attr.ib(factory=list)  # type: List[int]
 
 
-def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSystem()) -> Cas:
+def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None) -> Cas:
     """ Loads a CAS from a XMI source.
 
     Args:
@@ -30,6 +30,8 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = TypeSyste
         The deserialized CAS
 
     """
+    if typesystem is None:
+        typesystem = TypeSystem()
 
     deserializer = CasXmiDeserializer()
     if isinstance(source, str):
@@ -138,7 +140,11 @@ class CasXmiDeserializer:
                 if feature_name == "sofa":
                     continue
 
-                if typesystem.is_primitive(feature.rangeTypeName) or typesystem.is_primitive_collection(fs.type):
+                if (
+                    typesystem.is_primitive(feature.rangeTypeName)
+                    or typesystem.is_primitive_collection(feature.rangeTypeName)
+                    or typesystem.is_primitive_collection(fs.type)
+                ):
                     # TODO: Parse feature values to their real type here, e.g. parse ints or floats
                     continue
 
@@ -148,7 +154,7 @@ class CasXmiDeserializer:
                     continue
 
                 # Resolve references
-                if typesystem.is_collection(feature.rangeTypeName):
+                if typesystem.is_collection(fs.type, feature):
                     # A collection of references is a list of integers separated
                     # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
                     targets = []
@@ -275,7 +281,7 @@ class CasXmiSerializer:
 
                 if ts.is_primitive(feature.rangeTypeName) or ts.is_primitive_collection(fs.type):
                     continue
-                elif ts.is_collection(feature.rangeTypeName):
+                elif ts.is_collection(fs.type, feature):
                     lst = getattr(fs, feature_name)
                     if lst is None:
                         continue
@@ -367,7 +373,7 @@ class CasXmiSerializer:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif cas.typesystem.is_primitive(feature.rangeTypeName):
                 elem.attrib[feature_name] = str(value)
-            elif cas.typesystem.is_collection(feature.rangeTypeName):
+            elif cas.typesystem.is_collection(fs.type, feature):
                 elements = " ".join(str(e.xmiID) for e in value)
                 elem.attrib[feature_name] = elements
             else:

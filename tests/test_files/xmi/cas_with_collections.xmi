@@ -9,8 +9,8 @@
 		<elements>MTH</elements>
 		<elements>SNOMEDCT_US</elements>
 	</cas:StringArray>
+	<cas:FSArray xmi:id="4" elements="2 3" />
 	<cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text/plain"
               sofaString="Joe waited for the train . The train was late ."/>
-	<cas:View members="2 3" sofa="1"/>
+	<cas:View members="2 3 4" sofa="1"/>
 </xmi:XMI>
-

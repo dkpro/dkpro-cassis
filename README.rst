@@ -235,6 +235,25 @@ A CAS using the DKPro Core Type System can be created via
     for t in cas.typesystem.get_types():
         print(t)
 
+Miscellaneous
+-------------
+
+If your type system defines a type called :code:`self`, then it will be made
+available as a member variable `self_` on the respective type:
+
+.. code:: python
+
+    from cassis import *
+
+    typesystem = TypeSystem()
+
+    ExampleType = typesystem.create_type(name='example.Type')
+    typesystem.add_feature(type_=ExampleType, name='self', rangeTypeName='String')
+
+    annotation = ExampleType(self_="Test string")
+
+    print(annotation.self_)
+
 Development
 -----------
 

@@ -143,7 +143,14 @@ def test_type_inherits_from_annotation():
 def test_is_primitive(type_name: str, expected: bool):
     typesystem = TypeSystem()
 
-    assert typesystem.is_primitive(type_name) == expected
+    assert typesystem.is_primitive(type_name) is expected
+
+
+def test_is_primitive_when_parent_is_primitive():
+    typesystem = TypeSystem()
+    typesystem.create_type("test.string", "uima.cas.String")
+
+    assert typesystem.is_primitive("test.string")
 
 
 @pytest.mark.parametrize(

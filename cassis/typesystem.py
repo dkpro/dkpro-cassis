@@ -3,9 +3,10 @@ from itertools import chain, filterfalse
 from io import BytesIO
 from pathlib import Path
 import re
-from toposort import toposort_flatten
-from typing import Callable, Dict, List, IO, Iterator, Optional, Set, Union
+from typing import Callable, Dict, IO, Iterator, Optional, Set, Union
 import warnings
+
+from toposort import toposort_flatten
 
 from more_itertools import unique_everseen
 
@@ -764,3 +765,17 @@ class TypeSystemSerializer:
         if feature.elementType is not None:
             elementType = etree.SubElement(featureDescription, "elementType")
             elementType.text = feature.elementType
+
+
+def load_dkpro_core_typesystem() -> TypeSystem:
+    # https://stackoverflow.com/a/20885799
+    try:
+        import importlib.resources as pkg_resources
+    except ImportError:
+        # Try backported to PY<37 `importlib_resources`.
+        import importlib_resources as pkg_resources
+
+    from . import resources  # relative-import the *package* containing the templates
+
+    with pkg_resources.open_binary(resources, "dkpro-core-types.xml") as f:
+        return load_typesystem(f)

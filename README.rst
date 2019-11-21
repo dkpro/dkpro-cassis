@@ -221,6 +221,20 @@ as a :code:`Cas` .
 
     print([x.get_covered_text() for x in view.select_all()])
 
+DKPro Core Integration
+----------------------
+
+A CAS using the DKPro Core Type System can be created via
+
+.. code:: python
+
+    from cassis import *
+
+    cas = Cas(typesystem=load_dkpro_core_typesystem())
+
+    for t in cas.typesystem.get_types():
+        print(t)
+
 Miscellaneous
 -------------
 

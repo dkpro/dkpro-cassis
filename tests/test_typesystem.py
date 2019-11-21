@@ -364,3 +364,14 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
     actual_xml = typesystem.to_xml()
 
     assert_xml_equal(actual_xml, typesystem_with_redefined_documentannotation_xml)
+
+
+# DKPro Core Support
+
+
+def test_that_dkpro_core_typeystem_can_be_loaded():
+    ts = load_dkpro_core_typesystem()
+
+    POS = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS")
+    NamedEntity = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity")
+    CoreferenceLink = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.coref.type.CoreferenceLink")

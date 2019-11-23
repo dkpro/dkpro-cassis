@@ -238,8 +238,8 @@ A CAS using the DKPro Core Type System can be created via
 Miscellaneous
 -------------
 
-If your type system defines a type called :code:`self`, then it will be made
-available as a member variable `self_` on the respective type:
+If your type system defines a type called :code:`self` or `type`, then it will be made
+available as a member variable `self_` or `type_` on the respective type:
 
 .. code:: python
 
@@ -249,10 +249,12 @@ available as a member variable `self_` on the respective type:
 
     ExampleType = typesystem.create_type(name='example.Type')
     typesystem.add_feature(type_=ExampleType, name='self', rangeTypeName='String')
+    typesystem.add_feature(type_=ExampleType, name='type', rangeTypeName='String')
 
-    annotation = ExampleType(self_="Test string")
+    annotation = ExampleType(self_="Test string1", type_="Test string2")
 
     print(annotation.self_)
+    print(annotation.type_)
 
 Development
 -----------

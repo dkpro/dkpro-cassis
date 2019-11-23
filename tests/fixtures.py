@@ -104,6 +104,20 @@ def cas_with_empty_array_references_xmi(cas_with_empty_array_references_path):
         return f.read()
 
 
+# CAS with reserved names
+
+
+@pytest.fixture
+def cas_with_reserved_names_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_reserved_names.xmi")
+
+
+@pytest.fixture
+def cas_with_reserved_names_xmi(cas_with_reserved_names_path):
+    with open(cas_with_reserved_names_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

@@ -222,6 +222,13 @@ class CasXmiDeserializer:
         if "sofa" in attributes:
             attributes["sofa"] = int(attributes["sofa"])
 
+        # Remap features that use a reserved Python name
+        if "self" in attributes:
+            attributes["self_"] = attributes.pop("self")
+
+        if "type" in attributes:
+            attributes["type_"] = attributes.pop("type")
+
         return AnnotationType(**attributes)
 
     def _clear_elem(self, elem):
@@ -343,13 +350,17 @@ class CasXmiSerializer:
         # Serialize feature attributes
         t = cas.typesystem.get_type(fs.type)
         for feature in t.all_features:
-            feature_name = feature.name
-
-            if feature_name in CasXmiSerializer._COMMON_FIELD_NAMES:
+            if feature.name in CasXmiSerializer._COMMON_FIELD_NAMES:
                 continue
 
+            feature_name = feature.name
+
+            # Strip the underscore we added reserved names
+            if feature._has_reserved_name:
+                feature_name = feature.name[:-1]
+
             # Skip over 'None' features
-            value = getattr(fs, feature_name)
+            value = getattr(fs, feature.name)
             if value is None:
                 continue
 

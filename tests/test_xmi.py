@@ -16,6 +16,7 @@ FIXTURES = [
     (pytest.lazy_fixture("cas_with_references_xmi"), pytest.lazy_fixture("webanno_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_nonindexed_fs_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_empty_array_references_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_reserved_names_xmi"), pytest.lazy_fixture("typesystem_with_reserved_names_xml")),
 ]
 
 

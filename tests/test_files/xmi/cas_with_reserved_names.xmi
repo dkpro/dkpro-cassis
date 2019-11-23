@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+         xmlns:test="http:///test.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="47" language="x-unspecified"/>
+    <test:type xmi:id="3" type="2" self="2" sofa="1"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text/plain"
+              sofaString="Joe waited for the train . The train was late ."/>
+    <cas:View sofa="1" members="2 3"/>
+</xmi:XMI>

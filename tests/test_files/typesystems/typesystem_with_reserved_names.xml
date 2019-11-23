@@ -2,7 +2,7 @@
 <typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
     <types>
         <typeDescription>
-            <name>self</name>
+            <name>test.type</name>
             <description/>
             <supertypeName>uima.tcas.Annotation</supertypeName>
             <features>
@@ -15,6 +15,11 @@
                     <name>super</name>
                     <description/>
                     <rangeTypeName>uima.cas.Integer</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>type</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.TOP</rangeTypeName>
                 </featureDescription>
             </features>
         </typeDescription>

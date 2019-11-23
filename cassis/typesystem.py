@@ -487,11 +487,11 @@ class TypeSystem:
         has_reserved_name = False
 
         if name == "self" or name == "type":
-            name = name + "_"
-            has_reserved_name = True
             msg = "Trying to add feature `{0}` which is a reserved name in Python, renamed accessor to '{0}_' !".format(
                 name
             )
+            name = name + "_"
+            has_reserved_name = True
             warnings.warn(msg)
 
         feature = Feature(

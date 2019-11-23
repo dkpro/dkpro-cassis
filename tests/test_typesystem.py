@@ -100,6 +100,16 @@ def test_type_can_create_instance_with_inherited_fields():
     assert annotation.childFeature == "child"
 
 
+def test_type_can_create_instance_with_deeply_inherited_fields(typesystem_with_inheritance_xml):
+    # https://github.com/dkpro/dkpro-cassis/issues/97
+    typesystem = load_typesystem(typesystem_with_inheritance_xml)
+
+    t = typesystem.get_type("cassis.GrandGrandGrandChild")
+
+    assert "parentFeature" in t._inherited_features
+    assert "childFeature" in t._inherited_features
+
+
 def test_type_inherits_from_annotation_base():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type", supertypeName="uima.cas.AnnotationBase")

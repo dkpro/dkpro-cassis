@@ -42,5 +42,20 @@
                 </featureDescription>
             </features>
         </typeDescription>
+        <typeDescription>
+            <name>cassis.GrandChild</name>
+            <description/>
+            <supertypeName>cassis.Child</supertypeName>
+        </typeDescription>
+        <typeDescription>
+            <name>cassis.GrandGrandChild</name>
+            <description/>
+            <supertypeName>cassis.GrandChild</supertypeName>
+        </typeDescription>
+        <typeDescription>
+            <name>cassis.GrandGrandGrandChild</name>
+            <description/>
+            <supertypeName>cassis.GrandGrandChild</supertypeName>
+        </typeDescription>
     </types>
 </typeSystemDescription>

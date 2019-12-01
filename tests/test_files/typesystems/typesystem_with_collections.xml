@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
+    <types>
+        <typeDescription>
+            <name>cassis.StringArray</name>
+            <description/>
+            <supertypeName>uima.cas.StringArray</supertypeName>
+        </typeDescription>
+        <typeDescription>
+            <name>cassis.Group</name>
+            <description/>
+            <supertypeName>uima.tcas.Annotation</supertypeName>
+            <features>
+                <featureDescription>
+                    <name>collection1</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.StringArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>collection2</name>
+                    <description/>
+                    <rangeTypeName>cassis.StringArray</rangeTypeName>
+                </featureDescription>
+            </features>
+        </typeDescription>
+    </types>
+</typeSystemDescription>

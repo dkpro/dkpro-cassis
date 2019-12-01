@@ -170,9 +170,9 @@ def test_select_only_returns_annotations_of_current_view(tokens, sentences):
     assert sentences == actual_annotations_in_test_view
 
 
-def test_select_returns_feature_structures(cas_with_string_array_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(cas_with_string_array_xmi, typesystem=typesystem)
+def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_with_collections_xml):
+    typesystem = load_typesystem(typesystem_with_collections_xml)
+    cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
     arrs = list(cas.select("uima.cas.StringArray"))
 

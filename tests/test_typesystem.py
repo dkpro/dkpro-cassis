@@ -131,6 +131,36 @@ def test_type_inherits_from_annotation():
 
 
 @pytest.mark.parametrize(
+    "child_name, parent_name, expected",
+    [
+        (
+            "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph",
+            "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Div",
+            True,
+        ),
+        ("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemArgLink", "uima.cas.String", False),
+        ("de.tudarmstadt.ukp.dkpro.core.api.syntax.type.chunk.VC", "uima.tcas.Annotation", True),
+        ("de.tudarmstadt.ukp.dkpro.core.api.transform.type.SofaChangeAnnotation", "uima.tcas.Annotation", True),
+        (
+            "de.tudarmstadt.ukp.dkpro.core.api.anomaly.type.SpellingAnomaly",
+            "de.tudarmstadt.ukp.dkpro.core.api.anomaly.type.GrammarAnomaly",
+            False,
+        ),
+        ("de.tudarmstadt.ukp.dkpro.core.api.ner.type.Quantity", TypeSystem.TOP_TYPE_NAME, True),
+    ],
+)
+def test_is_instance_of(child_name: str, parent_name: str, expected: bool):
+    # We cannot use fixtures and parameterize at the same time, so we
+    # manually load the type system
+    path = os.path.join(FIXTURE_DIR, "typesystems", "important_dkpro_types.xml")
+
+    with open(path, "r") as f:
+        ts = load_typesystem(f.read())
+
+    assert ts.is_instance_of(child_name, parent_name) == expected
+
+
+@pytest.mark.parametrize(
     "type_name, expected",
     [
         ("uima.cas.Boolean", True),

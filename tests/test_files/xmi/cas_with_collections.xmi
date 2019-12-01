@@ -1,16 +1,37 @@
 <?xml version="1.0" ?>
 <xmi:XMI xmi:version="2.0" xmlns:cas="http:///uima/cas.ecore"
 		 xmlns:tcas="http:///uima/tcas.ecore"
-		 xmlns:xmi="http://www.omg.org/XMI">
+		 xmlns:xmi="http://www.omg.org/XMI"
+		 xmlns:cassis="http:///cassis.ecore">
+
 	<cas:NULL xmi:id="0"/>
+
     <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="47" language="x-unspecified"/>
+
 	<cas:StringArray xmi:id="3">
 		<elements>LNC</elements>
 		<elements>MTH</elements>
 		<elements>SNOMEDCT_US</elements>
 	</cas:StringArray>
-	<cas:FSArray xmi:id="4" elements="2 3" />
+
+	<cassis:StringArray xmi:id="4">
+		<elements>A</elements>
+		<elements>B</elements>
+		<elements>C</elements>
+	</cassis:StringArray>
+
+	<cassis:Group xmi:id="5" sofa="1">
+		<collection1>A</collection1>
+		<collection1>B</collection1>
+		<collection1>C</collection1>
+
+		<collection2>x</collection2>
+		<collection2>y</collection2>
+		<collection2>z</collection2>
+	</cassis:Group>
+
+	<cas:FSArray xmi:id="6" elements="2 3 4 5" />
 	<cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text/plain"
               sofaString="Joe waited for the train . The train was late ."/>
-	<cas:View members="2 3 4" sofa="1"/>
+	<cas:View members="2 3 4 5 6" sofa="1"/>
 </xmi:XMI>

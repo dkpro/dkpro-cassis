@@ -362,7 +362,7 @@ class TypeSystem:
         if add_document_annotation_type:
             self._add_document_annotation_type()
 
-    def has_type(self, typename: str):
+    def contains_type(self, typename: str):
         """ Checks whether this type system contains a type with name `typename`.
 
         Args:
@@ -384,7 +384,7 @@ class TypeSystem:
         Returns:
             The newly created type
         """
-        if self.has_type(name) and name not in _PREDEFINED_TYPES:
+        if self.contains_type(name) and name not in _PREDEFINED_TYPES:
             msg = "Type with name [{0}] already exists!".format(name)
             raise ValueError(msg)
 
@@ -400,7 +400,7 @@ class TypeSystem:
         self._types[name] = new_type
         return new_type
 
-    def get_type(self, typename: str) -> Type:
+    def get_type(self, type_name: str) -> Type:
         """ Finds a type by name in the type system of this CAS.
 
         Args:
@@ -411,14 +411,22 @@ class TypeSystem:
         Raises:
             Exception: If no type with `typename` could be found.
         """
-        if self.has_type(typename):
-            return self._types[typename]
+        if self.contains_type(type_name):
+            return self._types[type_name]
         else:
-            raise Exception("Type with name [{0}] not found!".format(typename))
+            raise Exception("Type with name [{0}] not found!".format(type_name))
 
     def get_types(self) -> Iterator[Type]:
         """ Returns all types of this type system """
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
+
+    def is_instance_of(self, type_name: str, parent_name: str) -> bool:
+        if type_name == parent_name:
+            return True
+        elif type_name == TypeSystem.TOP_TYPE_NAME:
+            return False
+        else:
+            return self.is_instance_of(self.get_type(type_name).supertypeName, parent_name)
 
     def is_primitive(self, type_name: str) -> bool:
         """ Checks if the type identified by `type_name` is a primitive type.
@@ -457,7 +465,12 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive collection type, else False
         """
-        return type_name in _PRIMITIVE_COLLECTION_TYPES
+        if type_name == TypeSystem.TOP_TYPE_NAME:
+            return False
+        elif type_name in _PRIMITIVE_COLLECTION_TYPES:
+            return True
+        else:
+            return self.is_primitive_collection(self.get_type(type_name).supertypeName)
 
     def add_feature(
         self,
@@ -667,7 +680,7 @@ class TypeSystemDeserializer:
         # It can be defined by users with custom fields. In case the loaded type system did not define
         # it, we add the standard DocumentAnnotation type. In case it is already defined, we add it to
         # the list of redefined predefined types so that is written back on serialization.
-        if not ts.has_type(_DOCUMENT_ANNOTATION_TYPE):
+        if not ts.contains_type(_DOCUMENT_ANNOTATION_TYPE):
             ts._add_document_annotation_type()
         else:
             ts._defines_predefined_type(_DOCUMENT_ANNOTATION_TYPE)

@@ -286,7 +286,11 @@ class CasXmiSerializer:
                 if feature_name == "sofa":
                     continue
 
-                if ts.is_primitive(feature.rangeTypeName) or ts.is_primitive_collection(fs.type):
+                if (
+                    ts.is_primitive(feature.rangeTypeName)
+                    or ts.is_primitive_collection(feature.rangeTypeName)
+                    or ts.is_primitive_collection(fs.type)
+                ):
                     continue
                 elif ts.is_collection(fs.type, feature):
                     lst = getattr(fs, feature_name)
@@ -313,6 +317,8 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
     def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
+        ts = cas.typesystem
+
         # The type name is a Java package, e.g. `org.myproj.Foo`.
         parts = fs.type.split(".")
 
@@ -348,7 +354,7 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Serialize feature attributes
-        t = cas.typesystem.get_type(fs.type)
+        t = ts.get_type(fs.type)
         for feature in t.all_features:
             if feature.name in CasXmiSerializer._COMMON_FIELD_NAMES:
                 continue
@@ -364,7 +370,9 @@ class CasXmiSerializer:
             if value is None:
                 continue
 
-            if fs.type == "uima.cas.StringArray":
+            if (ts.is_instance_of(fs.type, "uima.cas.StringArray") and feature_name == "elements") or ts.is_instance_of(
+                feature.rangeTypeName, "uima.cas.StringArray"
+            ):
                 # String arrays need to be serialized to a series of child elements, as strings can
                 # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
                 # serialize it as an attribute, it would look like
@@ -382,9 +390,9 @@ class CasXmiSerializer:
                     child.text = e
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)
-            elif cas.typesystem.is_primitive(feature.rangeTypeName):
+            elif ts.is_primitive(feature.rangeTypeName):
                 elem.attrib[feature_name] = str(value)
-            elif cas.typesystem.is_collection(fs.type, feature):
+            elif ts.is_collection(fs.type, feature):
                 elements = " ".join(str(e.xmiID) for e in value)
                 elem.attrib[feature_name] = elements
             else:

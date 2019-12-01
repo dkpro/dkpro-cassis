@@ -52,13 +52,13 @@ def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
 
 
 @pytest.fixture
-def cas_with_string_array_path():
+def cas_with_collections_path():
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_collections.xmi")
 
 
 @pytest.fixture
-def cas_with_string_array_xmi(cas_with_string_array_path):
-    with open(cas_with_string_array_path, "r") as f:
+def cas_with_collections_xmi(cas_with_collections_path):
+    with open(cas_with_collections_path, "r") as f:
         return f.read()
 
 
@@ -200,6 +200,20 @@ def typesystem_with_reserved_names_path():
 @pytest.fixture
 def typesystem_with_reserved_names_xml(typesystem_with_reserved_names_path):
     with open(typesystem_with_reserved_names_path, "r") as f:
+        return f.read()
+
+
+# Type system with collections
+
+
+@pytest.fixture
+def typesystem_with_collections_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_collections.xml")
+
+
+@pytest.fixture
+def typesystem_with_collections_xml(typesystem_with_collections_path):
+    with open(typesystem_with_collections_path, "r") as f:
         return f.read()
 
 

@@ -38,13 +38,13 @@ def small_xmi(small_xmi_path):
 
 
 @pytest.fixture
-def cas_with_inheritance_xmi_path():
+def cas_with_inheritance_path():
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_inheritance.xmi")
 
 
 @pytest.fixture
-def cas_with_inheritance_xmi(cas_with_inheritance_xmi_path):
-    with open(cas_with_inheritance_xmi_path, "r") as f:
+def cas_with_inheritance_xmi(cas_with_inheritance_path):
+    with open(cas_with_inheritance_path, "r") as f:
         return f.read()
 
 
@@ -115,6 +115,19 @@ def cas_with_reserved_names_path():
 @pytest.fixture
 def cas_with_reserved_names_xmi(cas_with_reserved_names_path):
     with open(cas_with_reserved_names_path, "r") as f:
+        return f.read()
+
+# CAS with two SOFAs
+
+
+@pytest.fixture
+def cas_with_two_sofas_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_two_sofas.xmi")
+
+
+@pytest.fixture
+def cas_with_two_sofas_xmi(cas_with_two_sofas_path):
+    with open(cas_with_two_sofas_path, "r") as f:
         return f.read()
 
 

@@ -65,9 +65,9 @@ class CasXmiDeserializer:
         state = OUTSIDE_FS
 
         for event, elem in context:
+            # Ignore the 'xmi:XMI' and 'cas:NULL' elements
             if elem.tag == TAG_XMI or elem.tag == TAG_CAS_NULL:
                 pass
-                # Ignore the 'xmi:XMI' and 'cas:NULL' elements
             elif elem.tag == TAG_CAS_SOFA:
                 if event == "end":
                     sofa = self._parse_sofa(elem)
@@ -131,6 +131,7 @@ class CasXmiDeserializer:
             raise RuntimeError("Number of views and sofas is not equal!")
 
         # Post-process feature values
+        referenced_fs = set()
         for xmi_id, fs in feature_structures.items():
             t = typesystem.get_type(fs.type)
 
@@ -162,13 +163,16 @@ class CasXmiDeserializer:
                         target_id = int(ref)
                         target = feature_structures[target_id]
                         targets.append(target)
+                        referenced_fs.add(target_id)
                     setattr(fs, feature_name, targets)
                 else:
                     target_id = int(value)
                     target = feature_structures[target_id]
+                    referenced_fs.add(target_id)
                     setattr(fs, feature_name, target)
 
-        cas = Cas(typesystem)
+        fs_in_views = set()
+        cas = Cas(typesystem=typesystem)
         for sofa in sofas:
             proto_view = views[sofa.xmiID]
 
@@ -184,6 +188,16 @@ class CasXmiDeserializer:
                 annotation = feature_structures[member_id]
 
                 view.add_annotation(annotation)
+
+                fs_in_views.add(annotation.xmiID)
+
+        # We need to generate new IDs for feature structures that are referenced
+        # only by other fs and not added to a view, as normally View::add_annotation
+        # generates the ids.
+        referenced_fs = referenced_fs.difference(fs_in_views)
+        for target_id in sorted(referenced_fs):
+            fs = feature_structures[target_id]
+            fs.xmiID = cas._get_next_xmi_id()
 
         return cas
 
@@ -273,7 +287,12 @@ class CasXmiSerializer:
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature. """
         all_fs = {}
-        openlist = list(cas.select_all())
+
+        openlist = []
+        for sofa in cas.sofas:
+            view = cas.get_view(sofa.sofaID)
+            openlist.extend(view.select_all())
+
         ts = cas.typesystem
         while openlist:
             fs = openlist.pop(0)
@@ -361,7 +380,7 @@ class CasXmiSerializer:
 
             feature_name = feature.name
 
-            # Strip the underscore we added reserved names
+            # Strip the underscore we added for reserved names
             if feature._has_reserved_name:
                 feature_name = feature.name[:-1]
 

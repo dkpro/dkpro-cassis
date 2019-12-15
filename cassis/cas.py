@@ -180,7 +180,8 @@ class Cas:
             annotation: The annotation to add.
 
         """
-        annotation.xmiID = self._get_next_xmi_id()
+        next_id = self._get_next_xmi_id()
+        annotation.xmiID = next_id
         if hasattr(annotation, "sofa"):
             annotation.sofa = self.get_sofa()
 

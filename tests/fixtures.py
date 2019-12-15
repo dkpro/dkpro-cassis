@@ -117,6 +117,7 @@ def cas_with_reserved_names_xmi(cas_with_reserved_names_path):
     with open(cas_with_reserved_names_path, "r") as f:
         return f.read()
 
+
 # CAS with two SOFAs
 
 

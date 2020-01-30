@@ -555,7 +555,7 @@ class TypeSystem:
 # Deserializing
 
 
-def load_typesystem(source: Union[IO, str]) -> TypeSystem:
+def load_typesystem(source: Union[IO, str], ts: TypeSystem = None) -> TypeSystem:
     """ Loads a type system from a XML source.
 
     Args:
@@ -568,17 +568,18 @@ def load_typesystem(source: Union[IO, str]) -> TypeSystem:
     """
     deserializer = TypeSystemDeserializer()
     if isinstance(source, str):
-        return deserializer.deserialize(BytesIO(source.encode("utf-8")))
+        return deserializer.deserialize(BytesIO(source.encode("utf-8")),ts)
     else:
-        return deserializer.deserialize(source)
+        return deserializer.deserialize(source,ts)
 
 
 class TypeSystemDeserializer:
-    def deserialize(self, source: Union[IO, str]) -> TypeSystem:
+    def deserialize(self, source: Union[IO, str], ts: TypeSystem = None) -> TypeSystem:
         """
 
         Args:
             source: a filename or file object containing XML data
+            ts: an optional typesystem to add the deserialized types to
 
         Returns:
             typesystem (TypeSystem):
@@ -633,7 +634,8 @@ class TypeSystemDeserializer:
                 del elem.getparent()[0]
         del context
 
-        ts = TypeSystem(add_document_annotation_type=False)
+        if not ts:
+            ts = TypeSystem(add_document_annotation_type=False)
 
         # Some CAS handling libraries add predefined types to the typesystem XML.
         # Here we check that the redefinition of predefined types adheres to the definition in UIMA

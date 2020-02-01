@@ -3,7 +3,7 @@ import warnings
 
 import pytest
 
-from cassis.typesystem import Feature, _COLLECTION_TYPES
+from cassis.typesystem import Feature, _COLLECTION_TYPES, TOP_TYPE_NAME
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -146,7 +146,7 @@ def test_type_inherits_from_annotation():
             "de.tudarmstadt.ukp.dkpro.core.api.anomaly.type.GrammarAnomaly",
             False,
         ),
-        ("de.tudarmstadt.ukp.dkpro.core.api.ner.type.Quantity", TypeSystem.TOP_TYPE_NAME, True),
+        ("de.tudarmstadt.ukp.dkpro.core.api.ner.type.Quantity", TOP_TYPE_NAME, True),
     ],
 )
 def test_is_instance_of(child_name: str, parent_name: str, expected: bool):
@@ -279,6 +279,25 @@ def test_is_primitive_collection(type_name: str, expected: bool):
     assert typesystem.is_primitive_collection(type_name) == expected
 
 
+@pytest.mark.parametrize(
+    "parent_name, child_name, expected",
+    [
+        ("uima.cas.ArrayBase", "uima.cas.ShortArray", True),
+        ("uima.cas.FSList", "uima.cas.ShortArray", False),
+        ("uima.cas.ListBase", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FSList", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FloatList", "uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.EmptyIntegerList", "uima.cas.IntegerList", False),
+        ("uima.cas.Sofa", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.TOP", True),
+    ],
+)
+def test_subsumes(parent_name: str, child_name: str, expected: bool):
+    ts = TypeSystem()
+    assert ts.subsumes(parent_name, child_name) == expected
+
+
 # Deserializing
 
 
@@ -404,6 +423,104 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
     actual_xml = typesystem.to_xml()
 
     assert_xml_equal(actual_xml, typesystem_with_redefined_documentannotation_xml)
+
+
+# Merging of type systems
+# We take some tests from https://github.com/apache/uima-uimaj/blob/master/uimaj-core/src/test/java/org/apache/uima/util/CasCreationUtilsTest.java
+
+
+@pytest.mark.parametrize(
+    "name, rangeTypeName, elementType, multipleReferencesAllowed",
+    [
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.tcas.Annotation", True),  # Same multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Default multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Same elementType
+        ("listMultiRefsOk", "uima.cas.FSList", "uima.tcas.Annotation", None),  # Default elementType
+        ("arrayTop", "uima.cas.FSArray", None, None),  # No elementType,
+    ],
+)
+def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementType, multipleReferencesAllowed):
+    with open(typesystem_merge_base_path(), "r") as f:
+        base = load_typesystem(f.read())
+
+    ts = TypeSystem()
+    t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
+    ts.add_feature(
+        type_=t,
+        name=name,
+        rangeTypeName=rangeTypeName,
+        elementType=elementType,
+        multipleReferencesAllowed=multipleReferencesAllowed,
+    )
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning)
+
+        result = merge_typesystems(base, ts)
+
+    assert result.contains_type("test.ArraysAndListsWithElementTypes")
+
+
+@pytest.mark.parametrize(
+    "name, rangeTypeName, elementType, multipleReferencesAllowed",
+    [
+        ("arrayNoElementType", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Different elementTypes
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.AnnotationBase", True),  # Different elementTypes
+        ("arrayMultiRefsOk", "uima.cas.FSList", "uima.cas.Annotation", True),  # Incompatible rangeTypes
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.Annotation", False),  # Different multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.cas.Annotation", True),  # Different multiref
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.Annotation", None),  # Different multiref default
+    ],
+)
+def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elementType, multipleReferencesAllowed):
+    with open(typesystem_merge_base_path(), "r") as f:
+        base = load_typesystem(f.read())
+
+    ts = TypeSystem()
+    t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
+    ts.add_feature(
+        type_=t,
+        name=name,
+        rangeTypeName=rangeTypeName,
+        elementType=elementType,
+        multipleReferencesAllowed=multipleReferencesAllowed,
+    )
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning)
+        with pytest.raises(ValueError, match=r".*\[{0}\].*".format(name)):
+            merge_typesystems(base, ts)
+
+
+def test_that_merging_types_with_different_compatible_supertypes_works():
+    ts1 = TypeSystem()
+    ts1.create_type("test.Sub", description="Example type.", supertypeName="uima.tcas.Annotation")
+
+    ts2 = TypeSystem()
+    ts2.create_type("test.Super", description="Example type.", supertypeName="uima.tcas.Annotation")
+    ts2.create_type("test.Sub", description="Example type.", supertypeName="test.Super")
+
+    result = merge_typesystems(ts1, ts2)
+    sub = result.get_type("test.Sub")
+
+    assert sub.supertypeName == "test.Super"
+
+    # Also check the other order
+    result = merge_typesystems(ts2, ts1)
+    sub = result.get_type("test.Sub")
+
+    assert sub.supertypeName == "test.Super"
+
+
+def test_that_merging_types_with_different_incompatible_supertypes_throws():
+    ts1 = TypeSystem()
+    ts1.create_type("test.Sub", description="Example type.", supertypeName="uima.cas.EmptyIntegerList")
+
+    ts2 = TypeSystem()
+    ts2.create_type("test.Sub", description="Example type.", supertypeName="uima.cas.NonEmptyStringList")
+
+    with pytest.raises(ValueError, match=r".*incompatible super types.*"):
+        merge_typesystems(ts1, ts2)
 
 
 # DKPro Core Support

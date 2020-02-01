@@ -273,6 +273,13 @@ def inception_typesystem_xml(inception_typesystem_path):
         return f.read()
 
 
+# Type system merge base
+
+
+def typesystem_merge_base_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_merge_base.xml")
+
+
 # Annotations
 
 

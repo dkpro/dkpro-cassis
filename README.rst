@@ -221,6 +221,22 @@ as a :code:`Cas` .
 
     print([x.get_covered_text() for x in view.select_all()])
 
+Merging type systems
+~~~~~~~~~~~~~~~~~~~~
+
+Sometimes, it is desirable to merge two type systems. With **cassis**, this can be
+achieved via the :code:`merge_typesystems` function. The detailed rules of merging can be found
+`here <https://uima.apache.org/d/uimaj-2.10.4/references.html#ugr.ref.cas.typemerging>`_.
+
+.. code:: python
+
+    from cassis import *
+
+    with open('typesystem.xml', 'rb') as f:
+        typesystem = load_typesystem(f)
+
+    ts = merge_typesystems([typesystem, load_dkpro_core_typesystem()])
+
 DKPro Core Integration
 ----------------------
 

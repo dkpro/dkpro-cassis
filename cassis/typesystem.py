@@ -3,7 +3,7 @@ from itertools import chain, filterfalse
 from io import BytesIO
 from pathlib import Path
 import re
-from typing import Callable, Dict, IO, Iterator, Optional, Set, Union
+from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable
 import warnings
 
 from toposort import toposort_flatten
@@ -13,6 +13,8 @@ from more_itertools import unique_everseen
 import attr
 
 from lxml import etree
+
+TOP_TYPE_NAME = "uima.cas.TOP"
 
 _DOCUMENT_ANNOTATION_TYPE = "uima.tcas.DocumentAnnotation"
 
@@ -139,7 +141,7 @@ class FeatureStructure:
             raise NotImplementedError()
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, eq=False, order=False)
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
@@ -149,6 +151,33 @@ class Feature:
     elementType = attr.ib(default=None)  # type: str
     multipleReferencesAllowed = attr.ib(default=None)  # type: bool
     _has_reserved_name = attr.ib(default=False)  # type: bool
+
+    def __eq__(self, other):
+        if not isinstance(other, Feature):
+            return False
+        if self.name != other.name or self.description != other.description:
+            return False
+
+        if self.rangeTypeName != other.rangeTypeName:
+            return False
+
+        # If elementType is `None`, then we assume the default is `TOP`
+        if (self.elementType or TOP_TYPE_NAME) != (other.elementType or TOP_TYPE_NAME):
+            return False
+
+        # If multipleReferencesAllowed is `None`, then we assume the default is `False`
+        self_multiref = False if self.multipleReferencesAllowed is None else self.multipleReferencesAllowed
+        other_multiref = False if self.multipleReferencesAllowed is None else self.multipleReferencesAllowed
+        if self_multiref != other_multiref:
+            return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 
 @attr.s(slots=True)
@@ -272,8 +301,6 @@ class Type:
 
 
 class TypeSystem:
-    TOP_TYPE_NAME = "uima.cas.TOP"
-
     def __init__(self, add_document_annotation_type: bool = True):
         self._types = {}
 
@@ -285,7 +312,7 @@ class TypeSystem:
         # added in the following
 
         # `top` is directly assigned in order to circumvent the inheritance
-        top = Type(name=TypeSystem.TOP_TYPE_NAME, supertypeName=None)
+        top = Type(name=TOP_TYPE_NAME, supertypeName=None)
         self._types[top.name] = top
 
         # Primitive types
@@ -390,7 +417,7 @@ class TypeSystem:
 
         new_type = Type(name=name, supertypeName=supertypeName, description=description)
 
-        if supertypeName != TypeSystem.TOP_TYPE_NAME:
+        if supertypeName != TOP_TYPE_NAME:
             supertype = self.get_type(supertypeName)
             supertype._children[name] = new_type
 
@@ -423,7 +450,7 @@ class TypeSystem:
     def is_instance_of(self, type_name: str, parent_name: str) -> bool:
         if type_name == parent_name:
             return True
-        elif type_name == TypeSystem.TOP_TYPE_NAME:
+        elif type_name == TOP_TYPE_NAME:
             return False
         else:
             return self.is_instance_of(self.get_type(type_name).supertypeName, parent_name)
@@ -436,7 +463,7 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive type, else False
         """
-        if type_name == TypeSystem.TOP_TYPE_NAME:
+        if type_name == TOP_TYPE_NAME:
             return False
         elif type_name in _PRIMITIVE_TYPES:
             return True
@@ -465,12 +492,34 @@ class TypeSystem:
         Returns:
             Returns True if the type identified by `type_name` is a primitive collection type, else False
         """
-        if type_name == TypeSystem.TOP_TYPE_NAME:
+        if type_name == TOP_TYPE_NAME:
             return False
         elif type_name in _PRIMITIVE_COLLECTION_TYPES:
             return True
         else:
             return self.is_primitive_collection(self.get_type(type_name).supertypeName)
+
+    def subsumes(self, parent_name: str, child_name: str) -> bool:
+        """ Determines if the type `child_name` is a child of `parent_name`.
+
+        Args:
+            parent_name: Name of the parent type
+            child_name: Name of the child type
+
+        Returns:
+            True if `parent_name` subsumes `child_name` else False
+        """
+        if parent_name == TOP_TYPE_NAME:
+            return True
+
+        cur = child_name
+        while cur:
+            if cur == parent_name:
+                return True
+            else:
+                cur = self.get_type(cur).supertypeName
+
+        return False
 
     def add_feature(
         self,
@@ -673,7 +722,12 @@ class TypeSystemDeserializer:
         for t in created_types:
             for f in features[t.name]:
                 ts.add_feature(
-                    t, name=f.name, rangeTypeName=f.rangeTypeName, elementType=f.elementType, description=f.description
+                    t,
+                    name=f.name,
+                    rangeTypeName=f.rangeTypeName,
+                    elementType=f.elementType,
+                    description=f.description,
+                    multipleReferencesAllowed=f.multipleReferencesAllowed,
                 )
 
         # DocumentAnnotation is not a predefined UIMA type, but some applications assume that it exists.
@@ -778,6 +832,86 @@ class TypeSystemSerializer:
         if feature.elementType is not None:
             elementType = etree.SubElement(featureDescription, "elementType")
             elementType.text = feature.elementType
+
+
+def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
+    """ Merges several type systems into one.
+
+    If a type is defined in two source file systems, then the features of all of the these types are joined together in+
+    the target type system. The exact rules are outlined in
+    https://uima.apache.org/d/uimaj-2.10.4/references.html#ugr.ref.cas.typemerging .
+
+    Args:
+        *typesystems: The type systems to merge
+
+    Returns:
+        A new type system that is the result of merging  all of the type systems together.
+    """
+
+    type_list = []
+
+    for ts in typesystems:
+        type_list.extend(ts.get_types())
+
+    merged_types = set()
+    merged_ts = TypeSystem()
+
+    # A type can only be added if its supertype was added before. We therefore iterate over the list of all
+    # types and remove types once we were able to merge it. If we were not able to add a type for one iteration,
+    # then it means that the type systems are not mergeable and we abort with an error.
+    while True:
+        updated_type_list = type_list[:]
+        for t in type_list:
+            # Check whether the type is ready to be added
+            if t.supertypeName not in _PREDEFINED_TYPES and t.supertypeName not in merged_types:
+                continue
+
+            # The supertype is defined so we can add the current type to the new type system
+            if not merged_ts.contains_type(t.name):
+                # Create the type and add its features as it does not exist yet in the merged type system
+                created_type = merged_ts.create_type(
+                    name=t.name, description=t.description, supertypeName=t.supertypeName
+                )
+
+                for feature in t.features:
+                    created_type.add_feature(feature)
+            else:
+                # Type is already defind
+                existing_type = merged_ts.get_type(t.name)
+
+                # If the supertypes are not the same, we need to check whether they are at
+                # least compatible and then patch the hierarchy
+                if t.supertypeName != existing_type.supertypeName:
+                    if merged_ts.subsumes(existing_type.supertypeName, t.supertypeName):
+                        # Existing supertype subsumes newly specified supertype;
+                        # reset supertype to the new, more specific type
+                        existing_type.supertypeName = t.supertypeName
+                    elif merged_ts.subsumes(t.supertypeName, existing_type.supertypeName):
+                        # Newly specified supertype subsumes old type, this is OK and we don't
+                        # need to do anything
+                        pass
+                    else:
+                        msg = "Cannot merge type [{0}] with incompatible super types: [{1}] - [{2}]".format(
+                            t.name, t.supertypeName, existing_type.supertypeName
+                        )
+                        raise ValueError(msg)
+
+                # If the type is already defined, merge features
+                for feature in t.features:
+                    existing_type.add_feature(feature)
+
+            merged_types.add(t.name)
+            updated_type_list.remove(t)
+
+        # If there was no progress in the last iteration, then the leftover types cannot be merged
+        if len(type_list) == updated_type_list:
+            raise ValueError("Unmergeable types" + ", ".join([t.name for t in type_list]))
+
+        # If there are no types to merge left, then we are done
+        if len(updated_type_list) == 0:
+            break
+
+    return merged_ts
 
 
 def load_dkpro_core_typesystem() -> TypeSystem:

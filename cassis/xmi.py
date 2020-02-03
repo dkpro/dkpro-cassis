@@ -127,9 +127,6 @@ class CasXmiDeserializer:
             if event == "end":
                 self._clear_elem(elem)
 
-        if len(sofas) != len(views):
-            raise RuntimeError("Number of views and sofas is not equal!")
-
         # Post-process feature values
         referenced_fs = set()
         for xmi_id, fs in feature_structures.items():
@@ -174,8 +171,6 @@ class CasXmiDeserializer:
         fs_in_views = set()
         cas = Cas(typesystem=typesystem)
         for sofa in sofas:
-            proto_view = views[sofa.xmiID]
-
             if sofa.sofaID == "_InitialView":
                 view = cas.get_view("_InitialView")
             else:
@@ -183,6 +178,13 @@ class CasXmiDeserializer:
 
             view.sofa_string = sofa.sofaString
             view.sofa_mime = sofa.mimeType
+
+            # If a sofa has no members, then UIMA might omit the view. In that case,
+            # we create an empty view for it.
+            if sofa.xmiID in views:
+                proto_view = views[sofa.xmiID]
+            else:
+                proto_view = ProtoView(sofa.xmiID)
 
             for member_id in proto_view.members:
                 annotation = feature_structures[member_id]

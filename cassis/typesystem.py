@@ -743,7 +743,7 @@ class TypeSystemDeserializer:
 
     def _get_elem_as_str(self, elem: etree.Element) -> Optional[str]:
         if elem is not None:
-            return elem.text
+            return elem.text if elem.text is None else elem.text.strip()
         else:
             return None
 

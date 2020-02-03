@@ -1,5 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
+import itertools
 from pathlib import Path
 import sys
 from typing import Dict, Iterable, Iterator, List, Union, Tuple, Optional
@@ -63,7 +64,7 @@ class View:
         # Annotations are sorted by begin index first (smaller first). If begin
         # is equal, sort by end index, smaller first. This is the same as
         # comparing a Python tuple of (begin, end)
-        self._type_index = defaultdict(lambda: SortedKeyList(key=_sort_func))
+        self._indices = defaultdict(lambda: SortedKeyList(key=_sort_func))
 
     @property
     def type_index(self) -> Dict[str, SortedList]:
@@ -72,10 +73,10 @@ class View:
         Returns:
             A dictionary mapping type names to annotations of this type.
         """
-        return self._type_index
+        return self._indices
 
     def add_annotation_to_index(self, annotation):
-        self._type_index[annotation.type].add(annotation)
+        self._indices[annotation.type].add(annotation)
 
     def get_all_annotations(self) -> Iterator[FeatureStructure]:
         """ Gets all the annotations in this view.
@@ -84,8 +85,14 @@ class View:
             An iterator over all annotations in this view.
 
         """
-        for annotations_by_type in self._type_index.values():
+        for annotations_by_type in self._indices.values():
             yield from annotations_by_type
+
+
+class Index:
+    def __init__(self, typesystem: TypeSystem):
+        self._data = SortedKeyList(key=_sort_func)
+        self._typesystem = typesystem
 
 
 class Cas:
@@ -211,20 +218,20 @@ class Cas:
         sofa = self.get_sofa()
         return sofa.sofaString[annotation.begin : annotation.end]
 
-    def select(self, typename: str) -> Iterator[FeatureStructure]:
-        """ Finds all annotations of type `typename`.
+    def select(self, type_name: str) -> Iterator[FeatureStructure]:
+        """ Finds all annotations of type `type_name`.
 
         Args:
-            typename: The name of the type whose annotation instances are to be found
+            type_name: The name of the type whose annotation instances are to be found
 
         Returns:
-            An iterator over all feature structures of type `typename`
+            An iterator over all feature structures of type `type_name`
 
         """
-        for annotation in self._current_view.type_index[typename]:
+        for annotation in self._get_feature_structures(type_name):
             yield annotation
 
-    def select_covered(self, typename: str, covering_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
+    def select_covered(self, type_name: str, covering_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
         """Returns an iterator over covered annotations.
 
         Return all annotations that are covered
@@ -233,7 +240,7 @@ class Cas:
         are ignored.
 
         Args:
-            typename: The type name of the annotations to be returned
+            type_name: The type name of the annotations to be returned
             covering_annotation: The name of the annotation which covers
 
         Returns:
@@ -243,7 +250,7 @@ class Cas:
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
-        annotations = self._current_view.type_index[typename]
+        annotations = self._current_view.type_index[type_name]
 
         # The entry point is the index of the first annotation whose `begin`
         # is equal or higher than the `begin` of the covering annotation
@@ -256,7 +263,7 @@ class Cas:
             if annotation.begin > c_end:
                 break
 
-    def select_covering(self, typename: str, covered_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
+    def select_covering(self, type_name: str, covered_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
         """Returns an iterator over annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -265,7 +272,7 @@ class Cas:
         are ignored.
 
         Args:
-            typename: The type name of the annotations to be returned
+            type_name: The type name of the annotations to be returned
             covered_annotation: The name of the annotation which is covered
 
         Returns:
@@ -275,11 +282,9 @@ class Cas:
         c_begin = covered_annotation.begin
         c_end = covered_annotation.end
 
-        annotations = self._current_view.type_index[typename]
-
         # We iterate over all annotations and check whether the provided annotation
         # is covered in the current annotation
-        for annotation in annotations:
+        for annotation in self._get_feature_structures(type_name):
             if c_begin >= annotation.begin and c_end <= annotation.end:
                 yield annotation
 
@@ -291,6 +296,20 @@ class Cas:
 
         """
         return self._current_view.get_all_annotations()
+
+    # FS handling
+
+    def _get_feature_structures(self, type_name) -> Iterator[FeatureStructure]:
+        """ Returns an iterator over all feature structures of type `type_name` and child types. """
+        t = self._typesystem.get_type(type_name)
+        types = {e.name for e in t._children.values()}
+        types.add(type_name)
+
+        for name in types:
+            yield from self._current_view.type_index[name]
+
+    def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> Iterator[FeatureStructure]:
+        pass
 
     # Sofa
 

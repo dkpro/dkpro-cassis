@@ -110,8 +110,8 @@ def test_sofa_uri_can_be_set_and_read():
 # Select
 
 
-def test_select(tokens, sentences):
-    cas = Cas()
+def test_select(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
 
     actual_tokens = list(cas.select("cassis.Token"))
@@ -119,6 +119,16 @@ def test_select(tokens, sentences):
 
     assert actual_tokens == tokens
     assert actual_sentences == sentences
+
+
+def test_select_returns_also_parent_types(small_typesystem_xml, tokens, sentences):
+    annotations = sentences + tokens
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    cas.add_annotations(annotations)
+
+    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+
+    assert actual_annotations == annotations
 
 
 def test_select_covered(tokens, sentences):
@@ -135,8 +145,8 @@ def test_select_covered(tokens, sentences):
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
 
 
-def test_select_covering(tokens, sentences):
-    cas = Cas()
+def test_select_covering(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
     actual_first_sentence, actual_second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -174,7 +184,7 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     typesystem = load_typesystem(typesystem_with_collections_xml)
     cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
-    arrs = list(cas.select("uima.cas.StringArray"))
+    arrs = list(cas.select("cassis.StringArray"))
 
     assert len(arrs) == 1
 
@@ -266,10 +276,13 @@ def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
     assert all([token.xmiID is not None for token in actual_tokens])
 
 
-def test_annotations_are_ordered_correctly(tokens):
+def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem)
+
     annotations = list(tokens)
     random.shuffle(list(annotations))
-    cas = Cas()
+
     for token in annotations:
         cas.add_annotation(token)
 

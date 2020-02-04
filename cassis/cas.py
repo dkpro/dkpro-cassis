@@ -297,7 +297,6 @@ class Cas:
         types.add(type_name)
 
         for name in types:
-            print(name)
             yield from self._current_view.type_index[name]
 
     def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> Iterator[FeatureStructure]:

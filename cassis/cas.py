@@ -293,15 +293,20 @@ class Cas:
     def _get_feature_structures(self, type_name) -> Iterator[FeatureStructure]:
         """ Returns an iterator over all feature structures of type `type_name` and child types. """
         t = self._typesystem.get_type(type_name)
-        types = {e.name for e in t._children.values()}
+        types = {c.name for c in t.children}
         types.add(type_name)
 
         for name in types:
+            print(name)
             yield from self._current_view.type_index[name]
 
     def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> Iterator[FeatureStructure]:
+        """ Returns an iterator over all feature structures of type `type_name` and child types.
+         Only features are returned that are in [begin, end] or close to it. If you use this function,
+         you should always check bound in the calling method.
+         """
         t = self._typesystem.get_type(type_name)
-        types = {e.name for e in t._children.values()}
+        types = {c.name for c in t.children}
         types.add(type_name)
 
         for name in types:

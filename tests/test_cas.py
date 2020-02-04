@@ -128,7 +128,7 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
 
-    assert actual_annotations == annotations
+    assert set(actual_annotations) == set(annotations)
 
 
 def test_select_covered(small_typesystem_xml, tokens, sentences):
@@ -165,8 +165,8 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
     actual_tokens_in_first_sentence = list(cas.select_covered("cassis.Token", first_sentence))
     actual_tokens_in_second_sentence = list(cas.select_covered("cassis.Token", second_sentence))
 
-    assert actual_tokens_in_first_sentence == tokens_in_first_sentence + [subtoken1]
-    assert actual_tokens_in_second_sentence == tokens_in_second_sentence + [subtoken2]
+    assert set(actual_tokens_in_first_sentence) == set(tokens_in_first_sentence + [subtoken1])
+    assert set(actual_tokens_in_second_sentence) == set(tokens_in_second_sentence + [subtoken2])
 
 
 def test_select_covering(small_typesystem_xml, tokens, sentences):
@@ -189,6 +189,34 @@ def test_select_covering(small_typesystem_xml, tokens, sentences):
 
         assert len(result) == 1
         assert actual_second_sentence == second_sentence
+
+
+def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    typesystem = load_typesystem(small_typesystem_xml)
+    SubSentenceType = typesystem.create_type("cassis.SubSentence", supertypeName="cassis.Sentence")
+
+    cas = Cas(typesystem=typesystem)
+
+    first_sentence, second_sentence = sentences
+    annotations = tokens + sentences
+    subsentence1 = SubSentenceType(begin=first_sentence.begin, end=first_sentence.end)
+    subsentence2 = SubSentenceType(begin=second_sentence.begin, end=second_sentence.end)
+    annotations.append(subsentence1)
+    annotations.append(subsentence2)
+    cas.add_annotations(annotations)
+
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    for token in tokens_in_first_sentence:
+        result = set(cas.select_covering("cassis.Sentence", token))
+
+        assert result == {first_sentence, subsentence1}
+
+    for token in tokens_in_second_sentence:
+        result = set(cas.select_covering("cassis.Sentence", token))
+
+        assert result == {second_sentence, subsentence2}
 
 
 def test_select_only_returns_annotations_of_current_view(tokens, sentences):

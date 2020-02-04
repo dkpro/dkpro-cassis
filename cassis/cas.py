@@ -67,7 +67,7 @@ class View:
         self._indices = defaultdict(lambda: SortedKeyList(key=_sort_func))
 
     @property
-    def type_index(self) -> Dict[str, SortedList]:
+    def type_index(self) -> Dict[str, SortedKeyList]:
         """ Returns an index mapping type names to annotations of this type.
 
         Returns:
@@ -250,18 +250,9 @@ class Cas:
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
-        annotations = self._current_view.type_index[type_name]
-
-        # The entry point is the index of the first annotation whose `begin`
-        # is equal or higher than the `begin` of the covering annotation
-        entry_point = annotations.bisect_key_left((c_begin, c_begin))
-
-        for annotation in annotations[entry_point:]:
+        for annotation in self._get_feature_structures_in_range(type_name, c_begin, c_end):
             if annotation.begin >= c_begin and annotation.end <= c_end:
                 yield annotation
-
-            if annotation.begin > c_end:
-                break
 
     def select_covering(self, type_name: str, covered_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
         """Returns an iterator over annotations that cover the given annotation.
@@ -309,7 +300,19 @@ class Cas:
             yield from self._current_view.type_index[name]
 
     def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> Iterator[FeatureStructure]:
-        pass
+        t = self._typesystem.get_type(type_name)
+        types = {e.name for e in t._children.values()}
+        types.add(type_name)
+
+        for name in types:
+            annotations = self._current_view.type_index[name]
+
+            # We use binary search to find indices for the first and last annotations that are inside
+            # the window of [begin, end].
+            idx_begin = max(annotations.bisect_key_left((begin, end)) - 1, 0)
+            idx_end = min(annotations.bisect_key_right((end, begin)), len(annotations))
+
+            yield from annotations[idx_begin:idx_end]
 
     # Sofa
 

@@ -121,8 +121,8 @@ def test_select(small_typesystem_xml, tokens, sentences):
     assert actual_sentences == sentences
 
 
-def test_select_returns_also_parent_types(small_typesystem_xml, tokens, sentences):
-    annotations = sentences + tokens
+def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(annotations)
 
@@ -131,8 +131,8 @@ def test_select_returns_also_parent_types(small_typesystem_xml, tokens, sentence
     assert actual_annotations == annotations
 
 
-def test_select_covered(tokens, sentences):
-    cas = Cas()
+def test_select_covered(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -143,6 +143,30 @@ def test_select_covered(tokens, sentences):
 
     assert actual_tokens_in_first_sentence == tokens_in_first_sentence
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
+
+
+def test_select_covered_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    typesystem = load_typesystem(small_typesystem_xml)
+    SubTokenType = typesystem.create_type("cassis.SubToken", supertypeName="cassis.Token")
+
+    annotations = tokens + sentences
+    subtoken1 = SubTokenType(begin=tokens[2].begin, end=tokens[3].end)
+    subtoken2 = SubTokenType(begin=tokens[8].begin, end=tokens[8].end)
+    annotations.append(subtoken1)
+    annotations.append(subtoken2)
+
+    cas = Cas(typesystem=typesystem)
+    cas.add_annotations(annotations)
+
+    first_sentence, second_sentence = sentences
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    actual_tokens_in_first_sentence = list(cas.select_covered("cassis.Token", first_sentence))
+    actual_tokens_in_second_sentence = list(cas.select_covered("cassis.Token", second_sentence))
+
+    assert actual_tokens_in_first_sentence == tokens_in_first_sentence + [subtoken1]
+    assert actual_tokens_in_second_sentence == tokens_in_second_sentence + [subtoken2]
 
 
 def test_select_covering(small_typesystem_xml, tokens, sentences):

@@ -85,20 +85,6 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     assert 1 == len(list(view2.select_all()))
 
 
-def test_simple_features_are_parsed(tokens, sentences, small_xmi, small_typesystem_xml):
-    typesystem = load_typesystem(small_typesystem_xml)
-    cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
-
-    TokenType = typesystem.get_type("cassis.Token")
-    SentenceType = typesystem.get_type("cassis.Sentence")
-
-    actual_tokens = list(cas.select(TokenType.name))
-    actual_sentences = list(cas.select(SentenceType.name))
-
-    assert tokens == actual_tokens
-    assert sentences == actual_sentences
-
-
 def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type("cassis.Token")

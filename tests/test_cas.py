@@ -110,8 +110,8 @@ def test_sofa_uri_can_be_set_and_read():
 # Select
 
 
-def test_select(tokens, sentences):
-    cas = Cas()
+def test_select(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
 
     actual_tokens = list(cas.select("cassis.Token"))
@@ -121,8 +121,18 @@ def test_select(tokens, sentences):
     assert actual_sentences == sentences
 
 
-def test_select_covered(tokens, sentences):
-    cas = Cas()
+def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    annotations = tokens + sentences
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    cas.add_annotations(annotations)
+
+    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+
+    assert set(actual_annotations) == set(annotations)
+
+
+def test_select_covered(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -135,8 +145,32 @@ def test_select_covered(tokens, sentences):
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
 
 
-def test_select_covering(tokens, sentences):
-    cas = Cas()
+def test_select_covered_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    typesystem = load_typesystem(small_typesystem_xml)
+    SubTokenType = typesystem.create_type("cassis.SubToken", supertypeName="cassis.Token")
+
+    annotations = tokens + sentences
+    subtoken1 = SubTokenType(begin=tokens[2].begin, end=tokens[3].end)
+    subtoken2 = SubTokenType(begin=tokens[8].begin, end=tokens[8].end)
+    annotations.append(subtoken1)
+    annotations.append(subtoken2)
+
+    cas = Cas(typesystem=typesystem)
+    cas.add_annotations(annotations)
+
+    first_sentence, second_sentence = sentences
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    actual_tokens_in_first_sentence = list(cas.select_covered("cassis.Token", first_sentence))
+    actual_tokens_in_second_sentence = list(cas.select_covered("cassis.Token", second_sentence))
+
+    assert set(actual_tokens_in_first_sentence) == set(tokens_in_first_sentence + [subtoken1])
+    assert set(actual_tokens_in_second_sentence) == set(tokens_in_second_sentence + [subtoken2])
+
+
+def test_select_covering(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens + sentences)
     actual_first_sentence, actual_second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -157,6 +191,34 @@ def test_select_covering(tokens, sentences):
         assert actual_second_sentence == second_sentence
 
 
+def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+    typesystem = load_typesystem(small_typesystem_xml)
+    SubSentenceType = typesystem.create_type("cassis.SubSentence", supertypeName="cassis.Sentence")
+
+    cas = Cas(typesystem=typesystem)
+
+    first_sentence, second_sentence = sentences
+    annotations = tokens + sentences
+    subsentence1 = SubSentenceType(begin=first_sentence.begin, end=first_sentence.end)
+    subsentence2 = SubSentenceType(begin=second_sentence.begin, end=second_sentence.end)
+    annotations.append(subsentence1)
+    annotations.append(subsentence2)
+    cas.add_annotations(annotations)
+
+    tokens_in_first_sentence = tokens[:6]
+    tokens_in_second_sentence = tokens[6:]
+
+    for token in tokens_in_first_sentence:
+        result = set(cas.select_covering("cassis.Sentence", token))
+
+        assert result == {first_sentence, subsentence1}
+
+    for token in tokens_in_second_sentence:
+        result = set(cas.select_covering("cassis.Sentence", token))
+
+        assert result == {second_sentence, subsentence2}
+
+
 def test_select_only_returns_annotations_of_current_view(tokens, sentences):
     cas = Cas()
     cas.add_annotations(tokens)
@@ -174,7 +236,7 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     typesystem = load_typesystem(typesystem_with_collections_xml)
     cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
-    arrs = list(cas.select("uima.cas.StringArray"))
+    arrs = list(cas.select("cassis.StringArray"))
 
     assert len(arrs) == 1
 
@@ -266,10 +328,13 @@ def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
     assert all([token.xmiID is not None for token in actual_tokens])
 
 
-def test_annotations_are_ordered_correctly(tokens):
+def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem)
+
     annotations = list(tokens)
     random.shuffle(list(annotations))
-    cas = Cas()
+
     for token in annotations:
         cas.add_annotation(token)
 

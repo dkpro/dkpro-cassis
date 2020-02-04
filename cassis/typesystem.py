@@ -118,12 +118,12 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
-@attr.s(slots=True, eq=False, order=False)
+@attr.s(slots=True, hash=False, eq=True, order=True)
 class FeatureStructure:
     """The base class for all feature structure instances"""
 
     type = attr.ib()  # str: Type name of this feature structure instance
-    xmiID = attr.ib(default=None)  # int: xmiID of this feature structure instance
+    xmiID = attr.ib(default=None, eq=False)  # int: xmiID of this feature structure instance
 
     def __eq__(self, other):
         return self.__slots__ == other.__slots__
@@ -139,6 +139,9 @@ class FeatureStructure:
             return self.sofa.sofaString[self.begin : self.end]
         else:
             raise NotImplementedError()
+
+    def __hash__(self):
+        return self.xmiID
 
 
 @attr.s(slots=True, eq=False, order=False)
@@ -298,6 +301,10 @@ class Type:
 
         # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
         return unique_everseen(chain(self._features.values(), self._inherited_features.values()))
+
+    @property
+    def children(self) -> Iterator["Type"]:
+        yield from self._children.values()
 
 
 class TypeSystem:

@@ -220,7 +220,7 @@ class CasXmiDeserializer:
     def _parse_feature_structure(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
         # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
-        typename = elem.tag[9:].replace("/", ".").replace("ecore}", "")
+        typename = elem.tag[9:].replace("/", ".").replace("ecore}", "").strip()
 
         AnnotationType = typesystem.get_type(typename)
         attributes = dict(elem.attrib)

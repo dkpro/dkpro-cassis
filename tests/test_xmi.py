@@ -92,6 +92,7 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
     cas.add_annotation(TokenType(begin=0, end=3, id="0", pos="NNP"))
 
+    # Check that serializing still works
     xmi = cas.to_xmi()
     load_cas_from_xmi(xmi, typesystem=typesystem)
 

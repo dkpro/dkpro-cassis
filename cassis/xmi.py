@@ -1,6 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
-from typing import Dict, IO, Union, List, Set
+from typing import Dict, IO, Union, List, Set, Iterable
 
 import attr
 
@@ -47,7 +47,6 @@ class CasXmiDeserializer:
         NS_CAS = "{http:///uima/cas.ecore}"
 
         TAG_XMI = NS_XMI + "XMI"
-        TAG_CAS_NULL = NS_CAS + "NULL"
         TAG_CAS_SOFA = NS_CAS + "Sofa"
         TAG_CAS_VIEW = NS_CAS + "View"
 
@@ -65,8 +64,8 @@ class CasXmiDeserializer:
         state = OUTSIDE_FS
 
         for event, elem in context:
-            # Ignore the 'xmi:XMI' and 'cas:NULL' elements
-            if elem.tag == TAG_XMI or elem.tag == TAG_CAS_NULL:
+            # Ignore the 'xmi:XMI'
+            if elem.tag == TAG_XMI:
                 pass
             elif elem.tag == TAG_CAS_SOFA:
                 if event == "end":
@@ -197,6 +196,9 @@ class CasXmiDeserializer:
         # only by other fs and not added to a view, as normally View::add_annotation
         # generates the ids.
         referenced_fs = referenced_fs.difference(fs_in_views)
+
+        # We do not want to change the ID of cas:NULL
+        referenced_fs.discard(0)
         for target_id in sorted(referenced_fs):
             fs = feature_structures[target_id]
             fs.xmiID = cas._get_next_xmi_id()
@@ -284,7 +286,7 @@ class CasXmiSerializer:
 
         doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
 
-    def _find_all_fs(self, cas: Cas) -> List[FeatureStructure]:
+    def _find_all_fs(self, cas: Cas) -> Iterable[FeatureStructure]:
         """ This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature. """
@@ -329,7 +331,9 @@ class CasXmiSerializer:
                     if referenced_fs.xmiID not in all_fs:
                         openlist.append(referenced_fs)
 
-        return list(all_fs.values())
+        # We do not want to return cas:NULL here as we handle serializing it later
+        all_fs.pop(0, None)
+        yield from all_fs.values()
 
     def _serialize_cas_null(self, root: etree.Element):
         name = etree.QName(self._nsmap["cas"], "NULL")

@@ -20,6 +20,7 @@ _DOCUMENT_ANNOTATION_TYPE = "uima.tcas.DocumentAnnotation"
 
 _PREDEFINED_TYPES = {
     "uima.cas.TOP",
+    "uima.cas.NULL",
     "uima.cas.Boolean",
     "uima.cas.Byte",
     "uima.cas.Short",
@@ -321,6 +322,9 @@ class TypeSystem:
         # `top` is directly assigned in order to circumvent the inheritance
         top = Type(name=TOP_TYPE_NAME, supertypeName=None)
         self._types[top.name] = top
+
+        # cas:NULL
+        self.create_type(name="uima.cas.NULL", supertypeName="uima.cas.TOP")
 
         # Primitive types
         self.create_type(name="uima.cas.Boolean", supertypeName="uima.cas.TOP")

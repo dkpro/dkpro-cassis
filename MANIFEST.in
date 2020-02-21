@@ -1,1 +1,2 @@
 include README.rst LICENSE
+include cassis/resources/dkpro-core-types.xml

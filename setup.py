@@ -20,13 +20,13 @@ AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.5.0"
 
 install_requires = [
-    "lxml",
+    "lxml>=4.5.0",
     "attrs>=19.3.0",
-    "sortedcontainers",
-    "toposort",
-    "more-itertools",
-    "deprecation",
-    "importlib_resources"
+    "sortedcontainers>=2.1.0",
+    "toposort>=1.5",
+    "more-itertools>=8.2.0",
+    "deprecation>=2.0.7",
+    "importlib_resources>=1.0.2"
 ]
 
 test_dependencies = [

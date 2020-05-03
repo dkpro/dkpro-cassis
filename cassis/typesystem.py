@@ -615,6 +615,16 @@ class TypeSystem:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
     def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
+        """ Checks whether a feature structure is type sound.
+
+        Currently only checks `uima.cas.FSArray` and `uima.cas.FSList`.
+
+        Args:
+            fs: The feature structure to type check.
+
+        Returns:
+            List of type errors found, empty list of no errors were found.
+        """
         errors = []
 
         t = self.get_type(fs.type)

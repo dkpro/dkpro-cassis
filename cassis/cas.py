@@ -432,6 +432,13 @@ class Cas:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
     def typecheck(self) -> List[TypeCheckError]:
+        """ Checks whether all feature structures in this CAS are type sound.
+
+        For more information, see `cassis.TypesSystem::typecheck`.
+
+        Returns:
+            List of type errors found, empty list of no errors were found.
+        """
         all_errors = []
         for fs in self._find_all_fs():
             errors = self.typesystem.typecheck(fs)

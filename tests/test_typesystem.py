@@ -3,7 +3,7 @@ import warnings
 
 import pytest
 
-from cassis.typesystem import Feature, _COLLECTION_TYPES, TOP_TYPE_NAME
+from cassis.typesystem import Feature, _COLLECTION_TYPES, TOP_TYPE_NAME, TypeCheckError
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -532,3 +532,30 @@ def test_that_dkpro_core_typeystem_can_be_loaded():
     POS = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS")
     NamedEntity = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity")
     CoreferenceLink = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.coref.type.CoreferenceLink")
+
+
+# Type checking
+def test_typchecking_fs_array():
+    cas = Cas()
+    MyValue = cas.typesystem.create_type(name="test.MyValue", supertypeName="uima.cas.TOP")
+    MyOtherValue = cas.typesystem.create_type(name="test.MyOtherValue", supertypeName="uima.cas.TOP")
+    MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
+
+    cas.typesystem.add_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
+    cas.typesystem.add_feature(
+        type_=MyCollection, name="members", rangeTypeName="uima.cas.FSArray", elementType="test.MyValue"
+    )
+
+    members = [MyValue(value="foo"), MyValue(value="bar"), MyOtherValue()]
+
+    collection = MyCollection(members=members)
+
+    cas.add_annotation(collection)
+
+    errors = cas.typecheck()
+
+    assert len(errors) == 1
+    expected_error = TypeCheckError(
+        2, "Member of [uima.cas.FSArray] has unsound type: was [test.MyOtherValue], need [test.MyValue]!"
+    )
+    assert errors[0] == expected_error

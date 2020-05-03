@@ -3,7 +3,7 @@ from itertools import chain, filterfalse
 from io import BytesIO
 from pathlib import Path
 import re
-from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable
+from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable, List
 import warnings
 
 from toposort import toposort_flatten
@@ -119,6 +119,12 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
+@attr.s
+class TypeCheckError(Exception):
+    xmiID = attr.ib()  # int: xmiID of the feature structure with type error
+    description = attr.ib()  # str: Description of the type check error
+
+
 @attr.s(slots=True, hash=False, eq=True, order=True)
 class FeatureStructure:
     """The base class for all feature structure instances"""
@@ -126,8 +132,9 @@ class FeatureStructure:
     type = attr.ib()  # str: Type name of this feature structure instance
     xmiID = attr.ib(default=None, eq=False)  # int: xmiID of this feature structure instance
 
-    def __eq__(self, other):
-        return self.__slots__ == other.__slots__
+    def value(self, name: str):
+        """ Returns the value of the feature `name`. """
+        return getattr(self, name)
 
     def get_covered_text(self) -> str:
         """ Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
@@ -143,6 +150,9 @@ class FeatureStructure:
 
     def __hash__(self):
         return self.xmiID
+
+    def __eq__(self, other):
+        return self.__slots__ == other.__slots__
 
 
 @attr.s(slots=True, eq=False, order=False)
@@ -604,6 +614,24 @@ class TypeSystem:
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
+    def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
+        errors = []
+
+        t = self.get_type(fs.type)
+        for f in t.all_features:
+            # Check FS collections
+            if f.rangeTypeName == "uima.cas.FSArray" or f.rangeTypeName == "uima.cas.FSList":
+                # We check for every element that it is of type `elementType` or a child thereof
+                element_type = f.elementType or TOP_TYPE_NAME
+                for e in fs.value(f.name):
+                    if not self.subsumes(element_type, e.type):
+                        msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
+                            f.rangeTypeName, e.type, element_type
+                        )
+                        errors.append(TypeCheckError(fs.xmiID, msg))
+
+        return errors
+
     def _defines_predefined_type(self, type_name):
         self._predefined_types.add(type_name)
 
@@ -887,7 +915,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                 for feature in t.features:
                     created_type.add_feature(feature)
             else:
-                # Type is already defind
+                # Type is already defined
                 existing_type = merged_ts.get_type(t.name)
 
                 # If the supertypes are not the same, we need to check whether they are at

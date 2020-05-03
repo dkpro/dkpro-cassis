@@ -272,7 +272,7 @@ class CasXmiSerializer:
         self._serialize_cas_null(root)
 
         # Find all fs, even the ones that are not directly added to a sofa
-        for fs in sorted(self._find_all_fs(cas), key=lambda a: a.xmiID):
+        for fs in sorted(cas._find_all_fs(), key=lambda a: a.xmiID):
             self._serialize_feature_structure(cas, root, fs)
 
         for sofa in cas.sofas:
@@ -285,55 +285,6 @@ class CasXmiSerializer:
         etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
 
         doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
-
-    def _find_all_fs(self, cas: Cas) -> Iterable[FeatureStructure]:
-        """ This function traverses the whole CAS in order to find all directly and indirectly referenced
-        feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
-        referenced by another feature structure as a feature. """
-        all_fs = {}
-
-        openlist = []
-        for sofa in cas.sofas:
-            view = cas.get_view(sofa.sofaID)
-            openlist.extend(view.select_all())
-
-        ts = cas.typesystem
-        while openlist:
-            fs = openlist.pop(0)
-            all_fs[fs.xmiID] = fs
-
-            t = ts.get_type(fs.type)
-            for feature in t.all_features:
-                feature_name = feature.name
-
-                if feature_name == "sofa":
-                    continue
-
-                if (
-                    ts.is_primitive(feature.rangeTypeName)
-                    or ts.is_primitive_collection(feature.rangeTypeName)
-                    or ts.is_primitive_collection(fs.type)
-                ):
-                    continue
-                elif ts.is_collection(fs.type, feature):
-                    lst = getattr(fs, feature_name)
-                    if lst is None:
-                        continue
-
-                    for referenced_fs in lst:
-                        if referenced_fs.xmiID not in all_fs:
-                            openlist.append(referenced_fs)
-                else:
-                    referenced_fs = getattr(fs, feature_name)
-                    if referenced_fs is None:
-                        continue
-
-                    if referenced_fs.xmiID not in all_fs:
-                        openlist.append(referenced_fs)
-
-        # We do not want to return cas:NULL here as we handle serializing it later
-        all_fs.pop(0, None)
-        yield from all_fs.values()
 
     def _serialize_cas_null(self, root: etree.Element):
         name = etree.QName(self._nsmap["cas"], "NULL")

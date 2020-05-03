@@ -219,8 +219,8 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
         assert result == {second_sentence, subsentence2}
 
 
-def test_select_only_returns_annotations_of_current_view(tokens, sentences):
-    cas = Cas()
+def test_select_only_returns_annotations_of_current_view(tokens, sentences, small_typesystem_xml):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens)
     view = cas.create_view("testView")
     view.add_annotations(sentences)

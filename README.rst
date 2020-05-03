@@ -240,9 +240,9 @@ Type checking
 ~~~~~~~~~~~~~
 
 When adding annotations, no type checking is performed for simplicity reasons.
-In order to check types, call the `cas.typecheck()` method. Currently, it only
-checks whether elements in uima.cas.FSArray` or `uima.cas.FSList` are
-adhere to the specified `elementType`.
+In order to check types, call the :code:`cas.typecheck()` method. Currently, it only
+checks whether elements in uima.cas.FSArray` or :code:`uima.cas.FSList` are
+adhere to the specified :code:`elementType`.
 
 DKPro Core Integration
 ----------------------

@@ -341,3 +341,24 @@ def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
     actual_tokens = list(cas.select("cassis.Token"))
 
     assert actual_tokens == tokens
+
+
+def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    TokenType = typesystem.get_type("cassis.Token")
+    token = TokenType(begin=0, end=3, id="0", pos="NNP")
+
+    cas = Cas()
+    with pytest.raises(RuntimeError, match="Typesystem of CAS does not contain type"):
+        cas.add_annotation(token)
+
+
+def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    TokenType = typesystem.get_type("cassis.Token")
+    token = TokenType(begin=0, end=3, id="0", pos="NNP")
+
+    cas = Cas(lenient=True)
+    cas.add_annotation(token)

@@ -10,7 +10,7 @@ from attr import validators
 
 from sortedcontainers import SortedList, SortedKeyList
 
-from cassis.typesystem import FeatureStructure, TypeSystem
+from cassis.typesystem import FeatureStructure, TypeSystem, TypeCheckError
 
 import deprecation
 
@@ -98,7 +98,7 @@ class Index:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(self, typesystem: TypeSystem = None):
+    def __init__(self, typesystem: TypeSystem = None, lenient: bool = False):
         """ Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
 
@@ -106,6 +106,7 @@ class Cas:
             typesystem: The types system to use.
         """
         self._typesystem = typesystem if typesystem else TypeSystem()
+        self._lenient = lenient
 
         # When new attributes are added, they also need to be added in Cas::_copy. The copying
         # relies on the fact that all the members of the Cas are mutable references. It is not
@@ -187,6 +188,11 @@ class Cas:
             annotation: The annotation to add.
 
         """
+        if not self._lenient and not self._typesystem.contains_type(annotation.type):
+            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type)
+            msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
+            raise RuntimeError(msg)
+
         next_id = self._get_next_xmi_id()
         annotation.xmiID = next_id
         if hasattr(annotation, "sofa"):
@@ -424,6 +430,70 @@ class Cas:
                 serializer.serialize(f, self, pretty_print=pretty_print)
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+
+    def typecheck(self) -> List[TypeCheckError]:
+        """ Checks whether all feature structures in this CAS are type sound.
+
+        For more information, see `cassis.TypesSystem::typecheck`.
+
+        Returns:
+            List of type errors found, empty list of no errors were found.
+        """
+        all_errors = []
+        for fs in self._find_all_fs():
+            errors = self.typesystem.typecheck(fs)
+            all_errors.extend(errors)
+
+        return all_errors
+
+    def _find_all_fs(self) -> Iterable[FeatureStructure]:
+        """ This function traverses the whole CAS in order to find all directly and indirectly referenced
+        feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
+        referenced by another feature structure as a feature. """
+        all_fs = {}
+
+        openlist = []
+        for sofa in self.sofas:
+            view = self.get_view(sofa.sofaID)
+            openlist.extend(view.select_all())
+
+        ts = self.typesystem
+        while openlist:
+            fs = openlist.pop(0)
+            all_fs[fs.xmiID] = fs
+
+            t = ts.get_type(fs.type)
+            for feature in t.all_features:
+                feature_name = feature.name
+
+                if feature_name == "sofa":
+                    continue
+
+                if (
+                    ts.is_primitive(feature.rangeTypeName)
+                    or ts.is_primitive_collection(feature.rangeTypeName)
+                    or ts.is_primitive_collection(fs.type)
+                ):
+                    continue
+                elif ts.is_collection(fs.type, feature):
+                    lst = getattr(fs, feature_name)
+                    if lst is None:
+                        continue
+
+                    for referenced_fs in lst:
+                        if referenced_fs.xmiID not in all_fs:
+                            openlist.append(referenced_fs)
+                else:
+                    referenced_fs = getattr(fs, feature_name)
+                    if referenced_fs is None:
+                        continue
+
+                    if referenced_fs.xmiID not in all_fs:
+                        openlist.append(referenced_fs)
+
+        # We do not want to return cas:NULL here as we handle serializing it later
+        all_fs.pop(0, None)
+        yield from all_fs.values()
 
     def _get_next_xmi_id(self) -> int:
         return self._xmi_id_generator.generate_id()

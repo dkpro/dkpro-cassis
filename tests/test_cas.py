@@ -219,8 +219,8 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
         assert result == {second_sentence, subsentence2}
 
 
-def test_select_only_returns_annotations_of_current_view(tokens, sentences):
-    cas = Cas()
+def test_select_only_returns_annotations_of_current_view(tokens, sentences, small_typesystem_xml):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_annotations(tokens)
     view = cas.create_view("testView")
     view.add_annotations(sentences)
@@ -341,3 +341,24 @@ def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
     actual_tokens = list(cas.select("cassis.Token"))
 
     assert actual_tokens == tokens
+
+
+def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    TokenType = typesystem.get_type("cassis.Token")
+    token = TokenType(begin=0, end=3, id="0", pos="NNP")
+
+    cas = Cas()
+    with pytest.raises(RuntimeError, match="Typesystem of CAS does not contain type"):
+        cas.add_annotation(token)
+
+
+def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    TokenType = typesystem.get_type("cassis.Token")
+    token = TokenType(begin=0, end=3, id="0", pos="NNP")
+
+    cas = Cas(lenient=True)
+    cas.add_annotation(token)

@@ -57,7 +57,6 @@ Currently supported features are:
 
 Some features are still under development, e.g.
 
-- Feature encoding as XML elements (right now only XML attributes work)
 - Proper type checking
 - XML/XMI schema validation
 - Type unmarshalling from string to the actual type specified in the type system
@@ -236,6 +235,14 @@ achieved via the :code:`merge_typesystems` function. The detailed rules of mergi
         typesystem = load_typesystem(f)
 
     ts = merge_typesystems([typesystem, load_dkpro_core_typesystem()])
+
+Type checking
+~~~~~~~~~~~~~
+
+When adding annotations, no type checking is performed for simplicity reasons.
+In order to check types, call the `cas.typecheck()` method. Currently, it only
+checks whether elements in uima.cas.FSArray` or `uima.cas.FSList` are
+adhere to the specified `elementType`.
 
 DKPro Core Integration
 ----------------------

@@ -126,11 +126,13 @@ class Cas:
     def typesystem(self) -> TypeSystem:
         return self._typesystem
 
-    def create_view(self, name: str) -> "Cas":
+    def create_view(self, name: str, xmiID: Optional[int] = None, sofaNum: Optional[int] = None) -> "Cas":
         """ Create a view and its underlying Sofa (subject of analysis).
 
         Args:
             name: The name of the view. This is the same as the associated Sofa name.
+            xmiID: If specified, use this XMI id instead of generating a new one.
+            sofaNum: If specified, use this sofaNum instead of generating a new one.
 
         Returns:
             The newly created view.
@@ -141,12 +143,18 @@ class Cas:
         if name in self._views:
             raise ValueError("A view with name [{name}] already exists!".format(name=name))
 
-        self._add_view(name)
+        self._add_view(name, xmiID=xmiID, sofaNum=sofaNum)
         return self.get_view(name)
 
-    def _add_view(self, name: str):
+    def _add_view(self, name: str, xmiID: Optional[int] = None, sofaNum: Optional[int] = None):
+        if xmiID is None:
+            xmiID = self._get_next_xmi_id()
+
+        if sofaNum is None:
+            sofaNum = self._get_next_sofa_num()
+
         # Create sofa
-        sofa = Sofa(xmiID=self._get_next_xmi_id(), sofaNum=self._get_next_sofa_num(), sofaID=name)
+        sofa = Sofa(xmiID=xmiID, sofaNum=sofaNum, sofaID=name)
 
         # Create view
         view = View(sofa=sofa)
@@ -181,11 +189,12 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add_annotation(self, annotation: FeatureStructure):
+    def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
         """Adds an annotation to this Cas.
 
         Args:
             annotation: The annotation to add.
+            keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
 
         """
         if not self._lenient and not self._typesystem.contains_type(annotation.type):
@@ -193,7 +202,11 @@ class Cas:
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
-        next_id = self._get_next_xmi_id()
+        if keep_id and annotation.xmiID is not None:
+            next_id = annotation.xmiID
+        else:
+            next_id = self._get_next_xmi_id()
+
         annotation.xmiID = next_id
         if hasattr(annotation, "sofa"):
             annotation.sofa = self.get_sofa()

@@ -6,7 +6,7 @@ import attr
 
 from lxml import etree
 
-from cassis.cas import Cas, Sofa, View
+from cassis.cas import Cas, Sofa, View, IdGenerator
 from cassis.typesystem import FeatureStructure, TypeSystem
 
 
@@ -41,6 +41,10 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None) -> 
 
 
 class CasXmiDeserializer:
+    def __init__(self):
+        self._max_xmi_id = 0
+        self._max_sofa_num = 0
+
     def deserialize(self, source: Union[IO, str], typesystem: TypeSystem):
         # namespaces
         NS_XMI = "{http://www.omg.org/XMI}"
@@ -62,6 +66,8 @@ class CasXmiDeserializer:
         context = etree.iterparse(source, events=("start", "end"))
 
         state = OUTSIDE_FS
+        self._max_xmi_id = 0
+        self._max_sofa_num = 0
 
         for event, elem in context:
             # Ignore the 'xmi:XMI'
@@ -167,13 +173,12 @@ class CasXmiDeserializer:
                     referenced_fs.add(target_id)
                     setattr(fs, feature_name, target)
 
-        fs_in_views = set()
         cas = Cas(typesystem=typesystem)
         for sofa in sofas:
             if sofa.sofaID == "_InitialView":
                 view = cas.get_view("_InitialView")
             else:
-                view = cas.create_view(sofa.sofaID)
+                view = cas.create_view(sofa.sofaID, xmiID=sofa.xmiID, sofaNum=sofa.sofaNum)
 
             view.sofa_string = sofa.sofaString
             view.sofa_mime = sofa.mimeType
@@ -188,20 +193,10 @@ class CasXmiDeserializer:
             for member_id in proto_view.members:
                 annotation = feature_structures[member_id]
 
-                view.add_annotation(annotation)
+                view.add_annotation(annotation, keep_id=True)
 
-                fs_in_views.add(annotation.xmiID)
-
-        # We need to generate new IDs for feature structures that are referenced
-        # only by other fs and not added to a view, as normally View::add_annotation
-        # generates the ids.
-        referenced_fs = referenced_fs.difference(fs_in_views)
-
-        # We do not want to change the ID of cas:NULL
-        referenced_fs.discard(0)
-        for target_id in sorted(referenced_fs):
-            fs = feature_structures[target_id]
-            fs.xmiID = cas._get_next_xmi_id()
+        cas._xmi_id_generator = IdGenerator(self._max_xmi_id + 1)
+        cas._sofa_num_generator = IdGenerator(self._max_sofa_num + 1)
 
         return cas
 
@@ -209,6 +204,9 @@ class CasXmiDeserializer:
         attributes = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
+        self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
+        self._max_sofa_num = max(attributes["sofaNum"], self._max_sofa_num)
+
         return Sofa(**attributes)
 
     def _parse_view(self, elem) -> ProtoView:
@@ -247,6 +245,7 @@ class CasXmiDeserializer:
         if "type" in attributes:
             attributes["type_"] = attributes.pop("type")
 
+        self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         return AnnotationType(**attributes)
 
     def _clear_elem(self, elem):

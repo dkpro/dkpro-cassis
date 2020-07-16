@@ -209,7 +209,8 @@ class Type:
     _children = attr.ib(factory=dict)  # type: Dict[str, Type]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _constructor = attr.ib(init=False, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _constructor_fn = attr.ib(init=False, eq=False, order=False, repr=False)
+    _constructor = attr.ib(default=None, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
 
     def __attrs_post_init__(self):
         """ Build the constructor that can create feature structures of this type """
@@ -217,7 +218,12 @@ class Type:
         fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
 
-        self._constructor = attr.make_class(name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False)
+        # We assign this to a lambda to make it lazy
+        # When creating large type systems, almost no types are used so
+        # creating them on the fly is on average better
+        self._constructor_fn = lambda: attr.make_class(
+            name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False
+        )
 
     def __call__(self, **kwargs) -> FeatureStructure:
         """ Creates an feature structure of this type
@@ -229,6 +235,9 @@ class Type:
             A new feature structure instance of this type.
 
         """
+        if self._constructor is None:
+            self._constructor = self._constructor_fn()
+
         return self._constructor(**kwargs)
 
     def get_feature(self, name: str) -> Optional[Feature]:

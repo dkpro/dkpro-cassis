@@ -117,7 +117,7 @@ def test_type_can_retrieve_children(typesystem_with_inheritance_xml):
 
     children = [item.name for item in t.children]
 
-    assert children == ['cassis.GrandChild']
+    assert children == ["cassis.GrandChild"]
 
 
 def test_type_can_retrieve_descendants(typesystem_with_inheritance_xml):
@@ -127,7 +127,7 @@ def test_type_can_retrieve_descendants(typesystem_with_inheritance_xml):
 
     descendants = [item.name for item in t.descendants]
 
-    assert descendants == ['cassis.Child', 'cassis.GrandChild', 'cassis.GrandGrandChild', 'cassis.GrandGrandGrandChild']
+    assert descendants == ["cassis.Child", "cassis.GrandChild", "cassis.GrandGrandChild", "cassis.GrandGrandGrandChild"]
 
 
 def test_type_inherits_from_annotation_base():

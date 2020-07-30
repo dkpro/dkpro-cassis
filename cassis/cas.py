@@ -312,8 +312,7 @@ class Cas:
     def _get_feature_structures(self, type_name) -> Iterator[FeatureStructure]:
         """ Returns an iterator over all feature structures of type `type_name` and child types. """
         t = self._typesystem.get_type(type_name)
-        types = {c.name for c in t.children}
-        types.add(type_name)
+        types = {c.name for c in t.descendants}
 
         for name in types:
             yield from self._current_view.type_index[name]
@@ -324,8 +323,7 @@ class Cas:
          you should always check bound in the calling method.
          """
         t = self._typesystem.get_type(type_name)
-        types = {c.name for c in t.children}
-        types.add(type_name)
+        types = {c.name for c in t.descendants}
 
         for name in types:
             annotations = self._current_view.type_index[name]

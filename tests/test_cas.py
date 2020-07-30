@@ -362,3 +362,15 @@ def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
 
     cas = Cas(lenient=True)
     cas.add_annotation(token)
+
+
+def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesystem_with_inheritance_xml):
+    typesystem = load_typesystem(typesystem_with_inheritance_xml)
+
+    cas = load_cas_from_xmi(cas_with_inheritance_xmi, typesystem=typesystem)
+
+    assert len(list(cas.select("cassis.Parent"))) == 5
+    assert len(list(cas.select("cassis.Child"))) == 4
+    assert len(list(cas.select("cassis.GrandChild"))) == 3
+    assert len(list(cas.select("cassis.GrandGrandChild"))) == 2
+    assert len(list(cas.select("cassis.GrandGrandGrandChild"))) == 1

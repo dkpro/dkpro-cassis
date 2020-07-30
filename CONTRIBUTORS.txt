@@ -15,3 +15,5 @@
 # Please keep the list sorted.
 
 Jan-Christoph Klie <git@mrklie.com> [rentier]
+Richard Eckart de Castilho <richard.eckart@gmail.com> [reckart]
+

@@ -331,12 +331,10 @@ class Type:
         """
         Returns an iterator of the type and any descendant types (subtypes).
         """
+        yield self
         if self._children:
             for child in self._children.values():
-                yield self
                 yield from child.descendants
-        else:
-            yield self
 
 
 class TypeSystem:

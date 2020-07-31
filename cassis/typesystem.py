@@ -3,7 +3,7 @@ from itertools import chain, filterfalse
 from io import BytesIO
 from pathlib import Path
 import re
-from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable, List
+from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable, List, Any
 import warnings
 
 from toposort import toposort_flatten
@@ -147,6 +147,13 @@ class FeatureStructure:
             return self.sofa.sofaString[self.begin : self.end]
         else:
             raise NotImplementedError()
+
+    def get(self, path: str) -> Optional[Any]:
+        for part in path.split("."):
+            cur = getattr(self, part, None)
+            if cur is None:
+                return None
+        return cur
 
     def __hash__(self):
         return self.xmiID

@@ -210,6 +210,22 @@ class Cas:
         annotation.xmiID = next_id
         if hasattr(annotation, "sofa"):
             annotation.sofa = self.get_sofa()
+            
+            #resolve reference to sofa for FeatureStructure with nested FeatureStructure
+            t=self._typesystem.get_type( annotation.type )
+
+            for feature in t.all_features:
+                feature_name = feature.name
+                value=getattr(annotation, feature_name)
+                if value is None:
+                    continue
+                if self._typesystem.is_collection(annotation.type, feature ):
+                    for item in value:
+                        if hasattr( item, 'sofa' ):
+                            item.sofa=self.get_sofa()
+                else:
+                    if hasattr( value, 'sofa' ):
+                        value.sofa=self.get_sofa()
 
         self._current_view.add_annotation_to_index(annotation)
 

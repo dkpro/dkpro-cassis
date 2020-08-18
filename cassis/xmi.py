@@ -58,7 +58,7 @@ class CasXmiDeserializer:
         INSIDE_FS = 2
         INSIDE_ARRAY = 3
 
-        sofas = []
+        sofas = {}
         views = {}
         feature_structures = {}
         children = defaultdict(list)
@@ -76,7 +76,7 @@ class CasXmiDeserializer:
             elif elem.tag == TAG_CAS_SOFA:
                 if event == "end":
                     sofa = self._parse_sofa(elem)
-                    sofas.append(sofa)
+                    sofas[sofa.xmiID] = sofa
             elif elem.tag == TAG_CAS_VIEW:
                 if event == "end":
                     proto_view = self._parse_view(elem)
@@ -141,6 +141,9 @@ class CasXmiDeserializer:
                 feature_name = feature.name
 
                 if feature_name == "sofa":
+                    value = getattr(fs, feature_name)
+                    sofa = sofas[value]
+                    setattr(fs, feature_name, sofa)
                     continue
 
                 if (
@@ -174,7 +177,7 @@ class CasXmiDeserializer:
                     setattr(fs, feature_name, target)
 
         cas = Cas(typesystem=typesystem)
-        for sofa in sofas:
+        for sofa in sofas.values():
             if sofa.sofaID == "_InitialView":
                 view = cas.get_view("_InitialView")
             else:

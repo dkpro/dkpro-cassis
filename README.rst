@@ -26,6 +26,9 @@ dkpro-cassis
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
   :target: https://github.com/ambv/black
 
+.. image:: https://zenodo.org/badge/150018465.svg
+   :target: https://zenodo.org/badge/latestdoi/150018465
+
 DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation of the *Common Analysis System* (CAS)
 as defined by the `UIMA <https://uima.apache.org>`_ framework. The CAS is a data structure representing an object to
 be enrichted with annotations (the co-called *Subject of Analysis*, short *SofA*).
@@ -303,6 +306,22 @@ available as a member variable `self_` or `type_` on the respective type:
 
     print(annotation.self_)
     print(annotation.type_)
+
+Citing & Authors
+----------------
+
+If you find this repository helpful, feel free to cite
+
+.. code:: bibtex
+
+    @software{klie2020_cassis,
+      author       = {Jan-Christoph Klie and
+                      Richard Eckart de Castilho},
+      title        = {DKPro Cassis - Reading and Writing UIMA CAS Files in Python},
+      publisher    = {Zenodo},
+      doi          = {10.5281/zenodo.3994108},
+      url          = {https://github.com/dkpro/dkpro-cassis}
+    }
 
 Development
 -----------

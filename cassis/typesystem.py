@@ -149,10 +149,12 @@ class FeatureStructure:
             raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
+        cur = self
         for part in path.split("."):
-            cur = getattr(self, part, None)
+            cur = getattr(cur, part, None)
             if cur is None:
                 return None
+
         return cur
 
     def __hash__(self):

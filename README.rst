@@ -147,15 +147,17 @@ feature :code:`b` that has a feature :code:`c`, some of which can be :code:`None
 following:
 
 .. code:: python
+
     fs.get("a.b.c")
 
 
 If :code:`a` or  :code:`b` or  :code:`c` are :code:`None`, then this returns instead of
 throwing an error.
 
-Another example would be a StringList containing :code:`["Foo", "Bar", "Baz"`:
+Another example would be a StringList containing :code:`["Foo", "Bar", "Baz"]`:
 
 .. code:: python
+
     assert lst.get("head") == "foo"
     assert lst.get("tail.head") == "bar"
     assert lst.get("tail.tail.head") == "baz"

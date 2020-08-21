@@ -241,6 +241,45 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     assert len(arrs) == 1
 
 
+# Get with path selector
+
+
+def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    pred = next(cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred"))
+    first_arg = pred.arguments[0]
+
+    end = first_arg.get("target.end")
+
+    assert end == 5
+
+
+def test_get_path_stringlist():
+    cas = Cas()
+
+    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
+    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
+
+    data = ["foo", "bar", "baz"]
+    lst = NonEmptyStringList()
+
+    cur = lst
+    for s in data:
+        cur.head = s
+        cur.tail = NonEmptyStringList()
+        cur = cur.tail
+
+    cur.tail = EmptyStringList()
+    print(lst)
+
+    assert lst.get("head") == "foo"
+    assert lst.get("tail.head") == "bar"
+    assert lst.get("tail.tail.head") == "baz"
+    assert lst.get("tail.tail.tail.head") == None
+
+
 # Covered text
 
 

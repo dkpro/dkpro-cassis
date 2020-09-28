@@ -143,10 +143,10 @@ class FeatureStructure:
             The text covered by the annotation
 
         """
-        if self.is_annotation():
+        if hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end"):
             return self.sofa.sofaString[self.begin : self.end]
         else:
-            raise Exception("Cannot call `get_covered_text` on a feature structure that is not an annotation!")
+            raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
         cur = self
@@ -156,14 +156,6 @@ class FeatureStructure:
                 return None
 
         return cur
-
-    def is_annotation(self) -> bool:
-        """ Checks whether this feature structure is an annotation. An annotation in UIMA has a begin and an end.
-
-        Returns:
-            `True` if this feature structure is an annotation, else `False`
-        """
-        return hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end")
 
     def __hash__(self):
         return self.xmiID

@@ -196,7 +196,8 @@ class CasXmiDeserializer:
             for member_id in proto_view.members:
                 fs = feature_structures[member_id]
 
-                if fs.is_annotation():
+                # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
+                if typesystem.is_instance_of(fs.type, "uima.tcas.Annotation"):
                     fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
                     fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
 
@@ -351,6 +352,11 @@ class CasXmiSerializer:
             value = getattr(fs, feature.name)
             if value is None:
                 continue
+
+            # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
+            if ts.is_instance_of(fs.type, "uima.tcas.Annotation") and feature_name == "begin" or feature_name == "end":
+                sofa: Sofa = getattr(fs, "sofa")
+                value = sofa._offset_converter.cassis_to_uima(value)
 
             if (ts.is_instance_of(fs.type, "uima.cas.StringArray") and feature_name == "elements") or ts.is_instance_of(
                 feature.rangeTypeName, "uima.cas.StringArray"

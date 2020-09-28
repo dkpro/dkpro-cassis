@@ -18,6 +18,7 @@ FIXTURES = [
     (pytest.lazy_fixture("cas_with_empty_array_references_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_reserved_names_xmi"), pytest.lazy_fixture("typesystem_with_reserved_names_xml")),
     (pytest.lazy_fixture("cas_with_two_sofas_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_smileys_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
 ]
 
 
@@ -66,9 +67,9 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
              xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
         <cas:NULL xmi:id="0"/>
-        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
-        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="5" id="0"/>
-        <cassis:Sentence xmi:id="84" sofa="2" begin="3" end="7" id="1"/>
+        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="26" language="x-unspecified"/>
+        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="26" id="0"/>
+        <cassis:Sentence xmi:id="84" sofa="2" begin="0" end="20" id="1"/>
         <cas:Sofa xmi:id="1" sofaNum="1" sofaID="sofa1" mimeType="text/plain"
                   sofaString="Joe waited for the train ."/>
         <cas:View sofa="1" members="8 79"/>

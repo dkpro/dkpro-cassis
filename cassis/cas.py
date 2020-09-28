@@ -28,11 +28,26 @@ class IdGenerator:
 
 
 class OffsetConverter:
+    """  The Java platform and therefore UIMA internally uses a UTF-16 representation for text. For this reason,
+    the offsets used in UIMA XMI represent offsets of the 16bit units in UTF-16 strings. We convert them internally
+    to Unicode codepoints that are used by Python strings when creating a CAS. When serializing to XMI, we convert back.
+
+    See also:
+        https://webanno.github.io/webanno/releases/3.4.5/docs/user-guide.html#sect_webannotsv
+        https://uima.apache.org/d/uimaj-current/references.html 4.2.1
+    """
+
     def __init__(self):
         self._uima_to_cassis: Dict[int, int] = {}
         self._cassis_to_uima: Dict[int, int] = {}
 
     def create_index(self, sofa_string: str):
+        self._uima_to_cassis.clear()
+        self._cassis_to_uima.clear()
+
+        if sofa_string is None:
+            return
+
         count_uima = 0
         count_cassis = 0
 
@@ -50,10 +65,14 @@ class OffsetConverter:
         self._uima_to_cassis[count_uima] = count_cassis
         self._cassis_to_uima[count_cassis] = count_uima
 
-    def uima_to_cassis(self, idx: int) -> int:
+    def uima_to_cassis(self, idx: Optional[int]) -> Optional[int]:
+        if idx is None:
+            return None
         return self._uima_to_cassis[idx]
 
-    def cassis_to_uima(self, idx: int) -> int:
+    def cassis_to_uima(self, idx: Optional[int]) -> Optional[int]:
+        if idx is None:
+            return None
         return self._cassis_to_uima[idx]
 
 
@@ -80,7 +99,7 @@ class Sofa:
     sofaURI = attr.ib(default=None, validator=_validator_optional_string)
 
     #: OffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
-    _offset_converter = attr.ib(factory=OffsetConverter)
+    _offset_converter = attr.ib(factory=OffsetConverter, eq=False, hash=False)
 
     @property
     def sofaString(self) -> str:

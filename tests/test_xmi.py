@@ -219,3 +219,33 @@ def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_di
     assert root.nsmap["test0"] == "http:///bar/test.ecore"
     assert len(root.xpath("//test:Foo", namespaces=root.nsmap)) == 2
     assert len(root.xpath("//test0:Bar", namespaces=root.nsmap)) == 2
+
+
+# UIMA vs cassis offsets
+
+
+def test_offsets_are_mapped_from_uima_to_cassis(cas_with_smileys_xmi, dkpro_typesystem_xml):
+    typesystem = load_typesystem(dkpro_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
+
+    named_entities = cas.select("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity")
+
+    surface_forms = [ne.get_covered_text() for ne in named_entities]
+
+    assert surface_forms == ["Transformers", "Transformers", "Transformers", "PyTorch", "TensorFlow"]
+
+
+def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, dkpro_typesystem_xml):
+    typesystem = load_typesystem(dkpro_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
+
+    size_uima_to_cassis_before = len(cas.get_sofa()._offset_converter._uima_to_cassis)
+    size_cassis_to_uima_before = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+
+    cas.sofa_string = "Hello 😊, my name is Jan."
+
+    size_uima_to_cassis_after = len(cas.get_sofa()._offset_converter._uima_to_cassis)
+    size_cassis_to_uima_after = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+
+    assert size_uima_to_cassis_before != size_uima_to_cassis_after
+    assert size_cassis_to_uima_before != size_cassis_to_uima_after

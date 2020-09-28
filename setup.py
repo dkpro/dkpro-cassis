@@ -17,7 +17,7 @@ DESCRIPTION = "UIMA CAS processing library in Python"
 HOMEPAGE = "https://dkpro.github.io"
 EMAIL = "dkpro-core-user@googlegroups.com"
 AUTHOR = "The DKPro cassis team"
-REQUIRES_PYTHON = ">=3.5.0"
+REQUIRES_PYTHON = ">=3.6.0"
 
 install_requires = [
     "lxml>=4.5.0",
@@ -115,9 +115,9 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Software Development :: Libraries",
         "Topic :: Scientific/Engineering :: Human Machine Interfaces",
         "Topic :: Text Processing :: Linguistic"

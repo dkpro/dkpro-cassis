@@ -194,9 +194,13 @@ class CasXmiDeserializer:
                 proto_view = ProtoView(sofa.xmiID)
 
             for member_id in proto_view.members:
-                annotation = feature_structures[member_id]
+                fs = feature_structures[member_id]
 
-                view.add_annotation(annotation, keep_id=True)
+                if fs.is_annotation():
+                    fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
+                    fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
+
+                view.add_annotation(fs, keep_id=True)
 
         cas._xmi_id_generator = IdGenerator(self._max_xmi_id + 1)
         cas._sofa_num_generator = IdGenerator(self._max_sofa_num + 1)

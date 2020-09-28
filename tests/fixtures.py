@@ -132,6 +132,20 @@ def cas_with_two_sofas_xmi(cas_with_two_sofas_path):
         return f.read()
 
 
+# CAS with smileys
+
+
+@pytest.fixture
+def cas_with_smileys_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_smileys.xmi")
+
+
+@pytest.fixture
+def cas_with_smileys_xmi(cas_with_smileys_path):
+    with open(cas_with_smileys_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

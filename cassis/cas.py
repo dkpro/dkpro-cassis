@@ -27,6 +27,55 @@ class IdGenerator:
         return result
 
 
+class OffsetConverter:
+    """  The Java platform and therefore UIMA internally uses a UTF-16 representation for text. For this reason,
+    the offsets used in UIMA XMI represent offsets of the 16bit units in UTF-16 strings. We convert them internally
+    to Unicode codepoints that are used by Python strings when creating a CAS. When serializing to XMI, we convert back.
+
+    See also:
+        https://webanno.github.io/webanno/releases/3.4.5/docs/user-guide.html#sect_webannotsv
+        https://uima.apache.org/d/uimaj-current/references.html 4.2.1
+    """
+
+    def __init__(self):
+        self._uima_to_cassis: Dict[int, int] = {}
+        self._cassis_to_uima: Dict[int, int] = {}
+
+    def create_index(self, sofa_string: str):
+        self._uima_to_cassis.clear()
+        self._cassis_to_uima.clear()
+
+        if sofa_string is None:
+            return
+
+        count_uima = 0
+        count_cassis = 0
+
+        for c in sofa_string:
+            size_in_utf16_bytes = len(c.encode("utf-16-le")) // 2
+
+            self._uima_to_cassis[count_uima] = count_cassis
+            self._cassis_to_uima[count_cassis] = count_uima
+
+            count_uima += size_in_utf16_bytes
+            count_cassis += 1
+
+        # End offsets in UIMA are exclusive, we need to therefore add
+        # the offset after the last char also to this index
+        self._uima_to_cassis[count_uima] = count_cassis
+        self._cassis_to_uima[count_cassis] = count_uima
+
+    def uima_to_cassis(self, idx: Optional[int]) -> Optional[int]:
+        if idx is None:
+            return None
+        return self._uima_to_cassis[idx]
+
+    def cassis_to_uima(self, idx: Optional[int]) -> Optional[int]:
+        if idx is None:
+            return None
+        return self._cassis_to_uima[idx]
+
+
 @attr.s(slots=True)
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
@@ -41,13 +90,29 @@ class Sofa:
     sofaID = attr.ib(validator=validators.instance_of(str))
 
     #: str: The text corresponding to this sofa
-    sofaString = attr.ib(default=None, validator=_validator_optional_string)
+    _sofaString = attr.ib(default=None, validator=_validator_optional_string)
 
     #: str: The mime type of `sofaString`
     mimeType = attr.ib(default=None, validator=_validator_optional_string)
 
     #: str: The sofa URI, it references remote sofa data
     sofaURI = attr.ib(default=None, validator=_validator_optional_string)
+
+    #: OffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
+    _offset_converter = attr.ib(factory=OffsetConverter, eq=False, hash=False)
+
+    @property
+    def sofaString(self) -> str:
+        return self._sofaString
+
+    @sofaString.setter
+    def sofaString(self, value: str):
+        self._sofaString = value
+        self._offset_converter.create_index(value)
+
+    def __attrs_post_init__(self):
+        if self._sofaString:
+            self._offset_converter.create_index(self._sofaString)
 
 
 class View:

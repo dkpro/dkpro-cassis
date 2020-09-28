@@ -18,6 +18,7 @@ FIXTURES = [
     (pytest.lazy_fixture("cas_with_empty_array_references_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_reserved_names_xmi"), pytest.lazy_fixture("typesystem_with_reserved_names_xml")),
     (pytest.lazy_fixture("cas_with_two_sofas_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
+    (pytest.lazy_fixture("cas_with_smileys_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
 ]
 
 
@@ -66,9 +67,9 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
              xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
         <cas:NULL xmi:id="0"/>
-        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="47" language="x-unspecified"/>
-        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="5" id="0"/>
-        <cassis:Sentence xmi:id="84" sofa="2" begin="3" end="7" id="1"/>
+        <tcas:DocumentAnnotation xmi:id="8" sofa="1" begin="0" end="26" language="x-unspecified"/>
+        <cassis:Sentence xmi:id="79" sofa="1" begin="0" end="26" id="0"/>
+        <cassis:Sentence xmi:id="84" sofa="2" begin="0" end="20" id="1"/>
         <cas:Sofa xmi:id="1" sofaNum="1" sofaID="sofa1" mimeType="text/plain"
                   sofaString="Joe waited for the train ."/>
         <cas:View sofa="1" members="8 79"/>
@@ -218,3 +219,33 @@ def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_di
     assert root.nsmap["test0"] == "http:///bar/test.ecore"
     assert len(root.xpath("//test:Foo", namespaces=root.nsmap)) == 2
     assert len(root.xpath("//test0:Bar", namespaces=root.nsmap)) == 2
+
+
+# UIMA vs cassis offsets
+
+
+def test_offsets_are_mapped_from_uima_to_cassis(cas_with_smileys_xmi, dkpro_typesystem_xml):
+    typesystem = load_typesystem(dkpro_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
+
+    named_entities = cas.select("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity")
+
+    surface_forms = [ne.get_covered_text() for ne in named_entities]
+
+    assert surface_forms == ["Transformers", "Transformers", "Transformers", "PyTorch", "TensorFlow"]
+
+
+def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, dkpro_typesystem_xml):
+    typesystem = load_typesystem(dkpro_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
+
+    size_uima_to_cassis_before = len(cas.get_sofa()._offset_converter._uima_to_cassis)
+    size_cassis_to_uima_before = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+
+    cas.sofa_string = "Hello 😊, my name is Jan."
+
+    size_uima_to_cassis_after = len(cas.get_sofa()._offset_converter._uima_to_cassis)
+    size_cassis_to_uima_after = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+
+    assert size_uima_to_cassis_before != size_uima_to_cassis_after
+    assert size_cassis_to_uima_before != size_cassis_to_uima_after

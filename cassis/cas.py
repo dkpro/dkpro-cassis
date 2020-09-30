@@ -1,18 +1,16 @@
+import itertools
+import sys
 from collections import defaultdict
 from io import BytesIO
-import itertools
 from pathlib import Path
-import sys
-from typing import Dict, Iterable, Iterator, List, Union, Tuple, Optional
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 import attr
-from attr import validators
-
-from sortedcontainers import SortedList, SortedKeyList
-
-from cassis.typesystem import FeatureStructure, TypeSystem, TypeCheckError
-
 import deprecation
+from attr import validators
+from sortedcontainers import SortedKeyList, SortedList
+
+from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 

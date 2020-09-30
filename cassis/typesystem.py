@@ -1,18 +1,15 @@
-from collections import defaultdict
-from itertools import chain, filterfalse
-from io import BytesIO
-from pathlib import Path
 import re
-from typing import Callable, Dict, IO, Iterator, Optional, Set, Union, Iterable, List, Any
 import warnings
-
-from toposort import toposort_flatten
-
-from more_itertools import unique_everseen
+from collections import defaultdict
+from io import BytesIO
+from itertools import chain, filterfalse
+from pathlib import Path
+from typing import IO, Any, Callable, Dict, Iterable, Iterator, List, Optional, Set, Union
 
 import attr
-
 from lxml import etree
+from more_itertools import unique_everseen
+from toposort import toposort_flatten
 
 TOP_TYPE_NAME = "uima.cas.TOP"
 

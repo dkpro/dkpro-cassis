@@ -3,9 +3,8 @@ import random
 import attr
 import pytest
 
-from tests.fixtures import *
-
 from cassis.cas import Cas
+from tests.fixtures import *
 
 # Cas
 

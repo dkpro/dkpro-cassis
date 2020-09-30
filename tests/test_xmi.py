@@ -3,9 +3,8 @@ from pathlib import Path
 from lxml import etree
 
 from cassis import *
-
-from tests.util import assert_xml_equal
 from tests.fixtures import *
+from tests.util import assert_xml_equal
 
 # Deserializing
 

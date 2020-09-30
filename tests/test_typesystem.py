@@ -1,13 +1,12 @@
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import pytest
 
-from cassis.typesystem import Feature, _COLLECTION_TYPES, TOP_TYPE_NAME, TypeCheckError
+from cassis import TypeSystem, load_typesystem
+from cassis.typesystem import _COLLECTION_TYPES, TOP_TYPE_NAME, Feature, TypeCheckError
 from tests.fixtures import *
 from tests.util import assert_xml_equal
-
-from cassis import load_typesystem, TypeSystem
 
 TYPESYSTEM_FIXTURES = [
     pytest.lazy_fixture("small_typesystem_xml"),

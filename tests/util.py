@@ -1,9 +1,8 @@
 import difflib
 from typing import IO, Union
 
-from lxml import etree
-
 import lxml_asserts
+from lxml import etree
 
 
 def assert_xml_equal(actual: Union[IO, str], expected: Union[IO, str]):

@@ -1,6 +1,7 @@
 import random
 
 import attr
+import pytest
 
 from tests.fixtures import *
 
@@ -277,7 +278,7 @@ def test_get_path_stringlist():
     assert lst.get("head") == "foo"
     assert lst.get("tail.head") == "bar"
     assert lst.get("tail.tail.head") == "baz"
-    assert lst.get("tail.tail.tail.head") == None
+    assert lst.get("tail.tail.tail.head") is None
 
 
 # Covered text
@@ -413,3 +414,56 @@ def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesyst
     assert len(list(cas.select("cassis.GrandChild"))) == 3
     assert len(list(cas.select("cassis.GrandGrandChild"))) == 2
     assert len(list(cas.select("cassis.GrandGrandGrandChild"))) == 1
+
+
+# Removing
+
+
+def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
+    annotations = tokens + sentences
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    cas.add_annotations(annotations)
+
+    for token in tokens:
+        cas.remove_annotation(token)
+
+    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+    assert set(actual_annotations) == set(sentences)
+
+    for sentence in sentences:
+        cas.remove_annotation(sentence)
+
+    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+    assert set(actual_annotations) == set()
+
+
+def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
+    annotations = tokens + sentences
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    view = cas.create_view("testView")
+
+    cas.add_annotations(annotations)
+    view.add_annotations(annotations)
+
+    for annotation in annotations:
+        cas.remove_annotation(annotation)
+
+    assert set(cas.select("uima.tcas.Annotation")) == set()
+    assert set(view.select("uima.tcas.Annotation")) == set(annotations)
+
+
+def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+
+    with pytest.raises(ValueError):
+        cas.remove_annotation(tokens[0])
+
+
+def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    cas.add_annotations(tokens)
+
+    view = cas.create_view("testView")
+
+    with pytest.raises(ValueError):
+        view.remove_annotation(tokens[0])

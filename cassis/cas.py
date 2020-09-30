@@ -1,18 +1,16 @@
+import itertools
+import sys
 from collections import defaultdict
 from io import BytesIO
-import itertools
 from pathlib import Path
-import sys
-from typing import Dict, Iterable, Iterator, List, Union, Tuple, Optional
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 import attr
-from attr import validators
-
-from sortedcontainers import SortedList, SortedKeyList
-
-from cassis.typesystem import FeatureStructure, TypeSystem, TypeCheckError
-
 import deprecation
+from attr import validators
+from sortedcontainers import SortedKeyList, SortedList
+
+from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -140,7 +138,7 @@ class View:
         """
         return self._indices
 
-    def add_annotation_to_index(self, annotation):
+    def add_annotation_to_index(self, annotation: FeatureStructure):
         self._indices[annotation.type].add(annotation)
 
     def get_all_annotations(self) -> Iterator[FeatureStructure]:
@@ -152,6 +150,15 @@ class View:
         """
         for annotations_by_type in self._indices.values():
             yield from annotations_by_type
+
+    def remove_annotation_from_index(self, annotation: FeatureStructure):
+        """ Removes an annotation from an index. This throws if the
+        annotation was not present.
+
+        Args:
+            annotation: The annotation to remove.
+        """
+        self._indices[annotation.type].remove(annotation)
 
 
 class Index:
@@ -287,6 +294,15 @@ class Cas:
         """
         for annotation in annotations:
             self.add_annotation(annotation)
+
+    def remove_annotation(self, annotation: FeatureStructure):
+        """ Removes an annotation from an index. This throws if the
+        annotation was not present.
+
+        Args:
+            annotation: The annotation to remove.
+        """
+        self._current_view.remove_annotation_from_index(annotation)
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:

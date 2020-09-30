@@ -1,12 +1,11 @@
 from collections import defaultdict
 from io import BytesIO
-from typing import Dict, IO, Union, List, Set, Iterable
+from typing import IO, Dict, Iterable, List, Set, Union
 
 import attr
-
 from lxml import etree
 
-from cassis.cas import Cas, Sofa, View, IdGenerator
+from cassis.cas import Cas, IdGenerator, Sofa, View
 from cassis.typesystem import FeatureStructure, TypeSystem
 
 

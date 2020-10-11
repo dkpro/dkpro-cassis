@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from io import BytesIO
 from typing import IO, Dict, Iterable, List, Set, Union
@@ -6,7 +7,7 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import FeatureStructure, TypeSystem
+from cassis.typesystem import FeatureStructure, TypeNotFoundError, TypeSystem
 
 
 @attr.s
@@ -17,13 +18,15 @@ class ProtoView:
     members = attr.ib(factory=list)  # type: List[int]
 
 
-def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None) -> Cas:
+def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False) -> Cas:
     """ Loads a CAS from a XMI source.
 
     Args:
         source: The XML source. If `source` is a string, then it is assumed to be an XML string.
             If `source` is a file-like object, then the data is read from it.
         typesystem: The type system that belongs to this CAS. If `None`, an empty type system is provided.
+        lenient: If `True`, unknown Types will be ignored. If `False`, unknown Types will cause an exception.
+            The default is `False`.
 
     Returns:
         The deserialized CAS
@@ -34,9 +37,9 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None) -> 
 
     deserializer = CasXmiDeserializer()
     if isinstance(source, str):
-        return deserializer.deserialize(BytesIO(source.encode("utf-8")), typesystem=typesystem)
+        return deserializer.deserialize(BytesIO(source.encode("utf-8")), typesystem=typesystem, lenient=lenient)
     else:
-        return deserializer.deserialize(source, typesystem=typesystem)
+        return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient)
 
 
 class CasXmiDeserializer:
@@ -44,7 +47,7 @@ class CasXmiDeserializer:
         self._max_xmi_id = 0
         self._max_sofa_num = 0
 
-    def deserialize(self, source: Union[IO, str], typesystem: TypeSystem):
+    def deserialize(self, source: Union[IO, str], typesystem: TypeSystem, lenient: bool):
         # namespaces
         NS_XMI = "{http://www.omg.org/XMI}"
         NS_CAS = "{http:///uima/cas.ecore}"
@@ -61,6 +64,7 @@ class CasXmiDeserializer:
         views = {}
         feature_structures = {}
         children = defaultdict(list)
+        lenient_ids = set()
 
         context = etree.iterparse(source, events=("start", "end"))
 
@@ -114,8 +118,19 @@ class CasXmiDeserializer:
                     if state == INSIDE_FS:
                         # We saw the closing tag of a new feature
                         state = OUTSIDE_FS
-                        fs = self._parse_feature_structure(typesystem, elem, children)
-                        feature_structures[fs.xmiID] = fs
+
+                        # If a type was not found, ignore it if lenient, else raise an exception
+                        try:
+                            fs = self._parse_feature_structure(typesystem, elem, children)
+                            feature_structures[fs.xmiID] = fs
+                        except TypeNotFoundError as e:
+                            if not lenient:
+                                raise e
+
+                            warnings.warn(e.message)
+                            xmiID = elem.attrib.get("{http://www.omg.org/XMI}id", None)
+                            if xmiID:
+                                lenient_ids.add(int(xmiID))
 
                         children.clear()
                     elif state == INSIDE_ARRAY:
@@ -175,7 +190,7 @@ class CasXmiDeserializer:
                     referenced_fs.add(target_id)
                     setattr(fs, feature_name, target)
 
-        cas = Cas(typesystem=typesystem)
+        cas = Cas(typesystem=typesystem, lenient=lenient)
         for sofa in sofas.values():
             if sofa.sofaID == "_InitialView":
                 view = cas.get_view("_InitialView")
@@ -193,6 +208,10 @@ class CasXmiDeserializer:
                 proto_view = ProtoView(sofa.xmiID)
 
             for member_id in proto_view.members:
+                # We ignore ids of feature structures for which we do not have a type
+                if member_id in lenient_ids:
+                    continue
+
                 fs = feature_structures[member_id]
 
                 # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints

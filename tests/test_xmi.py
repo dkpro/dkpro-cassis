@@ -3,6 +3,7 @@ from pathlib import Path
 from lxml import etree
 
 from cassis import *
+from cassis.typesystem import TypeNotFoundError
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -248,3 +249,20 @@ def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, d
 
     assert size_uima_to_cassis_before != size_uima_to_cassis_after
     assert size_cassis_to_uima_before != size_cassis_to_uima_after
+
+
+# Leniency
+
+
+def test_leniency_type_not_in_typeystem_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    with pytest.warns(UserWarning):
+        cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=True)
+
+
+def test_leniency_type_not_in_typeystem_not_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    with pytest.raises(TypeNotFoundError):
+        cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=False)

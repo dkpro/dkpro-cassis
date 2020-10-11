@@ -146,6 +146,20 @@ def cas_with_smileys_xmi(cas_with_smileys_path):
         return f.read()
 
 
+# CAS with feature structures that are not in typesystem
+
+
+@pytest.fixture
+def cas_with_leniency_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "lenient_cas.xmi")
+
+
+@pytest.fixture
+def cas_with_leniency_xmi(cas_with_leniency_path):
+    with open(cas_with_leniency_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

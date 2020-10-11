@@ -25,10 +25,7 @@ dkpro-cassis
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
   :target: https://github.com/ambv/black
-
-.. image:: https://zenodo.org/badge/150018465.svg
-   :target: https://zenodo.org/badge/latestdoi/150018465
-
+  
 DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation of the *Common Analysis System* (CAS)
 as defined by the `UIMA <https://uima.apache.org>`_ framework. The CAS is a data structure representing an object to
 be enrichted with annotations (the co-called *Subject of Analysis*, short *SofA*).

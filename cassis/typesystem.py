@@ -118,8 +118,13 @@ def _string_to_valid_classname(name: str):
 
 @attr.s
 class TypeCheckError(Exception):
-    xmiID = attr.ib()  # int: xmiID of the feature structure with type error
-    description = attr.ib()  # str: Description of the type check error
+    xmiID: int = attr.ib()  # xmiID of the feature structure with type error
+    description: str = attr.ib()  # Description of the type check error
+
+
+@attr.s
+class TypeNotFoundError(Exception):
+    message: str = attr.ib()  # Description of the error
 
 
 @attr.s(slots=True, hash=False, eq=True, order=True)
@@ -487,7 +492,7 @@ class TypeSystem:
         if self.contains_type(type_name):
             return self._types[type_name]
         else:
-            raise Exception("Type with name [{0}] not found!".format(type_name))
+            raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
 
     def get_types(self) -> Iterator[Type]:
         """ Returns all types of this type system """

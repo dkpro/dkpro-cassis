@@ -289,6 +289,9 @@ A CAS using the DKPro Core Type System can be created via
 Miscellaneous
 -------------
 
+If feature names clash with Python magic variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 If your type system defines a type called :code:`self` or `type`, then it will be made
 available as a member variable `self_` or `type_` on the respective type:
 
@@ -306,6 +309,13 @@ available as a member variable `self_` or `type_` on the respective type:
 
     print(annotation.self_)
     print(annotation.type_)
+
+Leniency
+~~~~~~~~
+
+If the type for a feature structure is not found in the typesystem, it will raise an exception by default.
+If you want to ignore these kind of errors, you can pass `lenient=True` to the `Cas`constructor or
+to `load_cas_from_xmi`.
 
 Citing & Authors
 ----------------

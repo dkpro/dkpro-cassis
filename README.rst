@@ -292,8 +292,8 @@ Miscellaneous
 If feature names clash with Python magic variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If your type system defines a type called :code:`self` or `type`, then it will be made
-available as a member variable `self_` or `type_` on the respective type:
+If your type system defines a type called :code:`self` or :code:`type`, then it will be made
+available as a member variable :code:`self_` or :code:`type_` on the respective type:
 
 .. code:: python
 
@@ -314,8 +314,8 @@ Leniency
 ~~~~~~~~
 
 If the type for a feature structure is not found in the typesystem, it will raise an exception by default.
-If you want to ignore these kind of errors, you can pass `lenient=True` to the `Cas`constructor or
-to `load_cas_from_xmi`.
+If you want to ignore these kind of errors, you can pass :code:`lenient=True` to the :code:`Cas` constructor or
+to :code:`load_cas_from_xmi`.
 
 Citing & Authors
 ----------------

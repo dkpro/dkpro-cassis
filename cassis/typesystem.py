@@ -785,6 +785,18 @@ class TypeSystemDeserializer:
                     msg = "Redefining predefined type [{0}] with different features: {1} - Have to be {2}"
                     raise ValueError(msg.format(type_name, t_features, pt_features))
 
+        # DocumentAnnotation is not a predefined UIMA type, but some applications assume that it exists.
+        # It can be defined by users with custom fields. In case the loaded type system did not define
+        # it, we add the standard DocumentAnnotation type. In case it is already defined, we add it to
+        # the list of redefined predefined types so that is written back on serialization.
+        if _DOCUMENT_ANNOTATION_TYPE not in types:
+            t = Type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
+            features[t.name].append(Feature(name="language", rangeTypeName="uima.cas.String"))
+            types[t.name] = t
+            type_dependencies[t.name].add("uima.tcas.Annotation")
+        else:
+            ts._defines_predefined_type(_DOCUMENT_ANNOTATION_TYPE)
+
         # Add the types to the type system in order of dependency (parents before children)
         created_types = []
         for type_name in toposort_flatten(type_dependencies, sort=False):
@@ -808,15 +820,6 @@ class TypeSystemDeserializer:
                     description=f.description,
                     multipleReferencesAllowed=f.multipleReferencesAllowed,
                 )
-
-        # DocumentAnnotation is not a predefined UIMA type, but some applications assume that it exists.
-        # It can be defined by users with custom fields. In case the loaded type system did not define
-        # it, we add the standard DocumentAnnotation type. In case it is already defined, we add it to
-        # the list of redefined predefined types so that is written back on serialization.
-        if not ts.contains_type(_DOCUMENT_ANNOTATION_TYPE):
-            ts._add_document_annotation_type()
-        else:
-            ts._defines_predefined_type(_DOCUMENT_ANNOTATION_TYPE)
 
         return ts
 

@@ -89,6 +89,25 @@ string using :code:`load_cas_from_xmi`.
     with open('cas.xml', 'rb') as f:
        cas = load_cas_from_xmi(f, typesystem=typesystem)
 
+Saving a CAS as XMI
+~~~~~~~~~~~~~~~~~~~
+
+A CAS can be serialized to XMI either by writing to a file or be
+returned as a string using :code:`cas.to_xmi()`.
+
+.. code:: python
+
+    from cassis import *
+
+    with open('cas.xml', 'rb') as f:
+       cas = load_cas_from_xmi(f)
+
+    # Returned as a string
+    xmi = cas.to_xmi()
+
+    # Written to file
+    cas.to_xmi("my_cas.xmi")
+
 Adding annotations
 ~~~~~~~~~~~~~~~~~~
 

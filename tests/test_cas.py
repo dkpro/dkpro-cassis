@@ -264,7 +264,9 @@ def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
     typesystem = load_typesystem(webanno_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
 
-    pred = next(cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred"))
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
     first_arg = pred.arguments[0]
 
     end = first_arg.get("target.end")

@@ -1,14 +1,13 @@
-import itertools
 import sys
 from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import attr
 import deprecation
 from attr import validators
-from sortedcontainers import SortedKeyList, SortedList
+from sortedcontainers import SortedKeyList
 
 from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
 
@@ -141,15 +140,17 @@ class View:
     def add_annotation_to_index(self, annotation: FeatureStructure):
         self._indices[annotation.type].add(annotation)
 
-    def get_all_annotations(self) -> Iterator[FeatureStructure]:
+    def get_all_annotations(self) -> List[FeatureStructure]:
         """ Gets all the annotations in this view.
 
         Returns:
-            An iterator over all annotations in this view.
+            A list of all annotations in this view.
 
         """
+        result = []
         for annotations_by_type in self._indices.values():
-            yield from annotations_by_type
+            result.extend(annotations_by_type)
+        return result
 
     def remove_annotation_from_index(self, annotation: FeatureStructure):
         """ Removes an annotation from an index. This throws if the
@@ -318,21 +319,20 @@ class Cas:
         sofa = self.get_sofa()
         return sofa.sofaString[annotation.begin : annotation.end]
 
-    def select(self, type_name: str) -> Iterator[FeatureStructure]:
+    def select(self, type_name: str) -> List[FeatureStructure]:
         """ Finds all annotations of type `type_name`.
 
         Args:
             type_name: The name of the type whose annotation instances are to be found
 
         Returns:
-            An iterator over all feature structures of type `type_name`
+            A list of all feature structures of type `type_name`
 
         """
-        for annotation in self._get_feature_structures(type_name):
-            yield annotation
+        return self._get_feature_structures(type_name)
 
-    def select_covered(self, type_name: str, covering_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
-        """Returns an iterator over covered annotations.
+    def select_covered(self, type_name: str, covering_annotation: FeatureStructure) -> List[FeatureStructure]:
+        """Returns a list of covered annotations.
 
         Return all annotations that are covered
 
@@ -344,18 +344,20 @@ class Cas:
             covering_annotation: The name of the annotation which covers
 
         Returns:
-            an iterator over covered annotations
+            A list of covered annotations
 
         """
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
+        result = []
         for annotation in self._get_feature_structures_in_range(type_name, c_begin, c_end):
             if annotation.begin >= c_begin and annotation.end <= c_end:
-                yield annotation
+                result.append(annotation)
+        return result
 
-    def select_covering(self, type_name: str, covered_annotation: FeatureStructure) -> Iterator[FeatureStructure]:
-        """Returns an iterator over annotations that cover the given annotation.
+    def select_covering(self, type_name: str, covered_annotation: FeatureStructure) -> List[FeatureStructure]:
+        """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
 
@@ -367,7 +369,7 @@ class Cas:
             covered_annotation: The name of the annotation which is covered
 
         Returns:
-            an iterator over covering annotations
+            A list of covering annotations
 
         """
         c_begin = covered_annotation.begin
@@ -379,33 +381,36 @@ class Cas:
             if c_begin >= annotation.begin and c_end <= annotation.end:
                 yield annotation
 
-    def select_all(self) -> Iterator[FeatureStructure]:
+    def select_all(self) -> List[FeatureStructure]:
         """Finds all feature structures in this Cas
 
         Returns:
-            An iterator over all annotations in this Cas
+            A list of all annotations in this Cas
 
         """
         return self._current_view.get_all_annotations()
 
     # FS handling
 
-    def _get_feature_structures(self, type_name) -> Iterator[FeatureStructure]:
-        """ Returns an iterator over all feature structures of type `type_name` and child types. """
+    def _get_feature_structures(self, type_name) -> List[FeatureStructure]:
+        """ Returns a list of all feature structures of type `type_name` and child types. """
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 
+        result = []
         for name in types:
-            yield from self._current_view.type_index[name]
+            result.extend(self._current_view.type_index[name])
+        return result
 
-    def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> Iterator[FeatureStructure]:
-        """ Returns an iterator over all feature structures of type `type_name` and child types.
+    def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> List[FeatureStructure]:
+        """ Returns a list of all feature structures of type `type_name` and child types.
          Only features are returned that are in [begin, end] or close to it. If you use this function,
          you should always check bound in the calling method.
          """
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 
+        result = []
         for name in types:
             annotations = self._current_view.type_index[name]
 
@@ -414,7 +419,9 @@ class Cas:
             idx_begin = annotations.bisect_key_left((begin, begin))
             idx_end = annotations.bisect_key_right((end, end))
 
-            yield from annotations[idx_begin:idx_end]
+            result.extend(annotations[idx_begin:idx_end])
+
+        return result
 
     # Sofa
 

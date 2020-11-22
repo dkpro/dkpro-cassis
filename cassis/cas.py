@@ -411,8 +411,8 @@ class Cas:
 
             # We use binary search to find indices for the first and last annotations that are inside
             # the window of [begin, end].
-            idx_begin = max(annotations.bisect_key_left((begin, end)) - 1, 0)
-            idx_end = min(annotations.bisect_key_right((end, begin)), len(annotations))
+            idx_begin = annotations.bisect_key_left((begin, begin))
+            idx_end = annotations.bisect_key_right((end, end))
 
             yield from annotations[idx_begin:idx_end]
 

@@ -145,6 +145,22 @@ def test_select_covered(small_typesystem_xml, tokens, sentences):
     assert actual_tokens_in_second_sentence == tokens_in_second_sentence
 
 
+def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+
+    AnnotationType = cas.typesystem.create_type("test.Annotation")
+    SentenceType = cas.typesystem.get_type("cassis.Sentence")
+    sentence = SentenceType(begin=0, end=10)
+    annotations = [AnnotationType(begin=0, end=5), AnnotationType(begin=0, end=5)]
+
+    cas.add_annotation(sentence)
+    cas.add_annotations(annotations)
+
+    actual_annotations = list(cas.select_covered("test.Annotation", sentence))
+
+    assert actual_annotations == annotations
+
+
 def test_select_covered_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
     typesystem = load_typesystem(small_typesystem_xml)
     SubTokenType = typesystem.create_type("cassis.SubToken", supertypeName="cassis.Token")

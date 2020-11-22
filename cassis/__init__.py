@@ -14,7 +14,3 @@ __all__ = [
     "merge_typesystems",
     "load_cas_from_xmi",
 ]
-
-del cas
-del typesystem
-del xmi

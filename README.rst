@@ -333,6 +333,12 @@ If the type for a feature structure is not found in the typesystem, it will rais
 If you want to ignore these kind of errors, you can pass :code:`lenient=True` to the :code:`Cas` constructor or
 to :code:`load_cas_from_xmi`.
 
+Large XMI files
+~~~~~~~~~~~~~~~
+
+If you try to parse large XMI files and get an error message like :code:`XMLSyntaxError: internal error: Huge input lookup`,
+then you can disable this security check by passing :code:`trusted=True` to your calls to :code:`load_cas_from_xmi`.
+
 Citing & Authors
 ----------------
 

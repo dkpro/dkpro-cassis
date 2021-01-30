@@ -18,7 +18,9 @@ class ProtoView:
     members = attr.ib(factory=list)  # type: List[int]
 
 
-def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False) -> Cas:
+def load_cas_from_xmi(
+    source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False, trusted: bool = False
+) -> Cas:
     """ Loads a CAS from a XMI source.
 
     Args:
@@ -27,6 +29,7 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None, len
         typesystem: The type system that belongs to this CAS. If `None`, an empty type system is provided.
         lenient: If `True`, unknown Types will be ignored. If `False`, unknown Types will cause an exception.
             The default is `False`.
+        trusted: If `True`, disables checks like XML parser security restrictions.
 
     Returns:
         The deserialized CAS
@@ -37,9 +40,11 @@ def load_cas_from_xmi(source: Union[IO, str], typesystem: TypeSystem = None, len
 
     deserializer = CasXmiDeserializer()
     if isinstance(source, str):
-        return deserializer.deserialize(BytesIO(source.encode("utf-8")), typesystem=typesystem, lenient=lenient)
+        return deserializer.deserialize(
+            BytesIO(source.encode("utf-8")), typesystem=typesystem, lenient=lenient, trusted=trusted
+        )
     else:
-        return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient)
+        return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient, trusted=trusted)
 
 
 class CasXmiDeserializer:
@@ -47,7 +52,7 @@ class CasXmiDeserializer:
         self._max_xmi_id = 0
         self._max_sofa_num = 0
 
-    def deserialize(self, source: Union[IO, str], typesystem: TypeSystem, lenient: bool):
+    def deserialize(self, source: Union[IO, str], typesystem: TypeSystem, lenient: bool, trusted: bool):
         # namespaces
         NS_XMI = "{http://www.omg.org/XMI}"
         NS_CAS = "{http:///uima/cas.ecore}"
@@ -66,7 +71,7 @@ class CasXmiDeserializer:
         children = defaultdict(list)
         lenient_ids = set()
 
-        context = etree.iterparse(source, events=("start", "end"))
+        context = etree.iterparse(source, events=("start", "end"), huge_tree=trusted)
 
         state = OUTSIDE_FS
         self._max_xmi_id = 0

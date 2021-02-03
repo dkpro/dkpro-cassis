@@ -831,7 +831,13 @@ class TypeSystemDeserializer:
 
     def _get_elem_as_bool(self, elem: etree.Element) -> Optional[bool]:
         if elem is not None:
-            return bool(elem.text)
+            text = elem.text
+            if text == "true":
+                return True
+            elif text == "false":
+                return False
+            else:
+                raise ValueError("Cannot parse boolean: " + str(text))
         else:
             return None
 

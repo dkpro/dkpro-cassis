@@ -367,6 +367,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     token_pos_feature = token_type.get_feature("pos")
     assert token_pos_feature.name == "pos"
     assert token_pos_feature.rangeTypeName == "uima.cas.String"
+    assert token_pos_feature.multipleReferencesAllowed is True
 
     # Assert sentence type
     sentence_type = typesystem.get_type("cassis.Sentence")
@@ -376,6 +377,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     sentence_type_id_feature = sentence_type.get_feature("id")
     assert sentence_type_id_feature.name == "id"
     assert sentence_type_id_feature.rangeTypeName == "uima.cas.Integer"
+    assert sentence_type_id_feature.multipleReferencesAllowed is False
 
 
 # Serializing

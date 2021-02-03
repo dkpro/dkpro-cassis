@@ -15,6 +15,7 @@
                     <name>pos</name>
                     <description/>
                     <rangeTypeName>uima.cas.String</rangeTypeName>
+                    <multipleReferencesAllowed>true</multipleReferencesAllowed>
                 </featureDescription>
             </features>
         </typeDescription>
@@ -27,6 +28,7 @@
                     <name>id</name>
                     <description/>
                     <rangeTypeName>uima.cas.Integer</rangeTypeName>
+                    <multipleReferencesAllowed>false</multipleReferencesAllowed>
                 </featureDescription>
             </features>
         </typeDescription>

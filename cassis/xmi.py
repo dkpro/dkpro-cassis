@@ -199,6 +199,9 @@ class CasXmiDeserializer:
         for sofa in sofas.values():
             if sofa.sofaID == "_InitialView":
                 view = cas.get_view("_InitialView")
+
+                # We need to make sure that the sofa gets the real xmi, see #155
+                view.get_sofa().xmiID = sofa.xmiID
             else:
                 view = cas.create_view(sofa.sofaID, xmiID=sofa.xmiID, sofaNum=sofa.sofaNum)
 

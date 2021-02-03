@@ -51,7 +51,7 @@ def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
 
     expected_sofas = [
         Sofa(
-            xmiID=1,
+            xmiID=15,
             sofaNum=1,
             sofaID="_InitialView",
             mimeType="text/plain",

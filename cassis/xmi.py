@@ -317,7 +317,7 @@ class CasXmiSerializer:
         doc = etree.ElementTree(root)
         etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
 
-        doc.write(sink, xml_declaration=True, pretty_print=pretty_print)
+        doc.write(sink, xml_declaration=True, pretty_print=pretty_print, encoding="UTF-8")
 
     def _serialize_cas_null(self, root: etree.Element):
         name = etree.QName(self._nsmap["cas"], "NULL")

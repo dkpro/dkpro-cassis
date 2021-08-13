@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <cas:Sofa xmi:id="2" sofaNum="1" sofaID="_InitialView" mimeType="text/plain" sofaArray="1"/>
+    <cas:ByteArray xmi:id="1" elements="5468697320697320612074657374"/>
+</xmi:XMI>

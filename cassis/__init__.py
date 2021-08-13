@@ -1,6 +1,7 @@
 """UIMA CAS processing library in Python."""
 
 from .cas import Cas, Sofa, View
+from .json import load_cas_from_json
 from .typesystem import TypeSystem, load_dkpro_core_typesystem, load_typesystem, merge_typesystems
 from .xmi import load_cas_from_xmi
 
@@ -13,4 +14,5 @@ __all__ = [
     "load_dkpro_core_typesystem",
     "merge_typesystems",
     "load_cas_from_xmi",
+    "load_cas_from_json",
 ]

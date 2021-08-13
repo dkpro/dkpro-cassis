@@ -1,0 +1,17 @@
+{
+  "%TYPES" : { },
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 0,
+      "%INDEX" : [ ]
+    }
+  },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 0,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView",
+    "mimeType" : "text/plain",
+    "sofaURI" : "classpath:/ProgrammaticallyCreatedCasDataSuite/document.txt"
+  } ]
+}

@@ -1,0 +1,30 @@
+{
+  "%TYPES" : { },
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 0,
+      "%INDEX" : [ 1, 2 ]
+    }
+  },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 0,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView",
+    "mimeType" : "text",
+    "sofaString" : "This is a test."
+  }, {
+    "%ID" : 1,
+    "%TYPE" : "uima.tcas.DocumentAnnotation",
+    "@sofa" : 0,
+    "begin" : 0,
+    "end" : 15,
+    "language" : "x-unspecified"
+  }, {
+    "%ID" : 2,
+    "%TYPE" : "uima.tcas.Annotation",
+    "@sofa" : 0,
+    "begin" : 0,
+    "end" : 15
+  } ]
+}

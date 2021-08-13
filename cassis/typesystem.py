@@ -349,6 +349,8 @@ class Type:
 
 
 class TypeSystem:
+    NAMESPACE_SEPARATOR = "."
+
     def __init__(self, add_document_annotation_type: bool = True):
         self._types = {}
 
@@ -424,7 +426,13 @@ class TypeSystem:
         self.add_feature(t, name="sofaNum", rangeTypeName="uima.cas.Integer")
         self.add_feature(t, name="sofaID", rangeTypeName="uima.cas.String")
         self.add_feature(t, name="mimeType", rangeTypeName="uima.cas.String")
-        self.add_feature(t, name="sofaArray", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.add_feature(
+            t,
+            name="sofaArray",
+            rangeTypeName="uima.cas.ByteArray",
+            elementType="uima.cas.Byte",
+            multipleReferencesAllowed=True,
+        )
         self.add_feature(t, name="sofaString", rangeTypeName="uima.cas.String")
         self.add_feature(t, name="sofaURI", rangeTypeName="uima.cas.String")
 

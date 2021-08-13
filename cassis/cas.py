@@ -360,7 +360,6 @@ class Cas:
         return sofa.sofaString[annotation.begin : annotation.end]
 
     def select(self, type_name: str) -> List[FeatureStructure]:
-        """ Finds all annotations of type `type_name`.
         """Finds all annotations of type `type_name`.
 
         Args:

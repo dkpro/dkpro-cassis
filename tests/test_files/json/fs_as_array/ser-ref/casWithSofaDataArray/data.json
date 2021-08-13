@@ -2,20 +2,20 @@
   "%TYPES" : { },
   "%VIEWS" : {
     "_InitialView" : {
-      "%SOFA" : 0,
+      "%SOFA" : 1,
       "%INDEX" : [ ]
     }
   },
   "%FEATURE_STRUCTURES" : [ {
-    "%ID" : 1,
+    "%ID" : 2,
     "%TYPE" : "uima.cas.ByteArray",
     "%ELEMENTS" : "VGhpcyBpcyBhIHRlc3Q="
   }, {
-    "%ID" : 0,
+    "%ID" : 1,
     "%TYPE" : "uima.cas.Sofa",
     "sofaNum" : 1,
     "sofaID" : "_InitialView",
     "mimeType" : "text/plain",
-    "@sofaArray" : 1
+    "@sofaArray" : 2
   } ]
 }

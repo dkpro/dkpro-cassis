@@ -646,10 +646,7 @@ class Cas:
                         openlist.append(referenced_fs)
 
         # We do not want to return cas:NULL here as we handle serializing it later
-        for fs_id, fs in list(all_fs.items()):
-            if fs.type == "uima.cas.NULL":
-                all_fs.pop(fs_id)
-
+        all_fs.pop(0, None)
         yield from all_fs.values()
 
     def _get_next_xmi_id(self) -> int:

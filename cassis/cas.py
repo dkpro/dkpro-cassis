@@ -13,6 +13,8 @@ from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
+NAME_DEFAULT_SOFA = "_InitialView"
+
 
 class IdGenerator:
     def __init__(self, initial_id: int = 1):

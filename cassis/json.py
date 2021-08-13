@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 from io import TextIOWrapper
 
-from cassis.cas import Cas, IdGenerator, Sofa, View
+from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
 from cassis.typesystem import *
 
 RESERVED_FIELD_PREFIX = "%"
@@ -116,16 +116,16 @@ class CasJsonDeserializer:
         description = json_type.get(DESCRIPTION_FIELD)
         new_type = typesystem.create_type(type_name, super_type_name, description=description)
 
-        for key, value in json_type.items():
+        for key, json_feature in json_type.items():
             if key.startswith(RESERVED_FIELD_PREFIX):
                 continue
             typesystem.add_feature(
                 new_type,
                 name=key,
-                rangeTypeName=json_type[RANGE_FIELD],
-                description=json_type.get(DESCRIPTION_FIELD),
-                elementType=json_type.get(ELEMENT_TYPE_FIELD),
-                multipleReferencesAllowed=json_type.get(MULTIPLE_REFERENCES_ALLOWED_FIELD),
+                rangeTypeName=json_feature[RANGE_FIELD],
+                description=json_feature.get(DESCRIPTION_FIELD),
+                elementType=json_feature.get(ELEMENT_TYPE_FIELD),
+                multipleReferencesAllowed=json_feature.get(MULTIPLE_REFERENCES_ALLOWED_FIELD),
             )
 
     def _get_or_create_view(
@@ -180,27 +180,32 @@ class CasJsonDeserializer:
         if AnnotationType.name == TYPE_NAME_BYTE_ARRAY:
             attributes["elements"] = base64.b64decode(attributes.get(ELEMENTS_FIELD))
 
-        self._resolve_references(attributes, feature_structures)
         self._strip_reserved_json_keys(attributes)
 
-        self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
-        return AnnotationType(**attributes)
-
-    def _resolve_references(self, attributes: Dict[str, any], feature_structures: Dict[int, any]):
+        ref_features = {}
         for key, value in list(attributes.items()):
             if key.startswith(REF_FEATURE_PREFIX):
+                ref_features[key[1:]] = value
                 attributes.pop(key)
-                feature_name = key[1:]
-                target_fs = feature_structures.get(value)
-                if target_fs:
-                    # Resolve id-ref now
-                    attributes[feature_name] = target_fs
-                else:
-                    # Resolve id-ref at the end of processing
-                    def fix_up():
-                        attributes[feature_name] = feature_structures.get(value)
 
-                    self._post_processors.append(fix_up)
+        self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
+        fs = AnnotationType(**attributes)
+
+        self._resolve_references(fs, ref_features, feature_structures)
+        return fs
+
+    def _resolve_references(self, fs, ref_features: Dict[str, any], feature_structures: Dict[int, any]):
+        for key, value in ref_features.items():
+            target_fs = feature_structures.get(value)
+            if target_fs:
+                # Resolve id-ref now
+                setattr(fs, key, target_fs)
+            else:
+                # Resolve id-ref at the end of processing
+                def fix_up():
+                    setattr(fs, key, feature_structures.get(value))
+
+                self._post_processors.append(fix_up)
 
     def _strip_reserved_json_keys(
         self,

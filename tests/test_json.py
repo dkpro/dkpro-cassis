@@ -1,7 +1,8 @@
 import json
 
+from cassis.cas import NAME_DEFAULT_SOFA
 from tests.fixtures import *
-from tests.test_files.test_cas_generators import MultiTypeRandomCasGenerator
+from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files")
@@ -27,14 +28,30 @@ def test_deserialization_serialization(json_path):
     assert_json_equal(actual_json, expected_json)
 
 
-def test_serialization_deserialization():
+def test_multi_type_random_serialization_deserialization():
     generator = MultiTypeRandomCasGenerator()
     for i in range(0, 10):
         generator.size = (i + 1) * 10
         generator.type_count = i + 1
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
-        expected_json = randomized_cas.to_json(pretty_print=True)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        expected_json = randomized_cas.to_json()
+
+        loaded_cas = load_cas_from_json(expected_json)
+        actual_json = loaded_cas.to_json()
+
+        assert_json_equal(actual_json, expected_json)
+
+
+def test_multi_feature_random_serialization_deserialization():
+    generator = MultiFeatureRandomCasGenerator()
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        typesystem = generator.generate_type_system()
+        randomized_cas = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        expected_json = randomized_cas.to_json()
 
         loaded_cas = load_cas_from_json(expected_json)
         actual_json = loaded_cas.to_json()

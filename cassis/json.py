@@ -1,15 +1,10 @@
 import base64
 import json
-import warnings
-from collections import OrderedDict, defaultdict
-from io import BytesIO, TextIOWrapper
-from typing import IO, Dict, Iterable, List, Optional, Set, Union
-
-import attr
-from lxml import etree
+from collections import OrderedDict
+from io import TextIOWrapper
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import FeatureStructure, TypeNotFoundError, TypeSystem
+from cassis.typesystem import *
 
 RESERVED_FIELD_PREFIX = "%"
 TYPE_FIELD = RESERVED_FIELD_PREFIX + "TYPE"
@@ -23,7 +18,9 @@ FEATURE_STRUCTURES_FIELD = RESERVED_FIELD_PREFIX + "FEATURE_STRUCTURES"
 REF_FEATURE_PREFIX = "@"
 NAME_FIELD = RESERVED_FIELD_PREFIX + "NAME"
 SUPER_TYPE_FIELD = RESERVED_FIELD_PREFIX + "SUPER_TYPE"
+DESCRIPTION_FIELD = RESERVED_FIELD_PREFIX + "DESCRIPTION"
 ELEMENT_TYPE_FIELD = RESERVED_FIELD_PREFIX + "ELEMENT_TYPE"
+MULTIPLE_REFERENCES_ALLOWED_FIELD = RESERVED_FIELD_PREFIX + "MULTIPLE_REFERENCES_ALLOWED"
 ID_FIELD = RESERVED_FIELD_PREFIX + "ID"
 FLAGS_FIELD = RESERVED_FIELD_PREFIX + "FLAGS"
 FLAG_DOCUMENT_ANNOTATION = "DocumentAnnotation"
@@ -58,26 +55,30 @@ class CasJsonDeserializer:
         self._max_sofa_num = 0
         self._post_processors = []
 
-    def deserialize(self, source: Union[IO, str], typesystem: TypeSystem) -> Cas:
+    def deserialize(self, source: Union[IO, str], typesystem: Optional[TypeSystem] = None) -> Cas:
         if isinstance(source, str):
             data = json.loads(source)
         else:
             data = json.load(source)
 
-        feature_structures = {}
-
         self._max_xmi_id = 0
         self._max_sofa_num = 0
         self._post_processors = []
 
-        data.get(TYPES_FIELD)  # FIXME
+        embedded_typesystem = TypeSystem()
+        json_typesystem = data.get(TYPES_FIELD)
+        for type_name, json_type in json_typesystem.items():
+            self._parse_type(embedded_typesystem, type_name, json_type)
+
+        typesystem = merge_typesystems(typesystem, embedded_typesystem)
 
         cas = Cas(typesystem=typesystem)
 
+        feature_structures = {}
         json_feature_structures = data.get(FEATURE_STRUCTURES_FIELD)
         if isinstance(json_feature_structures, list):
             for json_fs in json_feature_structures:
-                if json_fs.get(TYPE_FIELD) == Cas.TYPE_NAME_SOFA:
+                if json_fs.get(TYPE_FIELD) == TYPE_NAME_SOFA:
                     fs_id = json_fs.get(ID_FIELD)
                     fs = self._parse_sofa(cas, fs_id, json_fs, feature_structures)
                 else:
@@ -87,7 +88,7 @@ class CasJsonDeserializer:
 
         if isinstance(json_feature_structures, dict):
             for fs_id, json_fs in json_feature_structures.items():
-                if json_fs.get(TYPE_FIELD) == Cas.TYPE_NAME_SOFA:
+                if json_fs.get(TYPE_FIELD) == TYPE_NAME_SOFA:
                     fs_id = int(fs_id)
                     fs = self._parse_sofa(cas, fs_id, json_fs, feature_structures)
                 else:
@@ -110,11 +111,28 @@ class CasJsonDeserializer:
 
         return cas
 
+    def _parse_type(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, any]):
+        super_type_name = json_type[SUPER_TYPE_FIELD]
+        description = json_type.get(DESCRIPTION_FIELD)
+        new_type = typesystem.create_type(type_name, super_type_name, description=description)
+
+        for key, value in json_type.items():
+            if key.startswith(RESERVED_FIELD_PREFIX):
+                continue
+            typesystem.add_feature(
+                new_type,
+                name=key,
+                rangeTypeName=json_type[RANGE_FIELD],
+                description=json_type.get(DESCRIPTION_FIELD),
+                elementType=json_type.get(ELEMENT_TYPE_FIELD),
+                multipleReferencesAllowed=json_type.get(MULTIPLE_REFERENCES_ALLOWED_FIELD),
+            )
+
     def _get_or_create_view(
         self, cas: Cas, view_name: str, fs_id: Optional[int] = None, sofa_num: Optional[int] = None
     ) -> Cas:
-        if view_name == Cas.NAME_DEFAULT_SOFA:
-            view = cas.get_view(Cas.NAME_DEFAULT_SOFA)
+        if view_name == NAME_DEFAULT_SOFA:
+            view = cas.get_view(NAME_DEFAULT_SOFA)
 
             # We need to make sure that the sofa gets the real xmi, see #155
             if fs_id is not None:
@@ -124,7 +142,7 @@ class CasJsonDeserializer:
         else:
             return cas.create_view(view_name, xmiID=fs_id, sofaNum=sofa_num)
 
-    def _parse_view(self, cas: Cas, view_name: str, json_view: Dict[str, any], feature_structures: List):
+    def _parse_view(self, cas: Cas, view_name: str, json_view: Dict[str, any], feature_structures: Dict[str, any]):
         view = self._get_or_create_view(cas, view_name)
         for member_id in json_view[VIEW_INDEX_FIELD]:
             fs = feature_structures[member_id]
@@ -132,13 +150,13 @@ class CasJsonDeserializer:
 
     def _parse_sofa(self, cas: Cas, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]) -> Sofa:
         view = self._get_or_create_view(
-            cas, json_fs.get(Cas.FEATURE_BASE_NAME_SOFAID), fs_id, json_fs.get(Cas.FEATURE_BASE_NAME_SOFANUM)
+            cas, json_fs.get(FEATURE_BASE_NAME_SOFAID), fs_id, json_fs.get(FEATURE_BASE_NAME_SOFANUM)
         )
 
-        view.sofa_string = json_fs.get(Cas.FEATURE_BASE_NAME_SOFASTRING)
-        view.sofa_mime = json_fs.get(Cas.FEATURE_BASE_NAME_SOFAMIME)
-        view.sofa_uri = json_fs.get(Cas.FEATURE_BASE_NAME_SOFAURI)
-        view.sofa_array = feature_structures.get(json_fs.get(REF_FEATURE_PREFIX + Cas.FEATURE_BASE_NAME_SOFAARRAY))
+        view.sofa_string = json_fs.get(FEATURE_BASE_NAME_SOFASTRING)
+        view.sofa_mime = json_fs.get(FEATURE_BASE_NAME_SOFAMIME)
+        view.sofa_uri = json_fs.get(FEATURE_BASE_NAME_SOFAURI)
+        view.sofa_array = feature_structures.get(json_fs.get(REF_FEATURE_PREFIX + FEATURE_BASE_NAME_SOFAARRAY))
 
         return view.get_sofa()
 
@@ -159,7 +177,7 @@ class CasJsonDeserializer:
         if "type" in attributes:
             attributes["type_"] = attributes.pop("type")
 
-        if AnnotationType.name == Cas.TYPE_NAME_BYTE_ARRAY:
+        if AnnotationType.name == TYPE_NAME_BYTE_ARRAY:
             attributes["elements"] = base64.b64decode(attributes.get(ELEMENTS_FIELD))
 
         self._resolve_references(attributes, feature_structures)
@@ -205,6 +223,12 @@ class CasJsonSerializer:
         views = data[VIEWS_FIELD] = {}
         feature_structures = data[FEATURE_STRUCTURES_FIELD] = []
 
+        for type_ in cas.typesystem.get_types():
+            if type_.name == TYPE_NAME_DOCUMENT_ANNOTATION:
+                continue
+            json_type = self._serialize_type(type_)
+            types[json_type[NAME_FIELD]] = json_type
+
         for view in cas.views:
             views[view.sofa.sofaID] = self._serialize_view(view)
             if view.sofa.sofaArray:
@@ -222,12 +246,51 @@ class CasJsonSerializer:
             sink = TextIOWrapper(sink, encoding="utf-8", write_through=True)
 
         if sink:
-            json.dump(data, sink, sort_keys=False)
+            json.dump(data, sink, sort_keys=False, indent=2 if pretty_print else None)
         else:
-            json.dumps(data, sort_keys=False)
+            json.dumps(data, sort_keys=False, indent=2 if pretty_print else None)
 
         if isinstance(sink, TextIOWrapper):
             sink.detach()  # Prevent TextIOWrapper from closing the BytesIO
+
+    def _serialize_type(self, type_: Type):
+        type_name = self._to_external_type_name(type_.name)
+        supertype_name = self._to_external_type_name(type_.supertypeName)
+
+        json_type = {
+            NAME_FIELD: type_name,
+            SUPER_TYPE_FIELD: supertype_name,
+            DESCRIPTION_FIELD: type_.description,
+        }
+
+        for feature in list(type_.features):
+            json_feature = self._serialize_feature(json_type, feature)
+            json_type[json_feature[NAME_FIELD]] = json_feature
+
+        return json_type
+
+    def _serialize_feature(self, json_type, feature: Feature):
+        # If the feature name is a reserved name like `self`, then we added an
+        # underscore to it before so Python can handle it. We now need to remove it.
+        feature_name = feature.name
+        if feature._has_reserved_name:
+            feature_name = feature_name[:-1]
+
+        json_feature = {
+            NAME_FIELD: feature_name,
+            RANGE_FIELD: self._to_external_type_name(feature.rangeTypeName),
+        }
+
+        if feature.description:
+            json_feature[DESCRIPTION_FIELD] = feature.description
+
+        if feature.multipleReferencesAllowed is not None:
+            json_feature[MULTIPLE_REFERENCES_ALLOWED_FIELD] = feature.multipleReferencesAllowed
+
+        if feature.elementType is not None:
+            json_feature[ELEMENT_TYPE_FIELD] = self._to_external_type_name(feature.elementType)
+
+        return json_feature
 
     def _serialize_feature_structure(self, cas, fs) -> dict:
         json_fs = OrderedDict()
@@ -256,9 +319,9 @@ class CasJsonSerializer:
             #    sofa: Sofa = getattr(fs, "sofa")
             #    value = sofa._offset_converter.cassis_to_uima(value)
 
-            if t.name == Cas.TYPE_NAME_BYTE_ARRAY and feature_name == "elements":
+            if t.name == TYPE_NAME_BYTE_ARRAY and feature_name == "elements":
                 json_fs[ELEMENTS_FIELD] = base64.b64encode(value).decode("ascii")
-            elif t.supertypeName == Cas.TYPE_NAME_ARRAY_BASE and feature_name == "elements":
+            elif t.supertypeName == TYPE_NAME_ARRAY_BASE and feature_name == "elements":
                 json_fs[ELEMENTS_FIELD] = value
             elif ts.is_primitive(feature.rangeTypeName):
                 json_fs[feature_name] = value
@@ -271,3 +334,8 @@ class CasJsonSerializer:
 
     def _serialize_view(self, view: View):
         return {VIEW_SOFA_FIELD: view.sofa.xmiID, VIEW_INDEX_FIELD: sorted(x.xmiID for x in view.get_all_annotations())}
+
+    def _to_external_type_name(self, type_name: str):
+        if type_name.startswith("uima.noNamespace."):
+            return type_name.replace("uima.noNamespace.", "")
+        return type_name

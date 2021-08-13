@@ -177,40 +177,6 @@ class Index:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    NAME_SPACE_UIMA_CAS = "uima" + TypeSystem.NAMESPACE_SEPARATOR + "cas"
-    UIMA_CAS_PREFIX = NAME_SPACE_UIMA_CAS + TypeSystem.NAMESPACE_SEPARATOR
-    TYPE_NAME_TOP = UIMA_CAS_PREFIX + "TOP"
-    TYPE_NAME_INTEGER = UIMA_CAS_PREFIX + "Integer"
-    TYPE_NAME_FLOAT = UIMA_CAS_PREFIX + "Float"
-    TYPE_NAME_STRING = UIMA_CAS_PREFIX + "String"
-    TYPE_NAME_BOOLEAN = UIMA_CAS_PREFIX + "Boolean"
-    TYPE_NAME_BYTE = UIMA_CAS_PREFIX + "Byte"
-    TYPE_NAME_SHORT = UIMA_CAS_PREFIX + "Short"
-    TYPE_NAME_LONG = UIMA_CAS_PREFIX + "Long"
-    TYPE_NAME_DOUBLE = UIMA_CAS_PREFIX + "Double"
-    TYPE_NAME_ARRAY_BASE = UIMA_CAS_PREFIX + "ArrayBase"
-    TYPE_NAME_FS_ARRAY = UIMA_CAS_PREFIX + "FSArray"
-    TYPE_NAME_INTEGER_ARRAY = UIMA_CAS_PREFIX + "IntegerArray"
-    TYPE_NAME_FLOAT_ARRAY = UIMA_CAS_PREFIX + "FloatArray"
-    TYPE_NAME_STRING_ARRAY = UIMA_CAS_PREFIX + "StringArray"
-    TYPE_NAME_BOOLEAN_ARRAY = UIMA_CAS_PREFIX + "BooleanArray"
-    TYPE_NAME_BYTE_ARRAY = UIMA_CAS_PREFIX + "ByteArray"
-    TYPE_NAME_SHORT_ARRAY = UIMA_CAS_PREFIX + "ShortArray"
-    TYPE_NAME_LONG_ARRAY = UIMA_CAS_PREFIX + "LongArray"
-    TYPE_NAME_DOUBLE_ARRAY = UIMA_CAS_PREFIX + "DoubleArray"
-    TYPE_NAME_FS_HASH_SET = UIMA_CAS_PREFIX + "FSHashSet"
-    TYPE_NAME_SOFA = UIMA_CAS_PREFIX + "Sofa"
-    TYPE_NAME_ANNOTATION_BASE = UIMA_CAS_PREFIX + "AnnotationBase"
-
-    FEATURE_BASE_NAME_SOFANUM = "sofaNum"
-    FEATURE_BASE_NAME_SOFAID = "sofaID"
-    FEATURE_BASE_NAME_SOFAMIME = "mimeType"
-    FEATURE_BASE_NAME_SOFAURI = "sofaURI"
-    FEATURE_BASE_NAME_SOFASTRING = "sofaString"
-    FEATURE_BASE_NAME_SOFAARRAY = "sofaArray"
-
-    NAME_DEFAULT_SOFA = "_InitialView"
-
     def __init__(self, typesystem: TypeSystem = None, lenient: bool = False):
         """Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
@@ -573,7 +539,7 @@ class Cas:
         """
         from cassis.xmi import CasXmiSerializer
 
-        return self.serialize(CasXmiSerializer(), path, pretty_print)
+        return self._serialize(CasXmiSerializer(), path, pretty_print)
 
     def to_json(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a JSON representation of this CAS.
@@ -589,9 +555,9 @@ class Cas:
         """
         from cassis.json import CasJsonSerializer
 
-        return self.serialize(CasJsonSerializer(), path, pretty_print)
+        return self._serialize(CasJsonSerializer(), path, pretty_print)
 
-    def serialize(self, serializer, path: Union[str, Path, None] = None, pretty_print: bool = False):
+    def _serialize(self, serializer, path: Union[str, Path, None] = None, pretty_print: bool = False):
         """Runs this CAS through the given serializer.
 
         Args:

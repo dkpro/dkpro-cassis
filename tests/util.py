@@ -50,7 +50,13 @@ def assert_json_equal(actual: str, expected: Union[IO, str]):
     Throws:
         AssertionError when json(actual) != json(expected)
     """
-    actual_json = json.dumps(json.loads(actual), sort_keys=True, indent=2)
+    if isinstance(actual, str):
+        actual = json.loads(actual)
+
+    if isinstance(expected, str):
+        expected = json.loads(expected)
+
+    actual_json = json.dumps(actual, sort_keys=True, indent=2)
     expected_json = json.dumps(expected, sort_keys=True, indent=2)
 
     try:

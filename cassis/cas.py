@@ -25,7 +25,7 @@ class IdGenerator:
 
 
 class OffsetConverter:
-    """  The Java platform and therefore UIMA internally uses a UTF-16 representation for text. For this reason,
+    """The Java platform and therefore UIMA internally uses a UTF-16 representation for text. For this reason,
     the offsets used in UIMA XMI represent offsets of the 16bit units in UTF-16 strings. We convert them internally
     to Unicode codepoints that are used by Python strings when creating a CAS. When serializing to XMI, we convert back.
 
@@ -122,7 +122,7 @@ class View:
     """A view into a CAS contains a subset of feature structures and annotations."""
 
     def __init__(self, sofa: Sofa):
-        """ Creates a new view for the given sofa.
+        """Creates a new view for the given sofa.
 
         Args:
             sofa: The sofa associated with this view.
@@ -136,7 +136,7 @@ class View:
 
     @property
     def type_index(self) -> Dict[str, SortedKeyList]:
-        """ Returns an index mapping type names to annotations of this type.
+        """Returns an index mapping type names to annotations of this type.
 
         Returns:
             A dictionary mapping type names to annotations of this type.
@@ -147,7 +147,7 @@ class View:
         self._indices[annotation.type].add(annotation)
 
     def get_all_annotations(self) -> List[FeatureStructure]:
-        """ Gets all the annotations in this view.
+        """Gets all the annotations in this view.
 
         Returns:
             A list of all annotations in this view.
@@ -159,7 +159,7 @@ class View:
         return result
 
     def remove_annotation_from_index(self, annotation: FeatureStructure):
-        """ Removes an annotation from an index. This throws if the
+        """Removes an annotation from an index. This throws if the
         annotation was not present.
 
         Args:
@@ -212,7 +212,7 @@ class Cas:
     NAME_DEFAULT_SOFA = "_InitialView"
 
     def __init__(self, typesystem: TypeSystem = None, lenient: bool = False):
-        """ Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
+        """Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
 
         Args:
@@ -240,7 +240,7 @@ class Cas:
         return self._typesystem
 
     def create_view(self, name: str, xmiID: Optional[int] = None, sofaNum: Optional[int] = None) -> "Cas":
-        """ Create a view and its underlying Sofa (subject of analysis).
+        """Create a view and its underlying Sofa (subject of analysis).
 
         Args:
             name: The name of the view. This is the same as the associated Sofa name.
@@ -276,7 +276,7 @@ class Cas:
         self._sofas[name] = sofa
 
     def get_view(self, name: str) -> "Cas":
-        """ Gets an existing view.
+        """Gets an existing view.
 
         Args:
             name: The name of the view. This is the same as the associated Sofa name.
@@ -327,7 +327,7 @@ class Cas:
         self._current_view.add_annotation_to_index(annotation)
 
     def add_annotations(self, annotations: Iterable[FeatureStructure]):
-        """ Adds several annotations at once to this CAS.
+        """Adds several annotations at once to this CAS.
 
         Args:
             annotations: An iterable of annotations to add.
@@ -337,7 +337,7 @@ class Cas:
             self.add_annotation(annotation)
 
     def remove_annotation(self, annotation: FeatureStructure):
-        """ Removes an annotation from an index. This throws if the
+        """Removes an annotation from an index. This throws if the
         annotation was not present.
 
         Args:
@@ -347,7 +347,7 @@ class Cas:
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:
-        """ Gets the text that is covered by `annotation`.
+        """Gets the text that is covered by `annotation`.
 
         Args:
             annotation: The annotation whose covered text is to be retrieved.
@@ -443,10 +443,10 @@ class Cas:
         return result
 
     def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> List[FeatureStructure]:
-        """ Returns a list of all feature structures of type `type_name` and child types.
-         Only features are returned that are in [begin, end] or close to it. If you use this function,
-         you should always check bound in the calling method.
-         """
+        """Returns a list of all feature structures of type `type_name` and child types.
+        Only features are returned that are in [begin, end] or close to it. If you use this function,
+        you should always check bound in the calling method.
+        """
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 
@@ -466,7 +466,7 @@ class Cas:
     # Sofa
 
     def get_sofa(self) -> Sofa:
-        """ Get the Sofa feature structure associated with this CAS view.
+        """Get the Sofa feature structure associated with this CAS view.
 
         Returns:
             The sofa associated with this CAS view.
@@ -485,7 +485,7 @@ class Cas:
 
     @property
     def sofa_string(self) -> str:
-        """ The sofa string contains the document text.
+        """The sofa string contains the document text.
 
         Returns: The sofa string.
 
@@ -494,7 +494,7 @@ class Cas:
 
     @sofa_string.setter
     def sofa_string(self, value: str):
-        """ Sets the sofa string to `value`.
+        """Sets the sofa string to `value`.
 
         Args:
             value: The new sofa string.
@@ -504,7 +504,7 @@ class Cas:
 
     @property
     def sofa_mime(self) -> str:
-        """ The sofa mime contains the MIME type of the document text.
+        """The sofa mime contains the MIME type of the document text.
 
         Returns: The sofa MIME type.
 
@@ -513,7 +513,7 @@ class Cas:
 
     @sofa_mime.setter
     def sofa_mime(self, value: str):
-        """ Sets the sofa MIME type to `value`.
+        """Sets the sofa MIME type to `value`.
 
         Args:
             value: The new sofa MIME type.
@@ -523,7 +523,7 @@ class Cas:
 
     @property
     def sofa_uri(self) -> str:
-        """ The sofa URI references external sofa data.
+        """The sofa URI references external sofa data.
 
         Returns: The sofa URI.
 
@@ -618,7 +618,7 @@ class Cas:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
     def typecheck(self) -> List[TypeCheckError]:
-        """ Checks whether all feature structures in this CAS are type sound.
+        """Checks whether all feature structures in this CAS are type sound.
 
         For more information, see `cassis.TypesSystem::typecheck`.
 
@@ -633,9 +633,9 @@ class Cas:
         return all_errors
 
     def _find_all_fs(self) -> Iterable[FeatureStructure]:
-        """ This function traverses the whole CAS in order to find all directly and indirectly referenced
+        """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
-        referenced by another feature structure as a feature. """
+        referenced by another feature structure as a feature."""
         all_fs = {}
 
         openlist = []

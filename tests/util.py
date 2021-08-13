@@ -7,7 +7,7 @@ from lxml import etree
 
 
 def assert_xml_equal(actual: Union[IO, str], expected: Union[IO, str]):
-    """ Checks whether the XML trees behind `actual` and `expected` are equal.
+    """Checks whether the XML trees behind `actual` and `expected` are equal.
 
     Args:
         actual: The actual XML

@@ -21,7 +21,7 @@ class ProtoView:
 def load_cas_from_xmi(
     source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False, trusted: bool = False
 ) -> Cas:
-    """ Loads a CAS from a XMI source.
+    """Loads a CAS from a XMI source.
 
     Args:
         source: The XML source. If `source` is a string, then it is assumed to be an XML string.
@@ -92,23 +92,23 @@ class CasXmiDeserializer:
             else:
                 """
                 In XMI, array element features can be encoded as
-                
+
                 <cas:StringArray>
                     <elements>LNC</elements>
                     <elements>MTH</elements>
                     <elements>SNOMEDCT_US</elements>
                 </cas:StringArray>
-                
-                In order to parse this with an incremental XML parser, we need to employ 
+
+                In order to parse this with an incremental XML parser, we need to employ
                 a simple state machine. It is depicted in the following.
-                            
+
                                    "start"               "start"
                      +-----------+-------->+-----------+-------->+--------+
                      | Outside   |         | Inside    |         | Inside |
                 +--->+ feature   |         | feature   |         | array  |
                      | structure |         | structure |         | element|
                      +-----------+<--------+-----------+<--------+--------+
-                                    "end"                 "end"                                
+                                    "end"                 "end"
                 """
                 if event == "start":
                     if state == OUTSIDE_FS:

@@ -542,7 +542,7 @@ class Cas:
 
     @property
     def sofa_array(self) -> str:
-        """The sofa byte array references a ByteArrayFS feature structure
+        """The sofa byte array references a uima.cas.ByteArray feature structure
 
         Returns: The sofa data byte array.
 
@@ -550,11 +550,11 @@ class Cas:
         return self.get_sofa().sofaArray
 
     @sofa_array.setter
-    def sofa_array(self, value: "uima_cas_ByteArrayFS"):
-        """Sets the sofa byte array to the given ByteArrayFS feature structure.
+    def sofa_array(self, value):
+        """Sets the sofa byte array to the given uima.cas.ByteArray feature structure.
 
         Args:
-            value: The new sofa byte array type.
+            value: The new sofa byte array feature structure.
 
         """
         self.get_sofa().sofaArray = value

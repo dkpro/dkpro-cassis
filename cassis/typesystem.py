@@ -139,7 +139,7 @@ class FeatureStructure:
         return getattr(self, name)
 
     def get_covered_text(self) -> str:
-        """ Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
+        """Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
 
         Returns:
             The text covered by the annotation
@@ -207,9 +207,9 @@ class Feature:
 
 @attr.s(slots=True)
 class Type:
-    """ Describes types in a type system.
+    """Describes types in a type system.
 
-    Instances of this class should not be created by hand, instead the type 
+    Instances of this class should not be created by hand, instead the type
     system's `create_type` should be used.
 
     """
@@ -237,9 +237,9 @@ class Type:
         )
 
     def __call__(self, **kwargs) -> FeatureStructure:
-        """ Creates an feature structure of this type
-        
-        When called with keyword arguments whose keys are the feature names and values are the 
+        """Creates an feature structure of this type
+
+        When called with keyword arguments whose keys are the feature names and values are the
         respective feature values, then a new feature structure instance is created.
 
         Returns:
@@ -252,7 +252,7 @@ class Type:
         return self._constructor(**kwargs)
 
     def get_feature(self, name: str) -> Optional[Feature]:
-        """ Find a feature by name
+        """Find a feature by name
 
         This returns `None` if this type does not contain a feature
         with the given `name`.
@@ -266,7 +266,7 @@ class Type:
         return self._features.get(name, None)
 
     def add_feature(self, feature: Feature, inherited: bool = False):
-        """ Add the given feature to his type.
+        """Add the given feature to his type.
 
         Args:
             feature: The feature
@@ -311,7 +311,7 @@ class Type:
 
     @property
     def features(self) -> Iterator[Feature]:
-        """ Returns an iterator over the features of this type. Inherited features are excluded. To
+        """Returns an iterator over the features of this type. Inherited features are excluded. To
         find these in addition to this types' own features, use `all_features`.
 
         Returns:
@@ -322,7 +322,7 @@ class Type:
 
     @property
     def all_features(self) -> Iterator[Feature]:
-        """ Returns an iterator over the features of this type. Inherited features are included. To
+        """Returns an iterator over the features of this type. Inherited features are included. To
         just retrieve immediate features, use `features`.
 
         Returns:
@@ -441,7 +441,7 @@ class TypeSystem:
             self._add_document_annotation_type()
 
     def contains_type(self, typename: str):
-        """ Checks whether this type system contains a type with name `typename`.
+        """Checks whether this type system contains a type with name `typename`.
 
         Args:
             typename: The name of type whose existence is to be checked.
@@ -452,7 +452,7 @@ class TypeSystem:
         return typename in self._types
 
     def create_type(self, name: str, supertypeName: str = "uima.tcas.Annotation", description: str = None) -> Type:
-        """ Creates a new type and return it.
+        """Creates a new type and return it.
 
         Args:
             name: The name of the new type
@@ -479,7 +479,7 @@ class TypeSystem:
         return new_type
 
     def get_type(self, type_name: str) -> Type:
-        """ Finds a type by name in the type system of this CAS.
+        """Finds a type by name in the type system of this CAS.
 
         Args:
             typename: The name of the type to retrieve
@@ -507,7 +507,7 @@ class TypeSystem:
             return self.is_instance_of(self.get_type(type_name).supertypeName, parent_name)
 
     def is_primitive(self, type_name: str) -> bool:
-        """ Checks if the type identified by `type_name` is a primitive type.
+        """Checks if the type identified by `type_name` is a primitive type.
 
         Args:
             type_name: The name of the type to query for.
@@ -522,7 +522,7 @@ class TypeSystem:
             return self.is_primitive(self.get_type(type_name).supertypeName)
 
     def is_collection(self, type_name: str, feature: Feature) -> bool:
-        """ Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
+        """Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
 
         Args:
             type_name: The type name to which the feature belongs.
@@ -536,7 +536,7 @@ class TypeSystem:
             return feature.rangeTypeName in _COLLECTION_TYPES
 
     def is_primitive_collection(self, type_name) -> bool:
-        """ Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.
+        """Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.
 
         Args:
             type_name: The name of the type to query for.
@@ -551,7 +551,7 @@ class TypeSystem:
             return self.is_primitive_collection(self.get_type(type_name).supertypeName)
 
     def subsumes(self, parent_name: str, child_name: str) -> bool:
-        """ Determines if the type `child_name` is a child of `parent_name`.
+        """Determines if the type `child_name` is a child of `parent_name`.
 
         Args:
             parent_name: Name of the parent type
@@ -581,7 +581,7 @@ class TypeSystem:
         description: str = None,
         multipleReferencesAllowed: bool = None,
     ):
-        """ Adds a feature to the given type.
+        """Adds a feature to the given type.
 
         Args:
             type_: The type to which the feature will be added
@@ -645,7 +645,7 @@ class TypeSystem:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 
     def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
-        """ Checks whether a feature structure is type sound.
+        """Checks whether a feature structure is type sound.
 
         Currently only checks `uima.cas.FSArray` and `uima.cas.FSList`.
 
@@ -684,7 +684,7 @@ class TypeSystem:
 
 
 def load_typesystem(source: Union[IO, str]) -> TypeSystem:
-    """ Loads a type system from a XML source.
+    """Loads a type system from a XML source.
 
     Args:
         source: The XML source. If `source` is a string, then it is assumed to be an XML string.
@@ -923,7 +923,7 @@ class TypeSystemSerializer:
 
 
 def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
-    """ Merges several type systems into one.
+    """Merges several type systems into one.
 
     If a type is defined in two source file systems, then the features of all of the these types are joined together in+
     the target type system. The exact rules are outlined in

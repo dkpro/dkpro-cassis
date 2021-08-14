@@ -27,7 +27,7 @@ def test_feature_can_be_added():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     actual_type = typesystem.get_type("test.Type")
     actual_feature = actual_type.get_feature("testFeature")
@@ -41,9 +41,9 @@ def test_feature_adding_warns_if_redefined_identically():
 
     test_type = typesystem.create_type(name="test.Type")
 
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
     with pytest.warns(UserWarning):
-        typesystem.add_feature(
+        typesystem.create_feature(
             type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature"
         )
 
@@ -52,10 +52,10 @@ def test_feature_adding_throws_if_redefined_differently():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     with pytest.raises(ValueError):
-        typesystem.add_feature(
+        typesystem.create_feature(
             type_=test_type, name="testFeature", rangeTypeName="Boolean", description="A test feature"
         )
 
@@ -75,7 +75,7 @@ def test_type_can_be_created():
 def test_type_can_create_instances():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     annotation = test_type(begin=0, end=42, testFeature="testValue")
 
@@ -88,10 +88,10 @@ def test_type_can_create_instance_with_inherited_fields():
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name="test.ParentType")
-    typesystem.add_feature(type_=parent_type, name="parentFeature", rangeTypeName="String")
+    typesystem.create_feature(type_=parent_type, name="parentFeature", rangeTypeName="String")
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
-    typesystem.add_feature(type_=child_type, name="childFeature", rangeTypeName="Integer")
+    typesystem.create_feature(type_=child_type, name="childFeature", rangeTypeName="Integer")
 
     annotation = child_type(parentFeature="parent", childFeature="child")
 
@@ -500,7 +500,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
 
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
-    ts.add_feature(
+    ts.create_feature(
         type_=t,
         name=name,
         rangeTypeName=rangeTypeName,
@@ -533,7 +533,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
 
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
-    ts.add_feature(
+    ts.create_feature(
         type_=t,
         name=name,
         rangeTypeName=rangeTypeName,
@@ -596,8 +596,8 @@ def test_typchecking_fs_array():
     MyOtherValue = cas.typesystem.create_type(name="test.MyOtherValue", supertypeName="uima.cas.TOP")
     MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
 
-    cas.typesystem.add_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
-    cas.typesystem.add_feature(
+    cas.typesystem.create_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
+    cas.typesystem.create_feature(
         type_=MyCollection, name="members", rangeTypeName="uima.cas.FSArray", elementType="test.MyValue"
     )
 

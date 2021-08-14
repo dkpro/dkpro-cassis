@@ -7,7 +7,7 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import FeatureStructure, TypeNotFoundError, TypeSystem
+from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, TypeNotFoundError, TypeSystem
 
 
 @attr.s
@@ -158,42 +158,50 @@ class CasXmiDeserializer:
 
             for feature in t.all_features:
                 feature_name = feature.name
+                value = getattr(fs, feature_name)
 
                 if feature_name == "sofa":
-                    value = getattr(fs, feature_name)
+
                     sofa = sofas[value]
                     setattr(fs, feature_name, sofa)
                     continue
 
-                if (
-                    typesystem.is_primitive(feature.rangeTypeName)
-                    or typesystem.is_primitive_collection(feature.rangeTypeName)
-                    or typesystem.is_primitive_collection(fs.type)
+                if typesystem.is_instance_of(fs.type, "uima.cas.StringArray"):
+                    # We already parsed string arrays to a Python list of string
+                    # before, so we do not need to work more on this
+                    continue
+                elif typesystem.is_primitive(feature.rangeTypeName) or typesystem.is_primitive_collection(
+                    feature.rangeTypeName
                 ):
                     # TODO: Parse feature values to their real type here, e.g. parse ints or floats
                     continue
-
-                # Resolve references here
-                value = getattr(fs, feature_name)
-                if value is None:
-                    continue
-
-                # Resolve references
-                if typesystem.is_collection(fs.type, feature):
-                    # A collection of references is a list of integers separated
-                    # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
-                    targets = []
-                    for ref in value.split():
-                        target_id = int(ref)
-                        target = feature_structures[target_id]
-                        targets.append(target)
-                        referenced_fs.add(target_id)
-                    setattr(fs, feature_name, targets)
+                elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
+                    elements = self._parse_primitive_array(fs.type, value)
+                    setattr(fs, feature_name, elements)
+                elif typesystem.is_primitive_array(feature.rangeTypeName):
+                    elements = self._parse_primitive_array(feature.rangeTypeName, value)
+                    setattr(fs, feature_name, elements)
                 else:
-                    target_id = int(value)
-                    target = feature_structures[target_id]
-                    referenced_fs.add(target_id)
-                    setattr(fs, feature_name, target)
+                    # Resolve references here
+                    if value is None:
+                        continue
+
+                    # Resolve references
+                    if typesystem.is_collection(fs.type, feature):
+                        # A collection of references is a list of integers separated
+                        # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
+                        targets = []
+                        for ref in value.split():
+                            target_id = int(ref)
+                            target = feature_structures[target_id]
+                            targets.append(target)
+                            referenced_fs.add(target_id)
+                        setattr(fs, feature_name, targets)
+                    else:
+                        target_id = int(value)
+                        target = feature_structures[target_id]
+                        referenced_fs.add(target_id)
+                        setattr(fs, feature_name, target)
 
         cas = Cas(typesystem=typesystem, lenient=lenient)
         for sofa in sofas.values():
@@ -281,6 +289,33 @@ class CasXmiDeserializer:
 
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         return AnnotationType(**attributes)
+
+    def _parse_primitive_array(self, type_name: str, value: str) -> List:
+        """ Primitive collections are serialized as white space seperated primitive values"""
+
+        # TODO: Use type name global variable here instead of hardcoded string literal
+        elements = value.split(" ")
+        if type_name == "uima.cas.FloatArray" or type_name == "uima.cas.DoubleArray":
+            return [float(e) for e in elements]
+        elif (
+            type_name == "uima.cas.IntegerArray"
+            or type_name == "uima.cas.ShortArray"
+            or type_name == "uima.cas.LongArray"
+        ):
+            return [int(e) for e in elements]
+        elif type_name == "uima.cas.BooleanArray":
+            return [self._parse_bool(e) for e in elements]
+        elif type_name == "uima.cas.ByteArray":
+            return list(bytearray.fromhex(value))
+        else:
+            raise ValueError(f"Not a primitive collection: {type_name}")
+
+    def _parse_bool(self, s: str) -> bool:
+        if s == "true":
+            return True
+        if s == "false":
+            return False
+        raise ValueError(f"Not a boolean: {s}")
 
     def _clear_elem(self, elem):
         """ Frees XML nodes that already have been processed to save memory """
@@ -402,6 +437,10 @@ class CasXmiSerializer:
                 for e in value:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
+            elif ts.is_primitive_array(fs.type) and feature_name == "elements":
+                elem.attrib[feature_name] = self._serialize_primitive_array(fs.type, value)
+            elif ts.is_primitive_array(feature.rangeTypeName):
+                elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeTypeName, value)
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)
             elif ts.is_primitive(feature.rangeTypeName):
@@ -429,3 +468,17 @@ class CasXmiSerializer:
 
         elem.attrib["sofa"] = str(view.sofa.xmiID)
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
+
+    def _serialize_primitive_array(self, type_name: str, values: List) -> str:
+        """ Primitive collections are serialized as white space seperated primitive values"""
+
+        # TODO: Use type name global variable here instead of hardcoded string literal
+        if type_name not in _PRIMITIVE_ARRAY_TYPES:
+            raise ValueError(f"Not a primitive array: {type_name}")
+
+        if type_name == "uima.cas.BooleanArray":
+            return " ".join(str(e).lower() for e in values)
+        elif type_name == "uima.cas.ByteArray":
+            return "".join("{:02X}".format(x) for x in values)
+        else:
+            return " ".join(str(e) for e in values)

@@ -262,9 +262,12 @@ class CasXmiDeserializer:
     def _parse_feature_structure(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
         # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
-        typename = elem.tag[9:].replace("/", ".").replace("ecore}", "").strip()
+        type_name: str = elem.tag[9:].replace("/", ".").replace("ecore}", "").strip()
 
-        AnnotationType = typesystem.get_type(typename)
+        if type_name.startswith("uima.noNamespace."):
+            type_name = type_name[17:]
+
+        AnnotationType = typesystem.get_type(type_name)
         attributes = dict(elem.attrib)
         attributes.update(children)
 
@@ -363,8 +366,12 @@ class CasXmiSerializer:
     def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
         ts = cas.typesystem
 
+        type_name = fs.type
+        if "." not in type_name:
+            type_name = f"uima.noNamespace.{type_name}"
+
         # The type name is a Java package, e.g. `org.myproj.Foo`.
-        parts = fs.type.split(".")
+        parts = type_name.split(".")
 
         # The CAS type namespace is converted to an XML namespace URI by the following rule:
         # replace all dots with slashes, prepend http:///, and append .ecore.

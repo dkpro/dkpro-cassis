@@ -221,6 +221,22 @@ def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_di
     assert len(root.xpath("//test0:Bar", namespaces=root.nsmap)) == 2
 
 
+def test_serializing_with_unset_xmi_ids_works():
+    typesystem = TypeSystem()
+    cas = Cas(typesystem)
+    FooType = typesystem.create_type("foo.test.Foo")
+    typesystem.add_feature(FooType, "bar", "bar.test.Bar")
+    BarType = typesystem.create_type("bar.test.Bar")
+
+    # Check that two annotations of the same type get the same namespace
+    foo = FooType()
+    cas.add_annotation(foo)
+    foo.bar = BarType()
+
+    # assert no error
+    cas.to_xmi(pretty_print=True)
+
+
 # UIMA vs cassis offsets
 
 

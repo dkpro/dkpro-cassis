@@ -299,6 +299,40 @@ def test_is_primitive_collection(type_name: str, expected: bool):
 
 
 @pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.ArrayBase", False),
+        ("uima.cas.FSArray", False),
+        ("uima.cas.FloatArray", True),
+        ("uima.cas.IntegerArray", True),
+        ("uima.cas.StringArray", False),
+        ("uima.cas.ListBase", False),
+        ("uima.cas.FSList", False),
+        ("uima.cas.EmptyFSList", False),
+        ("uima.cas.NonEmptyFSList", False),
+        ("uima.cas.FloatList", False),
+        ("uima.cas.EmptyFloatList", False),
+        ("uima.cas.NonEmptyFloatList", False),
+        ("uima.cas.IntegerList", False),
+        ("uima.cas.EmptyIntegerList", False),
+        ("uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.StringList", False),
+        ("uima.cas.EmptyStringList", False),
+        ("uima.cas.NonEmptyStringList", False),
+        ("uima.cas.BooleanArray", True),
+        ("uima.cas.ByteArray", True),
+        ("uima.cas.ShortArray", True),
+        ("uima.cas.LongArray", True),
+        ("uima.cas.DoubleArray", True),
+    ],
+)
+def test_is_primitive_collection(type_name: str, expected: bool):
+    typesystem = TypeSystem()
+
+    assert typesystem.is_primitive_array(type_name) == expected
+
+
+@pytest.mark.parametrize(
     "parent_name, child_name, expected",
     [
         ("uima.cas.ArrayBase", "uima.cas.ShortArray", True),

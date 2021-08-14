@@ -112,6 +112,17 @@ _PRIMITIVE_COLLECTION_TYPES = {
 }
 
 
+_PRIMITIVE_ARRAY_TYPES = {
+    "uima.cas.FloatArray",
+    "uima.cas.IntegerArray",
+    "uima.cas.BooleanArray",
+    "uima.cas.ByteArray",
+    "uima.cas.ShortArray",
+    "uima.cas.LongArray",
+    "uima.cas.DoubleArray",
+}
+
+
 def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
@@ -549,6 +560,21 @@ class TypeSystem:
             return True
         else:
             return self.is_primitive_collection(self.get_type(type_name).supertypeName)
+
+    def is_primitive_array(self, type_name) -> bool:
+        """Checks if the type identified by `type_name` is a primitive array, e.g. array of primitives.
+
+        Args:
+            type_name: The name of the type to query for.
+        Returns:
+            Returns True if the type identified by `type_name` is a primitive array type, else False
+        """
+        if type_name == TOP_TYPE_NAME:
+            return False
+        elif type_name in _PRIMITIVE_ARRAY_TYPES:
+            return True
+        else:
+            return self.is_primitive_array(self.get_type(type_name).supertypeName)
 
     def subsumes(self, parent_name: str, child_name: str) -> bool:
         """Determines if the type `child_name` is a child of `parent_name`.

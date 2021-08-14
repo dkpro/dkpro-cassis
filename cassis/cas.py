@@ -297,7 +297,7 @@ class Cas:
         """
         self.add(annotation, keep_id)
 
-    def add_annotations(self, annotations: Iterable[FeatureStructure]):
+    def add_all(self, annotations: Iterable[FeatureStructure]):
         """Adds several annotations at once to this CAS.
 
         Args:
@@ -306,6 +306,16 @@ class Cas:
         """
         for annotation in annotations:
             self.add(annotation)
+
+    @deprecation.deprecated(details="Use add_all()")
+    def add_annotations(self, annotations: Iterable[FeatureStructure]):
+        """Adds several annotations at once to this CAS.
+
+        Args:
+            annotations: An iterable of annotations to add.
+
+        """
+        self.add_all(annotations)
 
     def remove_annotation(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the

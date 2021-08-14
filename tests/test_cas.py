@@ -112,7 +112,7 @@ def test_sofa_uri_can_be_set_and_read():
 
 def test_select(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
 
     actual_tokens = list(cas.select("cassis.Token"))
     actual_sentences = list(cas.select("cassis.Sentence"))
@@ -124,7 +124,7 @@ def test_select(small_typesystem_xml, tokens, sentences):
 def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
 
@@ -133,7 +133,7 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
 
 def test_select_covered(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -154,7 +154,7 @@ def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
     annotations = [AnnotationType(begin=0, end=5), AnnotationType(begin=0, end=5)]
 
     cas.add(sentence)
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     actual_annotations = list(cas.select_covered("test.Annotation", sentence))
 
@@ -172,7 +172,7 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
     annotations.append(subtoken2)
 
     cas = Cas(typesystem=typesystem)
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -187,7 +187,7 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
 
 def test_select_covering(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
     actual_first_sentence, actual_second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -219,7 +219,7 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
     subsentence2 = SubSentenceType(begin=second_sentence.begin, end=second_sentence.end)
     annotations.append(subsentence1)
     annotations.append(subsentence2)
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -237,9 +237,9 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
 
 def test_select_only_returns_annotations_of_current_view(tokens, sentences, small_typesystem_xml):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens)
+    cas.add_all(tokens)
     view = cas.create_view("testView")
-    view.add_annotations(sentences)
+    view.add_all(sentences)
 
     actual_annotations_in_initial_view = list(cas.get_view("_InitialView").select_all())
     actual_annotations_in_test_view = list(cas.get_view("testView").select_all())
@@ -398,7 +398,7 @@ def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesyst
 def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     for token in tokens:
         cas.remove_annotation(token)
@@ -418,8 +418,8 @@ def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     view = cas.create_view("testView")
 
-    cas.add_annotations(annotations)
-    view.add_annotations(annotations)
+    cas.add_all(annotations)
+    view.add_all(annotations)
 
     for annotation in annotations:
         cas.remove_annotation(annotation)
@@ -437,7 +437,7 @@ def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences
 
 def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens)
+    cas.add_all(tokens)
 
     view = cas.create_view("testView")
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:noNamespace="http:///uima/noNamespace.ecore" xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <noNamespace:TypeWithNoNameSpace xmi:id="2" sofa="1" begin="0" end="9"/>
+    <tcas:DocumentAnnotation xmi:id="3" sofa="1" begin="0" end="9" language="x-unspecified"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="I am test"/>
+    <cas:View sofa="1" members="2 3"/>
+</xmi:XMI>

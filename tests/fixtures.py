@@ -160,6 +160,20 @@ def cas_with_leniency_xmi(cas_with_leniency_path):
         return f.read()
 
 
+# CAS and with feature structures whose types have no namespace
+
+
+@pytest.fixture
+def cas_has_fs_with_no_namespace_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_has_fs_with_no_namespace.xmi")
+
+
+@pytest.fixture
+def cas_has_fs_with_no_namespace_xmi(cas_has_fs_with_no_namespace_path):
+    with open(cas_has_fs_with_no_namespace_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 

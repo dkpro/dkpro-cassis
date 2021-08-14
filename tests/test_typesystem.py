@@ -605,7 +605,7 @@ def test_typchecking_fs_array():
 
     collection = MyCollection(members=members)
 
-    cas.add_annotation(collection)
+    cas.add(collection)
 
     errors = cas.typecheck()
 

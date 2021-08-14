@@ -262,7 +262,7 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
+    def add(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
         """Adds an annotation to this Cas.
 
         Args:
@@ -286,7 +286,18 @@ class Cas:
 
         self._current_view.add_annotation_to_index(annotation)
 
-    def add_annotations(self, annotations: Iterable[FeatureStructure]):
+    @deprecation.deprecated(details="Use add()")
+    def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
+        """Adds an annotation to this Cas.
+
+        Args:
+            annotation: The annotation to add.
+            keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
+
+        """
+        self.add(annotation, keep_id)
+
+    def add_all(self, annotations: Iterable[FeatureStructure]):
         """Adds several annotations at once to this CAS.
 
         Args:
@@ -294,9 +305,19 @@ class Cas:
 
         """
         for annotation in annotations:
-            self.add_annotation(annotation)
+            self.add(annotation)
 
-    def remove_annotation(self, annotation: FeatureStructure):
+    @deprecation.deprecated(details="Use add_all()")
+    def add_annotations(self, annotations: Iterable[FeatureStructure]):
+        """Adds several annotations at once to this CAS.
+
+        Args:
+            annotations: An iterable of annotations to add.
+
+        """
+        self.add_all(annotations)
+
+    def remove(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the
         annotation was not present.
 
@@ -304,6 +325,16 @@ class Cas:
             annotation: The annotation to remove.
         """
         self._current_view.remove_annotation_from_index(annotation)
+
+    @deprecation.deprecated(details="Use remove()")
+    def remove_annotation(self, annotation: FeatureStructure):
+        """Removes an annotation from an index. This throws if the
+        annotation was not present.
+
+        Args:
+            annotation: The annotation to remove.
+        """
+        self.remove(annotation)
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:

@@ -136,7 +136,7 @@ Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
     ]
 
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
 Selecting annotations
 ~~~~~~~~~~~~~~~~~~~~~
@@ -274,7 +274,7 @@ as a :code:`Cas` .
     cas = Cas()
     cas.sofa_string = "I like cheese ."
 
-    cas.add_annotations([
+    cas.add_all([
         Token(begin=0, end=1),
         Token(begin=2, end=6),
         Token(begin=7, end=13),
@@ -287,7 +287,7 @@ as a :code:`Cas` .
     view = cas.create_view('testView')
     view.sofa_string = "I like blackcurrant ."
 
-    view.add_annotations([
+    view.add_all([
         Token(begin=0, end=1),
         Token(begin=2, end=6),
         Token(begin=7, end=19),

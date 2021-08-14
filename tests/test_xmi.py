@@ -95,7 +95,7 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
     TokenType = typesystem.get_type("cassis.Token")
 
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
-    cas.add_annotation(TokenType(begin=0, end=3, id="0", pos="NNP"))
+    cas.add(TokenType(begin=0, end=3, id="0", pos="NNP"))
 
     # Check that serializing still works
     xmi = cas.to_xmi()
@@ -198,7 +198,7 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
     TokenType = typesystem.get_type("cassis.Token")
-    cas.add_annotation(TokenType(xmiID=13, sofa=1, begin=0, end=3, id=None, pos=None))
+    cas.add(TokenType(xmiID=13, sofa=1, begin=0, end=3, id=None, pos=None))
 
     actual_xml = cas.to_xmi()
 
@@ -212,10 +212,10 @@ def test_serializing_xmi_namespaces_with_same_prefixes_but_different_urls_are_di
     BarType = typesystem.create_type("bar.test.Bar")
 
     # Check that two annotations of the same type get the same namespace
-    cas.add_annotation(FooType())
-    cas.add_annotation(BarType())
-    cas.add_annotation(FooType())
-    cas.add_annotation(BarType())
+    cas.add(FooType())
+    cas.add(BarType())
+    cas.add(FooType())
+    cas.add(BarType())
     actual_xmi = cas.to_xmi()
 
     root = etree.fromstring(actual_xmi.encode("utf-8"))
@@ -229,12 +229,12 @@ def test_serializing_with_unset_xmi_ids_works():
     typesystem = TypeSystem()
     cas = Cas(typesystem)
     FooType = typesystem.create_type("foo.test.Foo")
-    typesystem.add_feature(FooType, "bar", "bar.test.Bar")
+    typesystem.create_feature(FooType, "bar", "bar.test.Bar")
     BarType = typesystem.create_type("bar.test.Bar")
 
     # Check that two annotations of the same type get the same namespace
     foo = FooType()
-    cas.add_annotation(foo)
+    cas.add(foo)
     foo.bar = BarType()
 
     # assert no error

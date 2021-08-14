@@ -348,7 +348,7 @@ def tokens(small_typesystem_xml):
     ]
 
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     return tokens
 
@@ -364,6 +364,6 @@ def sentences(small_typesystem_xml):
     sentences = [SentenceType(begin=0, end=26, id="0"), SentenceType(begin=27, end=47, id="1")]
 
     for sentence in sentences:
-        cas.add_annotation(sentence)
+        cas.add(sentence)
 
     return sentences

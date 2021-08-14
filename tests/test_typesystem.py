@@ -614,3 +614,101 @@ def test_typchecking_fs_array():
         2, "Member of [uima.cas.FSArray] has unsound type: was [test.MyOtherValue], need [test.MyValue]!"
     )
     assert errors[0] == expected_error
+
+
+# Get with path selector
+
+
+def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
+    first_arg = pred.arguments[0]
+
+    end = first_arg.get("target.end")
+
+    assert end == 5
+
+
+def test_get_path_stringlist():
+    cas = Cas()
+
+    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
+    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
+
+    data = ["foo", "bar", "baz"]
+    lst = NonEmptyStringList()
+
+    cur = lst
+    for s in data:
+        cur.head = s
+        cur.tail = NonEmptyStringList()
+        cur = cur.tail
+    cur.tail = EmptyStringList()
+
+    assert lst.get("head") == "foo"
+    assert lst.get("tail.head") == "bar"
+    assert lst.get("tail.tail.head") == "baz"
+    assert lst.get("tail.tail.tail.head") is None
+
+
+# Set with path selector
+
+
+def test_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
+    first_arg = pred.arguments[0]
+
+    end = first_arg.get("target.end")
+    assert end == 5
+
+    first_arg.set("target.end", 42)
+    end = first_arg.get("target.end")
+
+    assert end == 42
+
+
+def test_set_path_stringlist():
+    cas = Cas()
+
+    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
+    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
+
+    data = ["foo", "bar", "baz"]
+    lst = NonEmptyStringList()
+
+    cur = lst
+    for s in data:
+        cur.head = s
+        cur.tail = NonEmptyStringList()
+        cur = cur.tail
+    cur.tail = EmptyStringList()
+
+    lst.set("head", "new_foo")
+    lst.set("tail.head", "new_bar")
+    lst.set("tail.tail.head", "new_baz")
+
+    assert lst.get("head") == "new_foo"
+    assert lst.get("tail.head") == "new_bar"
+    assert lst.get("tail.tail.head") == "new_baz"
+
+
+def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
+    first_arg = pred.arguments[0]
+
+    with pytest.raises(AttributeError):
+        first_arg.set("target.bar", 42)

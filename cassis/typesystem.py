@@ -163,6 +163,13 @@ class FeatureStructure:
             raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
+        """ Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
+
+        If you have nested feature structures, e.g. a feature structure with feature `a` that has a feature `b` that
+        has a feature `c`, some of which can be `None`, then you can use the following:
+
+            fs.get("a.b.c")
+        """
         cur = self
         for part in path.split("."):
             cur = getattr(cur, part, None)
@@ -170,6 +177,25 @@ class FeatureStructure:
                 return None
 
         return cur
+
+    def set(self, path: str, value: Any):
+        """ Recursively sets an attribute, e.g. fs.set("a.b.c", 42) would set attribute `c` of `b` of `a` to `42`. """
+        
+        if "." not in path:
+            setattr(self, path, value)
+            return
+
+        idx = path.rindex(".")
+
+        value_name = path[idx + 1 :]
+        path = path[:idx]
+
+        target = self.get(path)
+
+        if target is None:
+            raise AttributeError(f"Attribute with name [{value_name}] not found on: {target}")
+
+        setattr(target, value_name, value)
 
     def __hash__(self):
         return self.xmiID

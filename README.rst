@@ -158,7 +158,7 @@ Selecting annotations
             # Annotation values can be accessed as properties
             print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
 
-Selecting nested features
+Getting and setting nested features
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have nested feature structures, e.g. a feature structure  with feature :code:`a` that has a
@@ -182,6 +182,19 @@ Another example would be a StringList containing :code:`["Foo", "Bar", "Baz"]`:
     assert lst.get("tail.tail.head") == "baz"
     assert lst.get("tail.tail.tail.head") == None
     assert lst.get("tail.tail.tail.tail.head") == None
+
+The same goes for setting:
+
+.. code:: python
+
+    lst.set("head", "new_foo")
+    lst.set("tail.head", "new_bar")
+    lst.set("tail.tail.head", "new_baz")
+
+    assert lst.get("head") == "new_foo"
+    assert lst.get("tail.head") == "new_bar"
+    assert lst.get("tail.tail.head") == "new_baz"
+
 
 Creating types and adding features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

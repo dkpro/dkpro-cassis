@@ -401,13 +401,13 @@ def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
     cas.add_all(annotations)
 
     for token in tokens:
-        cas.remove_annotation(token)
+        cas.remove(token)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
     assert set(actual_annotations) == set(sentences)
 
     for sentence in sentences:
-        cas.remove_annotation(sentence)
+        cas.remove(sentence)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
     assert set(actual_annotations) == set()
@@ -422,7 +422,7 @@ def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
     view.add_all(annotations)
 
     for annotation in annotations:
-        cas.remove_annotation(annotation)
+        cas.remove(annotation)
 
     assert set(cas.select("uima.tcas.Annotation")) == set()
     assert set(view.select("uima.tcas.Annotation")) == set(annotations)
@@ -432,7 +432,7 @@ def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
 
     with pytest.raises(ValueError):
-        cas.remove_annotation(tokens[0])
+        cas.remove(tokens[0])
 
 
 def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sentences):
@@ -442,4 +442,4 @@ def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sente
     view = cas.create_view("testView")
 
     with pytest.raises(ValueError):
-        view.remove_annotation(tokens[0])
+        view.remove(tokens[0])

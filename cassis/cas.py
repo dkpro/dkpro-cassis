@@ -317,7 +317,7 @@ class Cas:
         """
         self.add_all(annotations)
 
-    def remove_annotation(self, annotation: FeatureStructure):
+    def remove(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the
         annotation was not present.
 
@@ -325,6 +325,16 @@ class Cas:
             annotation: The annotation to remove.
         """
         self._current_view.remove_annotation_from_index(annotation)
+
+    @deprecation.deprecated(details="Use remove()")
+    def remove_annotation(self, annotation: FeatureStructure):
+        """Removes an annotation from an index. This throws if the
+        annotation was not present.
+
+        Args:
+            annotation: The annotation to remove.
+        """
+        self.remove(annotation)
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:

@@ -180,7 +180,7 @@ class FeatureStructure:
 
     def set(self, path: str, value: Any):
         """ Recursively sets an attribute, e.g. fs.set("a.b.c", 42) would set attribute `c` of `b` of `a` to `42`. """
-        
+
         if "." not in path:
             setattr(self, path, value)
             return
@@ -196,6 +196,12 @@ class FeatureStructure:
             raise AttributeError(f"Attribute with name [{value_name}] not found on: {target}")
 
         setattr(target, value_name, value)
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
 
     def __hash__(self):
         return self.xmiID

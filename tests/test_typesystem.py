@@ -616,10 +616,10 @@ def test_typchecking_fs_array():
     assert errors[0] == expected_error
 
 
-# Get with path selector
+# Getting/Setting with path selector
 
 
-def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+def test_get_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
     typesystem = load_typesystem(webanno_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
 
@@ -628,12 +628,16 @@ def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
     pred = result[0]
     first_arg = pred.arguments[0]
 
-    end = first_arg.get("target.end")
+    assert first_arg.get("target.end") == 5
+    first_arg.set("target.end", 42)
+    assert first_arg.get("target.end") == 42
 
-    assert end == 5
+    assert first_arg["target.end"] == 42
+    first_arg["target.end"] = 23
+    assert first_arg["target.end"] == 23
 
 
-def test_get_path_stringlist():
+def test_get_set_path_stringlist():
     cas = Cas()
 
     NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
@@ -654,43 +658,10 @@ def test_get_path_stringlist():
     assert lst.get("tail.tail.head") == "baz"
     assert lst.get("tail.tail.tail.head") is None
 
-
-# Set with path selector
-
-
-def test_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
-    typesystem = load_typesystem(webanno_typesystem_xml)
-    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
-
-    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
-    assert len(result) == 1
-    pred = result[0]
-    first_arg = pred.arguments[0]
-
-    end = first_arg.get("target.end")
-    assert end == 5
-
-    first_arg.set("target.end", 42)
-    end = first_arg.get("target.end")
-
-    assert end == 42
-
-
-def test_set_path_stringlist():
-    cas = Cas()
-
-    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
-    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
-
-    data = ["foo", "bar", "baz"]
-    lst = NonEmptyStringList()
-
-    cur = lst
-    for s in data:
-        cur.head = s
-        cur.tail = NonEmptyStringList()
-        cur = cur.tail
-    cur.tail = EmptyStringList()
+    assert lst["head"] == "foo"
+    assert lst["tail.head"] == "bar"
+    assert lst["tail.tail.head"] == "baz"
+    assert lst["tail.tail.tail.head"] is None
 
     lst.set("head", "new_foo")
     lst.set("tail.head", "new_bar")
@@ -699,6 +670,14 @@ def test_set_path_stringlist():
     assert lst.get("head") == "new_foo"
     assert lst.get("tail.head") == "new_bar"
     assert lst.get("tail.tail.head") == "new_baz"
+
+    lst["head"] = "newer_foo"
+    lst["tail.head"] = "newer_bar"
+    lst["tail.tail.head"] = "newer_baz"
+
+    assert lst["head"] == "newer_foo"
+    assert lst["tail.head"] == "newer_bar"
+    assert lst["tail.tail.head"] == "newer_baz"
 
 
 def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):

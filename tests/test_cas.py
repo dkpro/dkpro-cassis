@@ -153,7 +153,7 @@ def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
     sentence = SentenceType(begin=0, end=10)
     annotations = [AnnotationType(begin=0, end=5), AnnotationType(begin=0, end=5)]
 
-    cas.add_annotation(sentence)
+    cas.add(sentence)
     cas.add_annotations(annotations)
 
     actual_annotations = list(cas.select_covered("test.Annotation", sentence))
@@ -318,7 +318,7 @@ def test_add_annotation(small_typesystem_xml):
         TokenType(begin=25, end=26, id="5", pos="."),
     ]
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select(TokenType.name))
     assert actual_tokens == tokens
@@ -338,7 +338,7 @@ def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
         TokenType(begin=25, end=26, id="5", pos="."),
     ]
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select(TokenType.name))
     assert all([token.xmiID is not None for token in actual_tokens])
@@ -352,7 +352,7 @@ def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
     random.shuffle(list(annotations))
 
     for token in annotations:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select("cassis.Token"))
 
@@ -367,7 +367,7 @@ def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
 
     cas = Cas()
     with pytest.raises(RuntimeError, match="Typesystem of CAS does not contain type"):
-        cas.add_annotation(token)
+        cas.add(token)
 
 
 def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
@@ -377,7 +377,7 @@ def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
     token = TokenType(begin=0, end=3, id="0", pos="NNP")
 
     cas = Cas(lenient=True)
-    cas.add_annotation(token)
+    cas.add(token)
 
 
 def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesystem_with_inheritance_xml):

@@ -136,7 +136,7 @@ Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
     ]
 
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
 Selecting annotations
 ~~~~~~~~~~~~~~~~~~~~~

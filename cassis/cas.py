@@ -262,7 +262,7 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
+    def add(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
         """Adds an annotation to this Cas.
 
         Args:
@@ -286,6 +286,17 @@ class Cas:
 
         self._current_view.add_annotation_to_index(annotation)
 
+    @deprecation.deprecated(details="Use add()")
+    def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
+        """Adds an annotation to this Cas.
+
+        Args:
+            annotation: The annotation to add.
+            keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
+
+        """
+        self.add(annotation, keep_id)
+
     def add_annotations(self, annotations: Iterable[FeatureStructure]):
         """Adds several annotations at once to this CAS.
 
@@ -294,7 +305,7 @@ class Cas:
 
         """
         for annotation in annotations:
-            self.add_annotation(annotation)
+            self.add(annotation)
 
     def remove_annotation(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the

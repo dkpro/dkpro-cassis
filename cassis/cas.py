@@ -622,7 +622,7 @@ class Cas:
                         if ref.xmiID in all_fs:
                             continue
                         openlist.append(ref)
-                continue
+                continue  # After processing any arrays, skip to the next FS in the openlist
 
             # For non-array types, we look at the features - this includes also FSList-types
             for feature in t.all_features:

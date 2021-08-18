@@ -332,6 +332,13 @@ def test_is_primitive_collection(type_name: str, expected: bool):
     assert typesystem.is_primitive_array(type_name) == expected
 
 
+def test_is_aray():
+    cas = Cas()
+
+    for type in cas.typesystem.get_types():
+        assert cas.typesystem.is_array(type.name) == type.name.endswith("Array")
+
+
 @pytest.mark.parametrize(
     "parent_name, child_name, expected",
     [
@@ -695,7 +702,9 @@ def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
 
 
 def test_cannot_extend_final_type():
-    typesystem = TypeSystem()
+    cas = Cas()
 
-    with pytest.raises(ValueError):
-        typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")
+    for type in cas.typesystem.get_types():
+        if type.name.endswith("Array"):
+            with pytest.raises(ValueError):
+                cas.typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")

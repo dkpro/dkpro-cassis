@@ -198,7 +198,7 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
     TokenType = typesystem.get_type("cassis.Token")
-    cas.add(TokenType(xmiID=13, sofa=1, begin=0, end=3, id=None, pos=None))
+    cas.add(TokenType(begin=0, end=3, id=None, pos=None))
 
     actual_xml = cas.to_xmi()
 

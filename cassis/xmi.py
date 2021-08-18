@@ -343,7 +343,7 @@ class CasXmiSerializer:
         self._serialize_cas_null(root)
 
         # Find all fs, even the ones that are not directly added to a sofa
-        for fs in sorted(cas._find_all_fs(generate_missing_ids=True), key=lambda a: a.xmiID):
+        for fs in sorted(cas._find_all_fs(), key=lambda a: a.xmiID):
             self._serialize_feature_structure(cas, root, fs)
 
         for sofa in cas.sofas:

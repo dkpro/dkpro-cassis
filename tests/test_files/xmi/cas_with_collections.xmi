@@ -14,20 +14,16 @@
 		<elements>SNOMEDCT_US</elements>
 	</cas:StringArray>
 
-	<cassis:StringArray xmi:id="4">
+	<cas:StringArray xmi:id="4">
 		<elements>A</elements>
 		<elements>B</elements>
 		<elements>C</elements>
-	</cassis:StringArray>
+	</cas:StringArray>
 
-	<cassis:Group xmi:id="5" sofa="1">
+	<cassis:Group xmi:id="5" sofa="1" collection2="1 2 3">
 		<collection1>A</collection1>
 		<collection1>B</collection1>
 		<collection1>C</collection1>
-
-		<collection2>x</collection2>
-		<collection2>y</collection2>
-		<collection2>z</collection2>
 	</cassis:Group>
 
 	<cas:FSArray xmi:id="6" elements="2 3 4 5" />
@@ -37,22 +33,7 @@
 	<cas:NonEmptyFSList xmi:id="9" head="5" tail="10" />
 	<cas:EmptyFSList xmi:id="10"/>
 
-    <cas:FloatArray xmi:id="11" elements="0.7275637 0.054665208 0.6832234 0.0479393"/>
-    <cas:IntegerArray xmi:id="12" elements="1325939940 -248792245 1190043011 -1255373459 -1436456258 392236186"/>
-    <cas:StringArray xmi:id="13">
-        <elements>aaiguewilz</elements>
-        <elements>orarzvmgty</elements>
-        <elements>mkshhvglpk</elements>
-        <elements>ffvdpcdvbx</elements>
-        <elements>jsqcoqzpxb</elements>
-    </cas:StringArray>
-    <cas:BooleanArray xmi:id="14" elements="false true false"/>
-    <cas:ByteArray xmi:id="15" elements="42DB3064"/>
-    <cas:ShortArray xmi:id="16" elements="1929 13467 15132 15893"/>
-    <cas:LongArray xmi:id="17" elements="2516571677013944794"/>
-    <cas:DoubleArray xmi:id="18" elements="0.4362829094329638 0.6487936445670887 0.6959691863162578"/>
-
 	<cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text/plain"
               sofaString="Joe waited for the train . The train was late ."/>
-	<cas:View members="2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18" sofa="1"/>
+	<cas:View members="2 3 4 5 6 7 8 9 10" sofa="1"/>
 </xmi:XMI>

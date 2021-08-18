@@ -305,7 +305,7 @@ def test_is_primitive_collection(type_name: str, expected: bool):
         ("uima.cas.FSArray", False),
         ("uima.cas.FloatArray", True),
         ("uima.cas.IntegerArray", True),
-        ("uima.cas.StringArray", False),
+        ("uima.cas.StringArray", True),
         ("uima.cas.ListBase", False),
         ("uima.cas.FSList", False),
         ("uima.cas.EmptyFSList", False),
@@ -595,13 +595,14 @@ def test_typchecking_fs_array():
     MyValue = cas.typesystem.create_type(name="test.MyValue", supertypeName="uima.cas.TOP")
     MyOtherValue = cas.typesystem.create_type(name="test.MyOtherValue", supertypeName="uima.cas.TOP")
     MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
+    FSArray = cas.typesystem.get_type("uima.cas.FSArray")
 
     cas.typesystem.create_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
     cas.typesystem.create_feature(
         type_=MyCollection, name="members", rangeTypeName="uima.cas.FSArray", elementType="test.MyValue"
     )
 
-    members = [MyValue(value="foo"), MyValue(value="bar"), MyOtherValue()]
+    members = FSArray(elements=[MyValue(value="foo"), MyValue(value="bar"), MyOtherValue()])
 
     collection = MyCollection(members=members)
 
@@ -626,7 +627,7 @@ def test_get_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
     result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
     assert len(result) == 1
     pred = result[0]
-    first_arg = pred.arguments[0]
+    first_arg = pred.arguments.elements[0]
 
     assert first_arg.get("target.end") == 5
     first_arg.set("target.end", 42)
@@ -687,7 +688,7 @@ def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
     result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
     assert len(result) == 1
     pred = result[0]
-    first_arg = pred.arguments[0]
+    first_arg = pred.arguments.elements[0]
 
     with pytest.raises(AttributeError):
         first_arg.set("target.bar", 42)

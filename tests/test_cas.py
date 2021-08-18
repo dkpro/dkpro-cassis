@@ -112,7 +112,7 @@ def test_sofa_uri_can_be_set_and_read():
 
 def test_select(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
 
     actual_tokens = list(cas.select("cassis.Token"))
     actual_sentences = list(cas.select("cassis.Sentence"))
@@ -124,7 +124,7 @@ def test_select(small_typesystem_xml, tokens, sentences):
 def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
 
@@ -133,7 +133,7 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
 
 def test_select_covered(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -153,8 +153,8 @@ def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
     sentence = SentenceType(begin=0, end=10)
     annotations = [AnnotationType(begin=0, end=5), AnnotationType(begin=0, end=5)]
 
-    cas.add_annotation(sentence)
-    cas.add_annotations(annotations)
+    cas.add(sentence)
+    cas.add_all(annotations)
 
     actual_annotations = list(cas.select_covered("test.Annotation", sentence))
 
@@ -172,7 +172,7 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
     annotations.append(subtoken2)
 
     cas = Cas(typesystem=typesystem)
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -187,7 +187,7 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
 
 def test_select_covering(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens + sentences)
+    cas.add_all(tokens + sentences)
     actual_first_sentence, actual_second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -219,7 +219,7 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
     subsentence2 = SubSentenceType(begin=second_sentence.begin, end=second_sentence.end)
     annotations.append(subsentence1)
     annotations.append(subsentence2)
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
@@ -237,9 +237,9 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
 
 def test_select_only_returns_annotations_of_current_view(tokens, sentences, small_typesystem_xml):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens)
+    cas.add_all(tokens)
     view = cas.create_view("testView")
-    view.add_annotations(sentences)
+    view.add_all(sentences)
 
     actual_annotations_in_initial_view = list(cas.get_view("_InitialView").select_all())
     actual_annotations_in_test_view = list(cas.get_view("testView").select_all())
@@ -255,47 +255,6 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     arrs = list(cas.select("cassis.StringArray"))
 
     assert len(arrs) == 1
-
-
-# Get with path selector
-
-
-def test_get_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
-    typesystem = load_typesystem(webanno_typesystem_xml)
-    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
-
-    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
-    assert len(result) == 1
-    pred = result[0]
-    first_arg = pred.arguments[0]
-
-    end = first_arg.get("target.end")
-
-    assert end == 5
-
-
-def test_get_path_stringlist():
-    cas = Cas()
-
-    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
-    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
-
-    data = ["foo", "bar", "baz"]
-    lst = NonEmptyStringList()
-
-    cur = lst
-    for s in data:
-        cur.head = s
-        cur.tail = NonEmptyStringList()
-        cur = cur.tail
-
-    cur.tail = EmptyStringList()
-    print(lst)
-
-    assert lst.get("head") == "foo"
-    assert lst.get("tail.head") == "bar"
-    assert lst.get("tail.tail.head") == "baz"
-    assert lst.get("tail.tail.tail.head") is None
 
 
 # Covered text
@@ -359,7 +318,7 @@ def test_add_annotation(small_typesystem_xml):
         TokenType(begin=25, end=26, id="5", pos="."),
     ]
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select(TokenType.name))
     assert actual_tokens == tokens
@@ -379,7 +338,7 @@ def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
         TokenType(begin=25, end=26, id="5", pos="."),
     ]
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select(TokenType.name))
     assert all([token.xmiID is not None for token in actual_tokens])
@@ -393,7 +352,7 @@ def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
     random.shuffle(list(annotations))
 
     for token in annotations:
-        cas.add_annotation(token)
+        cas.add(token)
 
     actual_tokens = list(cas.select("cassis.Token"))
 
@@ -408,7 +367,7 @@ def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
 
     cas = Cas()
     with pytest.raises(RuntimeError, match="Typesystem of CAS does not contain type"):
-        cas.add_annotation(token)
+        cas.add(token)
 
 
 def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
@@ -418,7 +377,7 @@ def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
     token = TokenType(begin=0, end=3, id="0", pos="NNP")
 
     cas = Cas(lenient=True)
-    cas.add_annotation(token)
+    cas.add(token)
 
 
 def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesystem_with_inheritance_xml):
@@ -439,16 +398,16 @@ def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesyst
 def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(annotations)
+    cas.add_all(annotations)
 
     for token in tokens:
-        cas.remove_annotation(token)
+        cas.remove(token)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
     assert set(actual_annotations) == set(sentences)
 
     for sentence in sentences:
-        cas.remove_annotation(sentence)
+        cas.remove(sentence)
 
     actual_annotations = list(cas.select("uima.tcas.Annotation"))
     assert set(actual_annotations) == set()
@@ -459,11 +418,11 @@ def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     view = cas.create_view("testView")
 
-    cas.add_annotations(annotations)
-    view.add_annotations(annotations)
+    cas.add_all(annotations)
+    view.add_all(annotations)
 
     for annotation in annotations:
-        cas.remove_annotation(annotation)
+        cas.remove(annotation)
 
     assert set(cas.select("uima.tcas.Annotation")) == set()
     assert set(view.select("uima.tcas.Annotation")) == set(annotations)
@@ -473,14 +432,14 @@ def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
 
     with pytest.raises(ValueError):
-        cas.remove_annotation(tokens[0])
+        cas.remove(tokens[0])
 
 
 def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
-    cas.add_annotations(tokens)
+    cas.add_all(tokens)
 
     view = cas.create_view("testView")
 
     with pytest.raises(ValueError):
-        view.remove_annotation(tokens[0])
+        view.remove(tokens[0])

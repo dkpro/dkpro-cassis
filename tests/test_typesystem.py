@@ -27,7 +27,7 @@ def test_feature_can_be_added():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     actual_type = typesystem.get_type("test.Type")
     actual_feature = actual_type.get_feature("testFeature")
@@ -41,9 +41,9 @@ def test_feature_adding_warns_if_redefined_identically():
 
     test_type = typesystem.create_type(name="test.Type")
 
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
     with pytest.warns(UserWarning):
-        typesystem.add_feature(
+        typesystem.create_feature(
             type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature"
         )
 
@@ -52,10 +52,10 @@ def test_feature_adding_throws_if_redefined_differently():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     with pytest.raises(ValueError):
-        typesystem.add_feature(
+        typesystem.create_feature(
             type_=test_type, name="testFeature", rangeTypeName="Boolean", description="A test feature"
         )
 
@@ -75,7 +75,7 @@ def test_type_can_be_created():
 def test_type_can_create_instances():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.add_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     annotation = test_type(begin=0, end=42, testFeature="testValue")
 
@@ -88,10 +88,10 @@ def test_type_can_create_instance_with_inherited_fields():
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name="test.ParentType")
-    typesystem.add_feature(type_=parent_type, name="parentFeature", rangeTypeName="String")
+    typesystem.create_feature(type_=parent_type, name="parentFeature", rangeTypeName="String")
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
-    typesystem.add_feature(type_=child_type, name="childFeature", rangeTypeName="Integer")
+    typesystem.create_feature(type_=child_type, name="childFeature", rangeTypeName="Integer")
 
     annotation = child_type(parentFeature="parent", childFeature="child")
 
@@ -500,7 +500,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
 
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
-    ts.add_feature(
+    ts.create_feature(
         type_=t,
         name=name,
         rangeTypeName=rangeTypeName,
@@ -533,7 +533,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
 
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
-    ts.add_feature(
+    ts.create_feature(
         type_=t,
         name=name,
         rangeTypeName=rangeTypeName,
@@ -596,8 +596,8 @@ def test_typchecking_fs_array():
     MyOtherValue = cas.typesystem.create_type(name="test.MyOtherValue", supertypeName="uima.cas.TOP")
     MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
 
-    cas.typesystem.add_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
-    cas.typesystem.add_feature(
+    cas.typesystem.create_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
+    cas.typesystem.create_feature(
         type_=MyCollection, name="members", rangeTypeName="uima.cas.FSArray", elementType="test.MyValue"
     )
 
@@ -605,7 +605,7 @@ def test_typchecking_fs_array():
 
     collection = MyCollection(members=members)
 
-    cas.add_annotation(collection)
+    cas.add(collection)
 
     errors = cas.typecheck()
 
@@ -614,3 +614,80 @@ def test_typchecking_fs_array():
         2, "Member of [uima.cas.FSArray] has unsound type: was [test.MyOtherValue], need [test.MyValue]!"
     )
     assert errors[0] == expected_error
+
+
+# Getting/Setting with path selector
+
+
+def test_get_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
+    first_arg = pred.arguments[0]
+
+    assert first_arg.get("target.end") == 5
+    first_arg.set("target.end", 42)
+    assert first_arg.get("target.end") == 42
+
+    assert first_arg["target.end"] == 42
+    first_arg["target.end"] = 23
+    assert first_arg["target.end"] == 23
+
+
+def test_get_set_path_stringlist():
+    cas = Cas()
+
+    NonEmptyStringList = cas.typesystem.get_type("uima.cas.NonEmptyStringList")
+    EmptyStringList = cas.typesystem.get_type("uima.cas.EmptyStringList")
+
+    data = ["foo", "bar", "baz"]
+    lst = NonEmptyStringList()
+
+    cur = lst
+    for s in data:
+        cur.head = s
+        cur.tail = NonEmptyStringList()
+        cur = cur.tail
+    cur.tail = EmptyStringList()
+
+    assert lst.get("head") == "foo"
+    assert lst.get("tail.head") == "bar"
+    assert lst.get("tail.tail.head") == "baz"
+    assert lst.get("tail.tail.tail.head") is None
+
+    assert lst["head"] == "foo"
+    assert lst["tail.head"] == "bar"
+    assert lst["tail.tail.head"] == "baz"
+    assert lst["tail.tail.tail.head"] is None
+
+    lst.set("head", "new_foo")
+    lst.set("tail.head", "new_bar")
+    lst.set("tail.tail.head", "new_baz")
+
+    assert lst.get("head") == "new_foo"
+    assert lst.get("tail.head") == "new_bar"
+    assert lst.get("tail.tail.head") == "new_baz"
+
+    lst["head"] = "newer_foo"
+    lst["tail.head"] = "newer_bar"
+    lst["tail.tail.head"] = "newer_baz"
+
+    assert lst["head"] == "newer_foo"
+    assert lst["tail.head"] == "newer_bar"
+    assert lst["tail.tail.head"] == "newer_baz"
+
+
+def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
+    typesystem = load_typesystem(webanno_typesystem_xml)
+    cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
+
+    result = cas.select("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemPred")
+    assert len(result) == 1
+    pred = result[0]
+    first_arg = pred.arguments[0]
+
+    with pytest.raises(AttributeError):
+        first_arg.set("target.bar", 42)

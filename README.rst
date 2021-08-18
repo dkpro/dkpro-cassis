@@ -136,7 +136,7 @@ Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
     ]
 
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
 Selecting annotations
 ~~~~~~~~~~~~~~~~~~~~~
@@ -158,16 +158,25 @@ Selecting annotations
             # Annotation values can be accessed as properties
             print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
 
-Selecting nested features
+Getting and setting (nested) features
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have nested feature structures, e.g. a feature structure  with feature :code:`a` that has a
+If you want to access a variable but only have its name as a string or have nested feature structures,
+e.g. a feature structure  with feature :code:`a` that has a
 feature :code:`b` that has a feature :code:`c`, some of which can be :code:`None`, then you can use the
 following:
 
 .. code:: python
 
+    fs.get("var_name") # Or
+    fs["var_name"]
+
+Or in the nested case,
+
+.. code:: python
+
     fs.get("a.b.c")
+    fs["a.b.c"]
 
 
 If :code:`a` or  :code:`b` or  :code:`c` are :code:`None`, then this returns instead of
@@ -183,6 +192,29 @@ Another example would be a StringList containing :code:`["Foo", "Bar", "Baz"]`:
     assert lst.get("tail.tail.tail.head") == None
     assert lst.get("tail.tail.tail.tail.head") == None
 
+The same goes for setting:
+
+.. code:: python
+
+    # Functional
+    lst.set("head", "new_foo")
+    lst.set("tail.head", "new_bar")
+    lst.set("tail.tail.head", "new_baz")
+
+    assert lst.get("head") == "new_foo"
+    assert lst.get("tail.head") == "new_bar"
+    assert lst.get("tail.tail.head") == "new_baz"
+
+    # Bracket access
+    lst["head"] = "newer_foo"
+    lst["tail.head"] = "newer_bar"
+    lst["tail.tail.head"] = "newer_baz"
+
+    assert lst["head"] == "newer_foo"
+    assert lst["tail.head"] == "newer_bar"
+    assert lst["tail.tail.head"] == "newer_baz"
+
+
 Creating types and adding features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -193,10 +225,10 @@ Creating types and adding features
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name='example.ParentType')
-    typesystem.add_feature(type_=parent_type, name='parentFeature', rangeTypeName='String')
+    typesystem.create_feature(type_=parent_type, name='parentFeature', rangeTypeName='String')
 
     child_type = typesystem.create_type(name='example.ChildType', supertypeName=parent_type.name)
-    typesystem.add_feature(type_=child_type, name='childFeature', rangeTypeName='Integer')
+    typesystem.create_feature(type_=child_type, name='childFeature', rangeTypeName='Integer')
 
     annotation = child_type(parentFeature='parent', childFeature='child')
 
@@ -242,7 +274,7 @@ as a :code:`Cas` .
     cas = Cas()
     cas.sofa_string = "I like cheese ."
 
-    cas.add_annotations([
+    cas.add_all([
         Token(begin=0, end=1),
         Token(begin=2, end=6),
         Token(begin=7, end=13),
@@ -255,7 +287,7 @@ as a :code:`Cas` .
     view = cas.create_view('testView')
     view.sofa_string = "I like blackcurrant ."
 
-    view.add_annotations([
+    view.add_all([
         Token(begin=0, end=1),
         Token(begin=2, end=6),
         Token(begin=7, end=19),
@@ -318,8 +350,8 @@ available as a member variable :code:`self_` or :code:`type_` on the respective 
     typesystem = TypeSystem()
 
     ExampleType = typesystem.create_type(name='example.Type')
-    typesystem.add_feature(type_=ExampleType, name='self', rangeTypeName='String')
-    typesystem.add_feature(type_=ExampleType, name='type', rangeTypeName='String')
+    typesystem.create_feature(type_=ExampleType, name='self', rangeTypeName='String')
+    typesystem.create_feature(type_=ExampleType, name='type', rangeTypeName='String')
 
     annotation = ExampleType(self_="Test string1", type_="Test string2")
 

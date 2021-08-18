@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import IO, Any, Callable, Dict, Iterable, Iterator, List, Optional, Set, Union
 
 import attr
+import deprecation
 from lxml import etree
 from more_itertools import unique_everseen
 from toposort import toposort_flatten
@@ -205,6 +206,13 @@ class FeatureStructure:
             raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
+        """ Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
+
+        If you have nested feature structures, e.g. a feature structure with feature `a` that has a feature `b` that
+        has a feature `c`, some of which can be `None`, then you can use the following:
+
+            fs.get("a.b.c")
+        """
         cur = self
         for part in path.split("."):
             cur = getattr(cur, part, None)
@@ -212,6 +220,31 @@ class FeatureStructure:
                 return None
 
         return cur
+
+    def set(self, path: str, value: Any):
+        """ Recursively sets an attribute, e.g. fs.set("a.b.c", 42) would set attribute `c` of `b` of `a` to `42`. """
+
+        if "." not in path:
+            setattr(self, path, value)
+            return
+
+        idx = path.rindex(".")
+
+        value_name = path[idx + 1 :]
+        path = path[:idx]
+
+        target = self.get(path)
+
+        if target is None:
+            raise AttributeError(f"Attribute with name [{value_name}] not found on: {target}")
+
+        setattr(target, value_name, value)
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
 
     def __hash__(self):
         return self.xmiID
@@ -432,7 +465,7 @@ class TypeSystem:
 
         # Array
         t = self.create_type(name="uima.cas.ArrayBase", supertypeName="uima.cas.TOP")
-        self.add_feature(t, name="elements", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="elements", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
 
         self.create_type(name="uima.cas.FSArray", supertypeName="uima.cas.ArrayBase")
         self.create_type(name="uima.cas.BooleanArray", supertypeName="uima.cas.ArrayBase")
@@ -449,52 +482,47 @@ class TypeSystem:
         self.create_type(name="uima.cas.FSList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyFSList", supertypeName="uima.cas.FSList")
         t = self.create_type(name="uima.cas.NonEmptyFSList", supertypeName="uima.cas.FSList")
-        self.add_feature(t, name="head", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
-        self.add_feature(t, name="tail", rangeTypeName="uima.cas.FSList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="tail", rangeTypeName="uima.cas.FSList", multipleReferencesAllowed=True)
 
         # FloatList
         self.create_type(name="uima.cas.FloatList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyFloatList", supertypeName="uima.cas.FloatList")
         t = self.create_type(name="uima.cas.NonEmptyFloatList", supertypeName="uima.cas.FloatList")
-        self.add_feature(t, name="head", rangeTypeName="uima.cas.Float")
-        self.add_feature(t, name="tail", rangeTypeName="uima.cas.FloatList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeTypeName="uima.cas.Float")
+        self.create_feature(t, name="tail", rangeTypeName="uima.cas.FloatList", multipleReferencesAllowed=True)
 
         # IntegerList
         self.create_type(name="uima.cas.IntegerList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyIntegerList", supertypeName="uima.cas.IntegerList")
         t = self.create_type(name="uima.cas.NonEmptyIntegerList", supertypeName="uima.cas.IntegerList")
-        self.add_feature(t, name="head", rangeTypeName="uima.cas.Integer")
-        self.add_feature(t, name="tail", rangeTypeName="uima.cas.IntegerList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeTypeName="uima.cas.Integer")
+        self.create_feature(t, name="tail", rangeTypeName="uima.cas.IntegerList", multipleReferencesAllowed=True)
 
         # StringList
         self.create_type(name="uima.cas.StringList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyStringList", supertypeName="uima.cas.StringList")
         t = self.create_type(name="uima.cas.NonEmptyStringList", supertypeName="uima.cas.StringList")
-        self.add_feature(t, name="head", rangeTypeName="uima.cas.String")
-        self.add_feature(t, name="tail", rangeTypeName="uima.cas.StringList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="tail", rangeTypeName="uima.cas.StringList", multipleReferencesAllowed=True)
 
         # Sofa
         t = self.create_type(name="uima.cas.Sofa", supertypeName="uima.cas.TOP")
-        self.add_feature(t, name="sofaNum", rangeTypeName="uima.cas.Integer")
-        self.add_feature(t, name="sofaID", rangeTypeName="uima.cas.String")
-        self.add_feature(t, name="mimeType", rangeTypeName="uima.cas.String")
-        self.add_feature(
-            t,
-            name="sofaArray",
-            rangeTypeName="uima.cas.TOP",
-            multipleReferencesAllowed=True,
-        )
-        self.add_feature(t, name="sofaString", rangeTypeName="uima.cas.String")
-        self.add_feature(t, name="sofaURI", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="sofaNum", rangeTypeName="uima.cas.Integer")
+        self.create_feature(t, name="sofaID", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="mimeType", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="sofaArray", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="sofaString", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="sofaURI", rangeTypeName="uima.cas.String")
 
         # AnnotationBase
         t = self.create_type(name="uima.cas.AnnotationBase", supertypeName="uima.cas.TOP")
-        self.add_feature(t, name="sofa", rangeTypeName="uima.cas.Sofa")
+        self.create_feature(t, name="sofa", rangeTypeName="uima.cas.Sofa")
 
         # Annotation
         t = self.create_type(name="uima.tcas.Annotation", supertypeName="uima.cas.AnnotationBase")
-        self.add_feature(t, name="begin", rangeTypeName="uima.cas.Integer")
-        self.add_feature(t, name="end", rangeTypeName="uima.cas.Integer")
+        self.create_feature(t, name="begin", rangeTypeName="uima.cas.Integer")
+        self.create_feature(t, name="end", rangeTypeName="uima.cas.Integer")
 
         if add_document_annotation_type:
             self._add_document_annotation_type()
@@ -646,7 +674,7 @@ class TypeSystem:
 
         return False
 
-    def add_feature(
+    def create_feature(
         self,
         type_: Type,
         name: str,
@@ -691,6 +719,32 @@ class TypeSystem:
         )
 
         type_.add_feature(feature)
+
+    @deprecation.deprecated(details="Use create_feature")
+    def add_feature(
+        self,
+        type_: Type,
+        name: str,
+        rangeTypeName: str,
+        elementType: str = None,
+        description: str = None,
+        multipleReferencesAllowed: bool = None,
+    ):
+        """Adds a feature to the given type.
+        Args:
+            type_: The type to which the feature will be added
+            name: The name of the new feature
+            rangeTypeName: The feature's rangeTypeName specifies the type of value that the feature can take.
+            elementType: The elementType of a feature is optional, and applies only when the rangeTypeName
+                is uima.cas.FSArray or uima.cas.FSList The elementType specifies what type of value can be
+                assigned as an element of the array or list.
+            description: The description of the new feature
+            multipleReferencesAllowed: Setting this to true indicates that the array or list may be shared,
+                so changes to it may affect other objects in the CAS.
+        Raises:
+            Exception: If a feature with name `name` already exists in `type_`.
+        """
+        self.create_feature(type_, name, rangeTypeName, elementType, description, multipleReferencesAllowed)
 
     def to_xml(self, path: Union[str, Path, None] = None) -> Optional[str]:
         """Creates a XMI representation of this type system.
@@ -751,7 +805,7 @@ class TypeSystem:
 
     def _add_document_annotation_type(self):
         t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
-        self.add_feature(t, name="language", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="language", rangeTypeName="uima.cas.String")
 
 
 # Deserializing
@@ -802,12 +856,6 @@ class TypeSystemDeserializer:
             type_name = self._get_elem_as_str(elem.find("{*}name"))
             description = self._get_elem_as_str(elem.find("{*}description"))
             supertypeName = self._get_elem_as_str(elem.find("{*}supertypeName"))
-
-            if "." not in type_name:
-                type_name = "uima.noNamespace." + type_name
-
-            if "." not in supertypeName:
-                supertypeName = "uima.noNamespace." + supertypeName
 
             types[type_name] = Type(name=type_name, supertypeName=supertypeName, description=description)
             type_dependencies[type_name].add(supertypeName)
@@ -886,7 +934,7 @@ class TypeSystemDeserializer:
         # between type references in inheritance and type references in range or element type.
         for t in created_types:
             for f in features[t.name]:
-                ts.add_feature(
+                ts.create_feature(
                     t,
                     name=f.name,
                     rangeTypeName=f.rangeTypeName,
@@ -944,20 +992,13 @@ class TypeSystemSerializer:
         typeDescription = etree.Element("typeDescription")
 
         name = etree.SubElement(typeDescription, "name")
-        type_name = type_.name
-        if type_name.startswith("uima.noNamespace."):
-            type_name = type_name.replace("uima.noNamespace.", "")
-
-        name.text = type_name
+        name.text = type_.name
 
         description = etree.SubElement(typeDescription, "description")
         description.text = type_.description
 
         supertype_name_node = etree.SubElement(typeDescription, "supertypeName")
-        supertype_name = type_.supertypeName
-        if supertype_name.startswith("uima.noNamespace."):
-            supertype_name = supertype_name.replace("uima.noNamespace.", "")
-        supertype_name_node.text = supertype_name
+        supertype_name_node.text = type_.supertypeName
 
         # Only create the `feature` element if there is at least one feature
         feature_list = list(type_.features)

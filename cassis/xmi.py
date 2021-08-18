@@ -235,7 +235,7 @@ class CasXmiDeserializer:
                     fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
                     fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
 
-                view.add_annotation(fs, keep_id=True)
+                view.add(fs, keep_id=True)
 
         cas._xmi_id_generator = IdGenerator(self._max_xmi_id + 1)
         cas._sofa_num_generator = IdGenerator(self._max_sofa_num + 1)
@@ -262,9 +262,12 @@ class CasXmiDeserializer:
     def _parse_feature_structure(self, typesystem: TypeSystem, elem, children: Dict[str, List[str]]):
         # Strip the http prefix, replace / with ., remove the ecore part
         # TODO: Error checking
-        typename = elem.tag[9:].replace("/", ".").replace("ecore}", "").strip()
+        type_name: str = elem.tag[9:].replace("/", ".").replace("ecore}", "").strip()
 
-        AnnotationType = typesystem.get_type(typename)
+        if type_name.startswith("uima.noNamespace."):
+            type_name = type_name[17:]
+
+        AnnotationType = typesystem.get_type(type_name)
         attributes = dict(elem.attrib)
         attributes.update(children)
 
@@ -339,6 +342,11 @@ class CasXmiSerializer:
 
         self._serialize_cas_null(root)
 
+        # Generate XMI ids for unset ones
+        for fs in cas._find_all_fs():
+            if fs.xmiID is None:
+                fs.xmiID = cas._get_next_xmi_id()
+
         # Find all fs, even the ones that are not directly added to a sofa
         for fs in sorted(cas._find_all_fs(), key=lambda a: a.xmiID):
             self._serialize_feature_structure(cas, root, fs)
@@ -363,8 +371,12 @@ class CasXmiSerializer:
     def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
         ts = cas.typesystem
 
+        type_name = fs.type
+        if "." not in type_name:
+            type_name = f"uima.noNamespace.{type_name}"
+
         # The type name is a Java package, e.g. `org.myproj.Foo`.
-        parts = fs.type.split(".")
+        parts = type_name.split(".")
 
         # The CAS type namespace is converted to an XML namespace URI by the following rule:
         # replace all dots with slashes, prepend http:///, and append .ecore.

@@ -160,6 +160,20 @@ def cas_with_leniency_xmi(cas_with_leniency_path):
         return f.read()
 
 
+# CAS and with feature structures whose types have no namespace
+
+
+@pytest.fixture
+def cas_has_fs_with_no_namespace_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_has_fs_with_no_namespace.xmi")
+
+
+@pytest.fixture
+def cas_has_fs_with_no_namespace_xmi(cas_has_fs_with_no_namespace_path):
+    with open(cas_has_fs_with_no_namespace_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 
@@ -334,7 +348,7 @@ def tokens(small_typesystem_xml):
     ]
 
     for token in tokens:
-        cas.add_annotation(token)
+        cas.add(token)
 
     return tokens
 
@@ -350,6 +364,6 @@ def sentences(small_typesystem_xml):
     sentences = [SentenceType(begin=0, end=26, id="0"), SentenceType(begin=27, end=47, id="1")]
 
     for sentence in sentences:
-        cas.add_annotation(sentence)
+        cas.add(sentence)
 
     return sentences

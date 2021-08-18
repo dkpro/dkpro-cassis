@@ -631,7 +631,9 @@ class Cas:
 
         return all_errors
 
-    def _find_all_fs(self, generate_missing_ids: bool = True) -> Iterable[FeatureStructure]:
+    def _find_all_fs(
+        self, generate_missing_ids: bool = True, include_inlinable_arrays: bool = False
+    ) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature."""
@@ -667,33 +669,52 @@ class Cas:
             all_fs[fs.xmiID] = fs
 
             t = ts.get_type(fs.type)
+
+            # Arrays contents are handled separately - they only have one "virtual" feature: elements
+            if t.supertypeName == "uima.cas.ArrayBase":
+                if t.name == "uima.cas.FSArray":
+                    for ref in fs.elements:
+                        if ref.xmiID in all_fs:
+                            continue
+                        openlist.append(ref)
+                continue  # After processing any arrays, skip to the next FS in the openlist
+
+            # For non-array types, we look at the features - this includes also FSList-types
             for feature in t.all_features:
                 feature_name = feature.name
 
                 if feature_name == "sofa":
                     continue
 
-                if (
-                    ts.is_primitive(feature.rangeTypeName)
-                    or ts.is_primitive_collection(feature.rangeTypeName)
-                    or ts.is_primitive_collection(fs.type)
-                ):
+                if ts.is_primitive(feature.rangeTypeName):
                     continue
-                elif ts.is_collection(fs.type, feature):
-                    lst = getattr(fs, feature_name)
-                    if lst is None:
-                        continue
 
-                    for referenced_fs in lst:
-                        if referenced_fs.xmiID not in all_fs:
-                            openlist.append(referenced_fs)
-                else:
-                    referenced_fs = getattr(fs, feature_name)
-                    if referenced_fs is None:
-                        continue
+                feature_value = getattr(fs, feature_name)
+                if feature_value is None:
+                    continue
 
-                    if referenced_fs.xmiID not in all_fs:
-                        openlist.append(referenced_fs)
+                if (
+                    not include_inlinable_arrays
+                    and not feature.multipleReferencesAllowed
+                    and ts.is_array(feature.rangeTypeName)
+                ):
+                    # For inlined FSArrays, we still need to scan their members
+                    if feature.rangeTypeName == "uima.cas.FSArray":
+                        for ref in feature_value.elements:
+                            if ref.xmiID in all_fs:
+                                continue
+                            openlist.append(ref)
+                    continue
+
+                if not hasattr(feature_value, "xmiID"):
+                    raise AttributeError(
+                        f"Feature [{feature_name}] should point to a [{feature.rangeTypeName}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
+                    )
+
+                if feature_value.xmiID in all_fs:
+                    continue
+
+                openlist.append(feature_value)
 
         yield from all_fs.values()
 

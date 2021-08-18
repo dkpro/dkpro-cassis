@@ -138,7 +138,7 @@ def test_deserializing_references_in_attributes_work(cas_with_references_xmi, we
     assert len(semarglinks) == 2
 
     # Check that the references to the semantic argument links have been resolved
-    assert sempred.arguments == semarglinks
+    assert sempred.arguments.elements == semarglinks
 
     # Check that the references from the links to the arguments have been resolved
     assert semarglinks[0].target == semargs[0]
@@ -290,3 +290,33 @@ def test_leniency_type_not_in_typeystem_not_lenient(cas_with_leniency_xmi, small
 
     with pytest.raises(TypeNotFoundError):
         cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=False)
+
+
+def test_multiple_references_allowed_true():
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("Foo")
+    IntegerArray = typesystem.get_type("uima.cas.IntegerArray")
+    f = typesystem.create_feature(Foo, "intArray", "uima.cas.IntegerArray", elementType="uima.cas.Integer")
+
+    cas = Cas(typesystem)
+    foo = Foo()
+    foo.intArray = IntegerArray(elements=[1, 2, 3])
+    cas.add(foo)
+
+    f.multipleReferencesAllowed = None
+    actual_xmi = cas.to_xmi(pretty_print=True)
+    root = etree.fromstring(actual_xmi.encode("utf-8"))
+    assert len(root.xpath("//cas:IntegerArray", namespaces=root.nsmap)) == 0
+    assert len(root.xpath("//noNamespace:Foo/@intArray", namespaces=root.nsmap)) == 1
+
+    f.multipleReferencesAllowed = True
+    actual_xmi = cas.to_xmi(pretty_print=True)
+    root = etree.fromstring(actual_xmi.encode("utf-8"))
+    assert len(root.xpath("//cas:IntegerArray", namespaces=root.nsmap)) == 1
+    assert root.xpath("//noNamespace:Foo/@intArray", namespaces=root.nsmap) == [f"{foo.intArray.xmiID}"]
+
+    f.multipleReferencesAllowed = False
+    actual_xmi = cas.to_xmi(pretty_print=True)
+    root = etree.fromstring(actual_xmi.encode("utf-8"))
+    assert len(root.xpath("//cas:IntegerArray", namespaces=root.nsmap)) == 0
+    assert len(root.xpath("//noNamespace:Foo/@intArray", namespaces=root.nsmap)) == 1

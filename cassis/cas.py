@@ -645,7 +645,7 @@ class Cas:
         ts = self.typesystem
         while openlist:
             fs = openlist.pop(0)
-            if generate_missing_ids:
+            if generate_missing_ids and fs.xmiID is None:
                 fs.xmiID = self._get_next_xmi_id()
             all_fs[fs.xmiID] = fs
 

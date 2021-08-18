@@ -616,7 +616,7 @@ class TypeSystem:
         # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
         return type_name in _PRIMITIVE_ARRAY_TYPES
 
-    def is_array(self, type_name) -> bool:
+    def is_array(self, type_name: str) -> bool:
         """Checks if the type identified by `type_name` is an array.
 
         Args:

@@ -252,7 +252,7 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     typesystem = load_typesystem(typesystem_with_collections_xml)
     cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
-    arrs = list(cas.select("uima.cas.StringArray"))
+    arrs = cas.select("uima.cas.StringArray")
 
     assert len(arrs) == 3
 

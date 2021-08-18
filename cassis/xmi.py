@@ -176,7 +176,7 @@ class CasXmiDeserializer:
                     continue
                 elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
                     # Separately rendered arrays (typically used with multipleReferencesAllowed = True)
-                    elements = self._parse_primitive_array(typesystem.get_type(fs.type), value)
+                    elements = self._parse_primitive_array(fs.type, value)
                     setattr(fs, feature_name, elements)
                 elif typesystem.is_primitive_array(feature.rangeTypeName):
                     # Array feature rendered inline (multipleReferencesAllowed = False|None)
@@ -186,7 +186,7 @@ class CasXmiDeserializer:
                     if isinstance(value, str):
                         FSType = typesystem.get_type(feature.rangeTypeName)
                         elements = FSType(
-                            elements=self._parse_primitive_array(typesystem.get_type(feature.rangeTypeName), value)
+                            elements=self._parse_primitive_array(feature.rangeTypeName, value)
                         )
                         setattr(fs, feature_name, elements)
                 else:
@@ -314,25 +314,25 @@ class CasXmiDeserializer:
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         return AnnotationType(**attributes)
 
-    def _parse_primitive_array(self, type: Type, value: str) -> List:
+    def _parse_primitive_array(self, type_name: str, value: str) -> List:
         """ Primitive collections are serialized as white space seperated primitive values"""
 
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
-        if type.name == "uima.cas.FloatArray" or type.name == "uima.cas.DoubleArray":
+        if type_name == "uima.cas.FloatArray" or type_name == "uima.cas.DoubleArray":
             return [float(e) for e in elements]
         elif (
-            type.name == "uima.cas.IntegerArray"
-            or type.name == "uima.cas.ShortArray"
-            or type.name == "uima.cas.LongArray"
+            type_name == "uima.cas.IntegerArray"
+            or type_name == "uima.cas.ShortArray"
+            or type_name == "uima.cas.LongArray"
         ):
             return [int(e) for e in elements]
-        elif type.name == "uima.cas.BooleanArray":
+        elif type_name == "uima.cas.BooleanArray":
             return [self._parse_bool(e) for e in elements]
-        elif type.name == "uima.cas.ByteArray":
+        elif type_name == "uima.cas.ByteArray":
             return list(bytearray.fromhex(value))
         else:
-            raise ValueError(f"Not a primitive collection: {type.name}")
+            raise ValueError(f"Not a primitive collection: {type_name}")
 
     def _parse_bool(self, s: str) -> bool:
         if s == "true":

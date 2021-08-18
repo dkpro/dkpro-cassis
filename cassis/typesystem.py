@@ -163,7 +163,7 @@ class FeatureStructure:
             raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
-        """ Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
+        """Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
 
         If you have nested feature structures, e.g. a feature structure with feature `a` that has a feature `b` that
         has a feature `c`, some of which can be `None`, then you can use the following:
@@ -171,10 +171,13 @@ class FeatureStructure:
             fs.get("a.b.c")
         """
         cur = self
-        for part in path.split("."):
-            cur = getattr(cur, part, None)
-            if cur is None:
-                return None
+        try:
+            for part in path.split("."):
+                cur = getattr(cur, part, None)
+                if cur is None:
+                    return None
+        except AttributeError:
+            raise AttributeError("Illegal feature path [{path}] for [{fs}]".format(path=path, fs=self))
 
         return cur
 

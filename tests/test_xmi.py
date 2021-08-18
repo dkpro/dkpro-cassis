@@ -233,9 +233,13 @@ def test_serializing_with_unset_xmi_ids_works():
     BarType = typesystem.create_type("bar.test.Bar")
 
     # Check that two annotations of the same type get the same namespace
-    foo = FooType()
-    cas.add(foo)
-    foo.bar = BarType()
+    foo1 = FooType()
+    cas.add(foo1)
+    foo1.bar = BarType()
+
+    foo2 = FooType()
+    cas.add(foo2)
+    foo2.bar = BarType()
 
     # assert no error
     cas.to_xmi(pretty_print=True)

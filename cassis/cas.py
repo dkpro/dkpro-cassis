@@ -593,7 +593,7 @@ class Cas:
 
             # We do not want to return cas:NULL here as we handle serializing it later
             if fs.xmiID == 0:
-                continue;
+                continue
 
             if fs.xmiID is None:
                 if generate_missing_ids:

@@ -576,7 +576,7 @@ class Cas:
 
         return all_errors
 
-    def _find_all_fs(self) -> Iterable[FeatureStructure]:
+    def _find_all_fs(self, generate_missing_ids: bool = True) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature."""
@@ -590,6 +590,25 @@ class Cas:
         ts = self.typesystem
         while openlist:
             fs = openlist.pop(0)
+
+            # We do not want to return cas:NULL here as we handle serializing it later
+            if fs.xmiID == 0:
+                continue
+
+            if fs.xmiID is None:
+                if generate_missing_ids:
+                    fs.xmiID = self._get_next_xmi_id()
+                else:
+                    raise ValueError("FS has no ID and ID generation is disabled! {fs}".format(fs=fs))
+
+            existing_fs = all_fs.get(fs.xmiID)
+            if existing_fs is not None and existing_fs is not fs:
+                raise ValueError(
+                    "Duplicate FS id [{fsId}] used for [{fs1}] and [{fs2}]".format(
+                        fsId=fs.xmiID, fs1=existing_fs, fs2=fs
+                    )
+                )
+
             all_fs[fs.xmiID] = fs
 
             t = ts.get_type(fs.type)
@@ -621,8 +640,6 @@ class Cas:
                     if referenced_fs.xmiID not in all_fs:
                         openlist.append(referenced_fs)
 
-        # We do not want to return cas:NULL here as we handle serializing it later
-        all_fs.pop(0, None)
         yield from all_fs.values()
 
     def _get_next_xmi_id(self) -> int:

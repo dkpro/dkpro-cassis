@@ -198,7 +198,7 @@ def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
     TokenType = typesystem.get_type("cassis.Token")
-    cas.add(TokenType(xmiID=13, sofa=1, begin=0, end=3, id=None, pos=None))
+    cas.add(TokenType(begin=0, end=3, id=None, pos=None))
 
     actual_xml = cas.to_xmi()
 
@@ -233,9 +233,13 @@ def test_serializing_with_unset_xmi_ids_works():
     BarType = typesystem.create_type("bar.test.Bar")
 
     # Check that two annotations of the same type get the same namespace
-    foo = FooType()
-    cas.add(foo)
-    foo.bar = BarType()
+    foo1 = FooType()
+    cas.add(foo1)
+    foo1.bar = BarType()
+
+    foo2 = FooType()
+    cas.add(foo2)
+    foo2.bar = BarType()
 
     # assert no error
     cas.to_xmi(pretty_print=True)

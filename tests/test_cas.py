@@ -443,3 +443,14 @@ def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sente
 
     with pytest.raises(ValueError):
         view.remove(tokens[0])
+
+
+def test_fail_on_duplicate_fs_id(small_typesystem_xml):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+
+    TokenType = cas.typesystem.get_type("cassis.Token")
+    cas.add_annotation(TokenType(xmiID=10, begin=0, end=0))
+    cas.add_annotation(TokenType(xmiID=10, begin=10, end=10))
+
+    with pytest.raises(ValueError):
+        list(cas._find_all_fs())

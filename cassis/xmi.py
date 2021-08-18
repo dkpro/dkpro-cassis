@@ -185,9 +185,7 @@ class CasXmiDeserializer:
                     # process it
                     if isinstance(value, str):
                         FSType = typesystem.get_type(feature.rangeTypeName)
-                        elements = FSType(
-                            elements=self._parse_primitive_array(feature.rangeTypeName, value)
-                        )
+                        elements = FSType(elements=self._parse_primitive_array(feature.rangeTypeName, value))
                         setattr(fs, feature_name, elements)
                 else:
                     # Resolve references here
@@ -474,14 +472,14 @@ class CasXmiSerializer:
 
             if (
                 ts.is_instance_of(feature.rangeTypeName, "uima.cas.StringArray")
-                and feature.multipleReferencesAllowed is not True
+                and not feature.multipleReferencesAllowed
             ):
                 for e in value.elements:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif ts.is_primitive_array(feature.rangeTypeName) and feature.multipleReferencesAllowed is not True:
+            elif ts.is_primitive_array(feature.rangeTypeName) and not feature.multipleReferencesAllowed:
                 elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeTypeName, value.elements)
-            elif feature.rangeTypeName == "uima.cas.FSArray" and feature.multipleReferencesAllowed is not True:
+            elif feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed:
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)

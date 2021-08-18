@@ -639,8 +639,8 @@ class Cas:
                     continue
 
                 if (
-                    include_inlinable_arrays is False
-                    and feature.multipleReferencesAllowed is not True
+                    not include_inlinable_arrays
+                    and not feature.multipleReferencesAllowed
                     and ts.is_array(feature.rangeTypeName)
                 ):
                     # For inlined FSArrays, we still need to scan their members

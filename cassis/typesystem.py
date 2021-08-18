@@ -608,7 +608,7 @@ class TypeSystem:
         Args:
             type_name: The name of the type to query for.
         Returns:
-            Returns True if the type identified by `type_name` is a primitive array type, else False
+            Returns `True` if the type identified by `type_name` is a primitive array type, else `False`
         """
         if type_name == TOP_TYPE_NAME:
             return False
@@ -622,7 +622,7 @@ class TypeSystem:
         Args:
             type_name: The name of the type to query for.
         Returns:
-            Returns True if the type identified by `type_name` is an array type, else False
+            Returns `True` if the type identified by `type_name` is an array type, else `False`
         """
         if type_name == TOP_TYPE_NAME:
             return False

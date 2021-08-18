@@ -692,3 +692,10 @@ def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
 
     with pytest.raises(AttributeError):
         first_arg.set("target.bar", 42)
+
+
+def test_cannot_extend_final_type():
+    typesystem = TypeSystem()
+
+    with pytest.raises(ValueError):
+        typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")

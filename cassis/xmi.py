@@ -184,7 +184,10 @@ class CasXmiDeserializer:
                     # them again, so we check if the value is still a string (i.e. attribute value) and only then
                     # process it
                     if isinstance(value, str):
-                        elements = self._parse_primitive_array(typesystem.get_type(feature.rangeTypeName), value)
+                        FSType = typesystem.get_type(feature.rangeTypeName)
+                        elements = FSType(
+                            elements=self._parse_primitive_array(typesystem.get_type(feature.rangeTypeName), value)
+                        )
                         setattr(fs, feature_name, elements)
                 else:
                     # Resolve references here
@@ -323,11 +326,11 @@ class CasXmiDeserializer:
             or type.name == "uima.cas.ShortArray"
             or type.name == "uima.cas.LongArray"
         ):
-            return type(elements=[int(e) for e in elements])
+            return [int(e) for e in elements]
         elif type.name == "uima.cas.BooleanArray":
-            return type(elements=[self._parse_bool(e) for e in elements])
+            return [self._parse_bool(e) for e in elements]
         elif type.name == "uima.cas.ByteArray":
-            return type(elements=list(bytearray.fromhex(value)))
+            return list(bytearray.fromhex(value))
         else:
             raise ValueError(f"Not a primitive collection: {type.name}")
 

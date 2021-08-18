@@ -254,7 +254,7 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
 
     arrs = list(cas.select("uima.cas.StringArray"))
 
-    assert len(arrs) == 2
+    assert len(arrs) == 3
 
 
 # Covered text

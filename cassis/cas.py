@@ -576,7 +576,7 @@ class Cas:
 
         return all_errors
 
-    def _find_all_fs(self) -> Iterable[FeatureStructure]:
+    def _find_all_fs(self, generate_missing_ids: bool = False) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature."""
@@ -590,6 +590,8 @@ class Cas:
         ts = self.typesystem
         while openlist:
             fs = openlist.pop(0)
+            if generate_missing_ids:
+                fs.xmiID = self._get_next_xmi_id()
             all_fs[fs.xmiID] = fs
 
             t = ts.get_type(fs.type)

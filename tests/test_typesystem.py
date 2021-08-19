@@ -709,7 +709,7 @@ def test_bad_feature_path(small_typesystem_xml):
     with pytest.raises(AttributeError) as ex:
         token[0]
 
-    assert "Illegal feature path" in str(ex.value)
+    assert "must be a string" in str(ex.value)
 
 
 def test_cannot_extend_final_type():

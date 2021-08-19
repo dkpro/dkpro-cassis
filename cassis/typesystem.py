@@ -174,14 +174,14 @@ class FeatureStructure:
 
             fs.get("a.b.c")
         """
+        if not isinstance(path, str):
+            raise AttributeError(f"Feature path [{path}] must be a string but is a [{type(path)}]")
+
         cur = self
-        try:
-            for part in path.split("."):
-                cur = getattr(cur, part, None)
-                if cur is None:
-                    return None
-        except AttributeError:
-            raise AttributeError("Illegal feature path [{path}] for [{fs}]".format(path=path, fs=self))
+        for part in path.split("."):
+            cur = getattr(cur, part, None)
+            if cur is None:
+                return None
 
         return cur
 

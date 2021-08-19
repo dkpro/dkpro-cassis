@@ -811,9 +811,12 @@ class TypeSystem:
         t = self.get_type(fs.type)
         for f in t.all_features:
             if f.rangeTypeName == "uima.cas.FSArray":
+                feature_value = fs.value(f.name)
+                if not feature_value.elements:
+                    continue
                 # We check for every element that it is of type `elementType` or a child thereof
                 element_type = f.elementType or TOP_TYPE_NAME
-                for e in fs.value(f.name).elements:
+                for e in feature_value.elements:
                     if not self.subsumes(element_type, e.type):
                         msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
                             f.rangeTypeName, e.type, element_type

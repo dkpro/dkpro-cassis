@@ -119,7 +119,7 @@ class CasJsonDeserializer:
         for key, json_feature in json_type.items():
             if key.startswith(RESERVED_FIELD_PREFIX):
                 continue
-            typesystem.add_feature(
+            typesystem.create_feature(
                 new_type,
                 name=key,
                 rangeTypeName=json_feature[RANGE_FIELD],
@@ -177,8 +177,14 @@ class CasJsonDeserializer:
         if "type" in attributes:
             attributes["type_"] = attributes.pop("type")
 
-        if AnnotationType.name == TYPE_NAME_BYTE_ARRAY:
-            attributes["elements"] = base64.b64decode(attributes.get(ELEMENTS_FIELD))
+        if typesystem.is_primitive_array(AnnotationType.name):
+            attributes["elements"] = self._parse_primitive_array(AnnotationType.name, json_fs.get(ELEMENTS_FIELD))
+        elif AnnotationType.name == TYPE_NAME_FS_ARRAY:
+            # Resolve id-ref at the end of processing
+            def fix_up(elements):
+                return lambda: setattr(fs, "elements", [feature_structures.get(e) for e in elements])
+
+            self._post_processors.append(fix_up(json_fs.get(ELEMENTS_FIELD)))
 
         self._strip_reserved_json_keys(attributes)
 
@@ -194,6 +200,12 @@ class CasJsonDeserializer:
         self._resolve_references(fs, ref_features, feature_structures)
         return fs
 
+    def _parse_primitive_array(self, type_name: str, elements: [list, str]) -> List:
+        if type_name == TYPE_NAME_BYTE_ARRAY:
+            return base64.b64decode(elements)
+        else:
+            return elements
+
     def _resolve_references(self, fs, ref_features: Dict[str, any], feature_structures: Dict[int, any]):
         for key, value in ref_features.items():
             target_fs = feature_structures.get(value)
@@ -202,10 +214,10 @@ class CasJsonDeserializer:
                 setattr(fs, key, target_fs)
             else:
                 # Resolve id-ref at the end of processing
-                def fix_up():
-                    setattr(fs, key, feature_structures.get(value))
+                def fix_up(k, v):
+                    return lambda: setattr(fs, k, feature_structures.get(v))
 
-                self._post_processors.append(fix_up)
+                self._post_processors.append(fix_up(key, value))
 
     def _strip_reserved_json_keys(
         self,
@@ -243,7 +255,7 @@ class CasJsonSerializer:
             feature_structures.append(json_sofa_fs)
 
         # Find all fs, even the ones that are not directly added to a sofa
-        for fs in sorted(cas._find_all_fs(), key=lambda a: a.xmiID):
+        for fs in sorted(cas._find_all_fs(include_inlinable_arrays=True), key=lambda a: a.xmiID):
             json_fs = self._serialize_feature_structure(cas, fs)
             feature_structures.append(json_fs)
 
@@ -304,6 +316,20 @@ class CasJsonSerializer:
 
         ts = cas.typesystem
         t = ts.get_type(fs.type)
+
+        if t.name == TYPE_NAME_BYTE_ARRAY:
+            if fs.elements:
+                json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
+            return json_fs
+        elif ts.is_primitive_array(t.name):
+            if fs.elements:
+                json_fs[ELEMENTS_FIELD] = fs.elements
+            return json_fs
+        elif TYPE_NAME_FS_ARRAY == t.name:
+            if fs.elements:
+                json_fs[ELEMENTS_FIELD] = [self._serialize_ref(e) for e in fs.elements]
+            return json_fs
+
         for feature in t.all_features:
             if feature.name in CasJsonSerializer._COMMON_FIELD_NAMES:
                 continue
@@ -324,18 +350,19 @@ class CasJsonSerializer:
             #    sofa: Sofa = getattr(fs, "sofa")
             #    value = sofa._offset_converter.cassis_to_uima(value)
 
-            if t.name == TYPE_NAME_BYTE_ARRAY and feature_name == "elements":
-                json_fs[ELEMENTS_FIELD] = base64.b64encode(value).decode("ascii")
-            elif t.supertypeName == TYPE_NAME_ARRAY_BASE and feature_name == "elements":
-                json_fs[ELEMENTS_FIELD] = value
-            elif ts.is_primitive(feature.rangeTypeName):
+            if ts.is_primitive(feature.rangeTypeName):
                 json_fs[feature_name] = value
-            elif ts.is_collection(fs.type, feature):
-                json_fs[REF_FEATURE_PREFIX + feature_name] = value.xmiID
             else:
                 # We need to encode non-primitive features as a reference
-                json_fs[REF_FEATURE_PREFIX + feature_name] = value.xmiID
+                json_fs[REF_FEATURE_PREFIX + feature_name] = self._serialize_ref(value)
         return json_fs
+
+    def _serialize_ref(self, fs) -> int:
+        if not fs:
+            return None
+
+        return fs.xmiID
+
 
     def _serialize_view(self, view: View):
         return {VIEW_SOFA_FIELD: view.sofa.xmiID, VIEW_INDEX_FIELD: sorted(x.xmiID for x in view.get_all_annotations())}

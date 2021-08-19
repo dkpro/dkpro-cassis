@@ -40,7 +40,7 @@ def assert_xml_equal(actual: Union[IO, str], expected: Union[IO, str]):
         raise e
 
 
-def assert_json_equal(actual: str, expected: Union[IO, str]):
+def assert_json_equal(actual: str, expected: Union[IO, str], sort_keys: bool = False):
     """Checks whether the JSON trees behind `actual` and `expected` are equal.
 
     Args:
@@ -56,8 +56,8 @@ def assert_json_equal(actual: str, expected: Union[IO, str]):
     if isinstance(expected, str):
         expected = json.loads(expected)
 
-    actual_json = json.dumps(actual, sort_keys=True, indent=2)
-    expected_json = json.dumps(expected, sort_keys=True, indent=2)
+    actual_json = json.dumps(actual, sort_keys=sort_keys, indent=2)
+    expected_json = json.dumps(expected, sort_keys=sort_keys, indent=2)
 
     try:
         assert actual_json == expected_json

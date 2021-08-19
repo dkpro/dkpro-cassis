@@ -25,7 +25,7 @@ def test_deserialization_serialization(json_path):
 
     actual_json = cas.to_json()
 
-    assert_json_equal(actual_json, expected_json)
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
 
 
 def test_multi_type_random_serialization_deserialization():

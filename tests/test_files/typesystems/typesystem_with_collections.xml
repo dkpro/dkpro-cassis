@@ -2,11 +2,6 @@
 <typeSystemDescription xmlns="http://uima.apache.org/resourceSpecifier">
     <types>
         <typeDescription>
-            <name>cassis.StringArray</name>
-            <description/>
-            <supertypeName>uima.cas.StringArray</supertypeName>
-        </typeDescription>
-        <typeDescription>
             <name>cassis.Group</name>
             <description/>
             <supertypeName>uima.tcas.Annotation</supertypeName>
@@ -19,7 +14,7 @@
                 <featureDescription>
                     <name>collection2</name>
                     <description/>
-                    <rangeTypeName>cassis.StringArray</rangeTypeName>
+                    <rangeTypeName>uima.cas.IntegerArray</rangeTypeName>
                 </featureDescription>
             </features>
         </typeDescription>

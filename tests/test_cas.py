@@ -252,9 +252,9 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
     typesystem = load_typesystem(typesystem_with_collections_xml)
     cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
-    arrs = list(cas.select("cassis.StringArray"))
+    arrs = cas.select("uima.cas.StringArray")
 
-    assert len(arrs) == 1
+    assert len(arrs) == 3
 
 
 # Covered text
@@ -454,3 +454,29 @@ def test_fail_on_duplicate_fs_id(small_typesystem_xml):
 
     with pytest.raises(ValueError):
         list(cas._find_all_fs())
+
+
+def test_scanning_for_transitively_referenced_integer_array():
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("Foo")
+    typesystem.create_feature(
+        Foo,
+        "ref",
+        rangeTypeName="uima.cas.IntegerArray",
+        elementType="uima.cas.Integer",
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem)
+
+    foo = Foo()
+    cas.add(foo)
+
+    IntegerArray = typesystem.get_type("uima.cas.IntegerArray")
+    int_array = IntegerArray()
+    int_array.elements = [1, 2, 3]
+    foo.ref = int_array
+
+    all_fs = list(cas._find_all_fs())
+
+    assert int_array in all_fs

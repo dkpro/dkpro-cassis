@@ -112,7 +112,6 @@ _PRIMITIVE_COLLECTION_TYPES = {
     "uima.cas.DoubleArray",
 }
 
-
 _PRIMITIVE_ARRAY_TYPES = {
     "uima.cas.FloatArray",
     "uima.cas.IntegerArray",
@@ -121,7 +120,12 @@ _PRIMITIVE_ARRAY_TYPES = {
     "uima.cas.ShortArray",
     "uima.cas.LongArray",
     "uima.cas.DoubleArray",
+    "uima.cas.StringArray",
 }
+
+_INHERITANCE_FINAL_TYPES = _PRIMITIVE_ARRAY_TYPES
+
+_ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {"uima.cas.FSArray"}
 
 
 def _string_to_valid_classname(name: str):
@@ -163,7 +167,7 @@ class FeatureStructure:
             raise NotImplementedError()
 
     def get(self, path: str) -> Optional[Any]:
-        """ Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
+        """Recursively gets an attribute, e.g. fs.get("a.b.c") would return attribute `c` of `b` of `a`.
 
         If you have nested feature structures, e.g. a feature structure with feature `a` that has a feature `b` that
         has a feature `c`, some of which can be `None`, then you can use the following:
@@ -422,6 +426,7 @@ class TypeSystem:
 
         # Array
         t = self.create_type(name="uima.cas.ArrayBase", supertypeName="uima.cas.TOP")
+        # FIXME "elements" is not actually a feature according to the UIMA Java SDK
         self.create_feature(t, name="elements", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
 
         self.create_type(name="uima.cas.FSArray", supertypeName="uima.cas.ArrayBase")
@@ -506,6 +511,9 @@ class TypeSystem:
         Returns:
             The newly created type
         """
+        if supertypeName in _INHERITANCE_FINAL_TYPES:
+            raise ValueError(f"[{name}] cannot inhert from [{supertypeName}] because the latter is inheritance final")
+
         if self.contains_type(name) and name not in _PREDEFINED_TYPES:
             msg = "Type with name [{0}] already exists!".format(name)
             raise ValueError(msg)
@@ -600,14 +608,27 @@ class TypeSystem:
         Args:
             type_name: The name of the type to query for.
         Returns:
-            Returns True if the type identified by `type_name` is a primitive array type, else False
+            Returns `True` if the type identified by `type_name` is a primitive array type, else `False`
         """
         if type_name == TOP_TYPE_NAME:
             return False
-        elif type_name in _PRIMITIVE_ARRAY_TYPES:
-            return True
-        else:
-            return self.is_primitive_array(self.get_type(type_name).supertypeName)
+
+        # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
+        return type_name in _PRIMITIVE_ARRAY_TYPES
+
+    def is_array(self, type_name: str) -> bool:
+        """Checks if the type identified by `type_name` is an array.
+
+        Args:
+            type_name: The name of the type to query for.
+        Returns:
+            Returns `True` if the type identified by `type_name` is an array type, else `False`
+        """
+        if type_name == TOP_TYPE_NAME:
+            return False
+
+        # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
+        return type_name in _ARRAY_TYPES
 
     def subsumes(self, parent_name: str, child_name: str) -> bool:
         """Determines if the type `child_name` is a child of `parent_name`.
@@ -639,7 +660,7 @@ class TypeSystem:
         elementType: str = None,
         description: str = None,
         multipleReferencesAllowed: bool = None,
-    ):
+    ) -> Feature:
         """Adds a feature to the given type.
 
         Args:
@@ -676,6 +697,8 @@ class TypeSystem:
         )
 
         type_.add_feature(feature)
+
+        return feature
 
     @deprecation.deprecated(details="Use create_feature")
     def add_feature(
@@ -732,7 +755,7 @@ class TypeSystem:
     def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
         """Checks whether a feature structure is type sound.
 
-        Currently only checks `uima.cas.FSArray` and `uima.cas.FSList`.
+        Currently only checks `uima.cas.FSArray`.
 
         Args:
             fs: The feature structure to type check.
@@ -744,11 +767,13 @@ class TypeSystem:
 
         t = self.get_type(fs.type)
         for f in t.all_features:
-            # Check FS collections
-            if f.rangeTypeName == "uima.cas.FSArray" or f.rangeTypeName == "uima.cas.FSList":
+            if f.rangeTypeName == "uima.cas.FSArray":
+                feature_value = fs.value(f.name)
+                if not feature_value.elements:
+                    continue
                 # We check for every element that it is of type `elementType` or a child thereof
                 element_type = f.elementType or TOP_TYPE_NAME
-                for e in fs.value(f.name):
+                for e in feature_value.elements:
                     if not self.subsumes(element_type, e.type):
                         msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
                             f.rangeTypeName, e.type, element_type

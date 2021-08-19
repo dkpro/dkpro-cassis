@@ -617,9 +617,9 @@ class Cas:
 
             # Arrays contents are handled separately - they only have one "virtual" feature: elements
             if t.supertypeName == "uima.cas.ArrayBase":
-                if t.name == "uima.cas.FSArray":
+                if t.name == "uima.cas.FSArray" and fs.elements:
                     for ref in fs.elements:
-                        if ref.xmiID in all_fs:
+                        if not ref or ref.xmiID in all_fs:
                             continue
                         openlist.append(ref)
                 continue  # After processing any arrays, skip to the next FS in the openlist
@@ -644,9 +644,9 @@ class Cas:
                     and ts.is_array(feature.rangeTypeName)
                 ):
                     # For inlined FSArrays, we still need to scan their members
-                    if feature.rangeTypeName == "uima.cas.FSArray":
+                    if feature.rangeTypeName == "uima.cas.FSArray" and feature_value.elements:
                         for ref in feature_value.elements:
-                            if ref.xmiID in all_fs:
+                            if not ref or ref.xmiID in all_fs:
                                 continue
                             openlist.append(ref)
                     continue

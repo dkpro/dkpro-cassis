@@ -14,20 +14,16 @@
 		<elements>SNOMEDCT_US</elements>
 	</cas:StringArray>
 
-	<cassis:StringArray xmi:id="4">
+	<cas:StringArray xmi:id="4">
 		<elements>A</elements>
 		<elements>B</elements>
 		<elements>C</elements>
-	</cassis:StringArray>
+	</cas:StringArray>
 
-	<cassis:Group xmi:id="5" sofa="1">
+	<cassis:Group xmi:id="5" sofa="1" collection2="1 2 3">
 		<collection1>A</collection1>
 		<collection1>B</collection1>
 		<collection1>C</collection1>
-
-		<collection2>x</collection2>
-		<collection2>y</collection2>
-		<collection2>z</collection2>
 	</cassis:Group>
 
 	<cas:FSArray xmi:id="6" elements="2 3 4 5" />

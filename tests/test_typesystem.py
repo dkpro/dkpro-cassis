@@ -701,6 +701,17 @@ def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
         first_arg.set("target.bar", 42)
 
 
+def test_bad_feature_path(small_typesystem_xml):
+    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    TokenType = cas.typesystem.get_type("cassis.Token")
+    token = TokenType(xmiID=10, begin=0, end=0)
+
+    with pytest.raises(AttributeError) as ex:
+        token[0]
+
+    assert "must be a string" in str(ex.value)
+
+
 def test_cannot_extend_final_type():
     cas = Cas()
 

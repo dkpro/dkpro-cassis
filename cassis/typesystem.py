@@ -269,6 +269,7 @@ class Type:
     name = attr.ib()  # type: str #: Type name of this type
     supertype = attr.ib()  # type: Type # : The super type (parent) of this type
     description = attr.ib(default=None)  # type: str #: Description of this type
+    typesystem = attr.ib(default=None)  # type: TypeSystem #: The typesystem this type belongs to
     _children = attr.ib(factory=dict)  # type: Dict[str, Type]
     _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
@@ -545,7 +546,7 @@ class TypeSystem:
             raise ValueError(msg)
 
         supertype = self.get_type(supertypeName)
-        new_type = Type(name=name, supertype=supertype, description=description)
+        new_type = Type(name=name, supertype=supertype, description=description, typesystem=self)
 
         if supertypeName != TOP_TYPE_NAME:
             supertype._children[name] = new_type

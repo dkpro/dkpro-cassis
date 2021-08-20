@@ -30,6 +30,8 @@ def test_feature_can_be_added():
     typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     actual_type = typesystem.get_type("test.Type")
+    assert actual_type.typesystem == typesystem
+
     actual_feature = actual_type.get_feature("testFeature")
     assert actual_feature.name == "testFeature"
     assert actual_feature.rangeTypeName == "String"

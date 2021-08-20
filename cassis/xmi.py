@@ -12,7 +12,7 @@ from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, Type, Ty
 
 @attr.s
 class ProtoView:
-    """ A view element from XMI. """
+    """A view element from XMI."""
 
     sofa = attr.ib(validator=attr.validators.instance_of(int))  # type: int
     members = attr.ib(factory=list)  # type: List[int]
@@ -313,7 +313,7 @@ class CasXmiDeserializer:
         return AnnotationType(**attributes)
 
     def _parse_primitive_array(self, type_name: str, value: str) -> List:
-        """ Primitive collections are serialized as white space seperated primitive values"""
+        """Primitive collections are serialized as white space seperated primitive values"""
 
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
@@ -340,7 +340,7 @@ class CasXmiDeserializer:
         raise ValueError(f"Not a boolean: {s}")
 
     def _clear_elem(self, elem):
-        """ Frees XML nodes that already have been processed to save memory """
+        """Frees XML nodes that already have been processed to save memory"""
         elem.clear()
         while elem.getprevious() is not None:
             del elem.getparent()[0]
@@ -478,9 +478,15 @@ class CasXmiSerializer:
                 for e in value.elements:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif ts.is_primitive_array(feature.rangeTypeName) and not feature.multipleReferencesAllowed and value.elements:
+            elif (
+                ts.is_primitive_array(feature.rangeTypeName)
+                and not feature.multipleReferencesAllowed
+                and value.elements
+            ):
                 elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeTypeName, value.elements)
-            elif feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements:
+            elif (
+                feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements
+            ):
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)
@@ -508,7 +514,7 @@ class CasXmiSerializer:
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
 
     def _serialize_primitive_array(self, type_name: str, values: List) -> str:
-        """ Primitive collections are serialized as white space seperated primitive values"""
+        """Primitive collections are serialized as white space seperated primitive values"""
 
         # TODO: Use type name global variable here instead of hardcoded string literal
         if type_name not in _PRIMITIVE_ARRAY_TYPES:

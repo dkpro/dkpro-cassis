@@ -424,7 +424,7 @@ class Cas:
     # FS handling
 
     def _get_feature_structures(self, type_name) -> List[FeatureStructure]:
-        """ Returns a list of all feature structures of type `type_name` and child types. """
+        """Returns a list of all feature structures of type `type_name` and child types."""
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 
@@ -616,7 +616,7 @@ class Cas:
             t = ts.get_type(fs.type)
 
             # Arrays contents are handled separately - they only have one "virtual" feature: elements
-            if t.supertypeName == "uima.cas.ArrayBase":
+            if t.supertype.name == "uima.cas.ArrayBase":
                 if t.name == "uima.cas.FSArray" and fs.elements:
                     for ref in fs.elements:
                         if not ref or ref.xmiID in all_fs:

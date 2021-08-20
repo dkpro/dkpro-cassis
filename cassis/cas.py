@@ -138,7 +138,7 @@ class View:
         return self._indices
 
     def add_annotation_to_index(self, annotation: FeatureStructure):
-        self._indices[annotation.type].add(annotation)
+        self._indices[annotation.type.name].add(annotation)
 
     def get_all_annotations(self) -> List[FeatureStructure]:
         """Gets all the annotations in this view.
@@ -159,7 +159,7 @@ class View:
         Args:
             annotation: The annotation to remove.
         """
-        self._indices[annotation.type].remove(annotation)
+        self._indices[annotation.type.name].remove(annotation)
 
 
 class Index:
@@ -270,8 +270,8 @@ class Cas:
             keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
 
         """
-        if not self._lenient and not self._typesystem.contains_type(annotation.type):
-            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type)
+        if not self._lenient and not self._typesystem.contains_type(annotation.type.name):
+            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type.name)
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
@@ -613,7 +613,7 @@ class Cas:
 
             all_fs[fs.xmiID] = fs
 
-            t = ts.get_type(fs.type)
+            t = ts.get_type(fs.type.name)
 
             # Arrays contents are handled separately - they only have one "virtual" feature: elements
             if t.supertype.name == "uima.cas.ArrayBase":

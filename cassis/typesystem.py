@@ -148,8 +148,8 @@ class TypeNotFoundError(Exception):
 class FeatureStructure:
     """The base class for all feature structure instances"""
 
-    type = attr.ib()  # str: Type name of this feature structure instance
-    xmiID = attr.ib(default=None, eq=False)  # int: xmiID of this feature structure instance
+    type: "Type" = attr.ib()  # Type name of this feature structure instance
+    xmiID: int = attr.ib(default=None, eq=False)  # xmiID of this feature structure instance
 
     def value(self, name: str):
         """Returns the value of the feature `name`."""
@@ -280,7 +280,7 @@ class Type:
         """Build the constructor that can create feature structures of this type"""
         name = _string_to_valid_classname(self.name)
         fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
-        fields["type"] = attr.ib(default=self.name)
+        fields["type"] = attr.ib(default=self)
 
         # We assign this to a lambda to make it lazy
         # When creating large type systems, almost no types are used so
@@ -629,7 +629,7 @@ class TypeSystem:
         else:
             return self.is_primitive_collection(self.get_type(type_name).supertype)
 
-    def is_primitive_array(self, type_name) -> bool:
+    def is_primitive_array(self, type_name: str) -> bool:
         """Checks if the type identified by `type_name` is a primitive array, e.g. array of primitives.
 
         Args:
@@ -785,7 +785,7 @@ class TypeSystem:
         """
         errors = []
 
-        t = self.get_type(fs.type)
+        t = self.get_type(fs.type.name)
         for f in t.all_features:
             if f.rangeTypeName == "uima.cas.FSArray":
                 feature_value = fs.value(f.name)
@@ -794,9 +794,9 @@ class TypeSystem:
                 # We check for every element that it is of type `elementType` or a child thereof
                 element_type = f.elementType or TOP_TYPE_NAME
                 for e in feature_value.elements:
-                    if not self.subsumes(element_type, e.type):
+                    if not self.subsumes(element_type, e.type.name):
                         msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
-                            f.rangeTypeName, e.type, element_type
+                            f.rangeTypeName, e.type.name, element_type
                         )
                         errors.append(TypeCheckError(fs.xmiID, msg))
 

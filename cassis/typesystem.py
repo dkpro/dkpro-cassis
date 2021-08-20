@@ -657,7 +657,6 @@ class TypeSystem:
         # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
         return type_name in _ARRAY_TYPES
 
-    @deprecated("Use parent_type.subsumes(child_type) instead.")
     def subsumes(self, parent_name: str, child_name: str) -> bool:
         """Determines if the type `child_name` is a child of `parent_name`.
 

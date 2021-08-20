@@ -3,7 +3,7 @@
   "%VIEWS" : {
     "_InitialView" : {
       "%SOFA" : 1,
-      "%INDEX" : [ 2, 3 ]
+      "%MEMBERS" : [ 2, 3 ]
     }
   },
   "%FEATURE_STRUCTURES" : [ {

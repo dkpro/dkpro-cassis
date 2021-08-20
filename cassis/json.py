@@ -13,7 +13,7 @@ TYPES_FIELD = RESERVED_FIELD_PREFIX + "TYPES"
 FEATURES_FIELD = RESERVED_FIELD_PREFIX + "FEATURES"
 VIEWS_FIELD = RESERVED_FIELD_PREFIX + "VIEWS"
 VIEW_SOFA_FIELD = RESERVED_FIELD_PREFIX + "SOFA"
-VIEW_INDEX_FIELD = RESERVED_FIELD_PREFIX + "INDEX"
+VIEW_MEMBERS_FIELD = RESERVED_FIELD_PREFIX + "MEMBERS"
 FEATURE_STRUCTURES_FIELD = RESERVED_FIELD_PREFIX + "FEATURE_STRUCTURES"
 REF_FEATURE_PREFIX = "@"
 NAME_FIELD = RESERVED_FIELD_PREFIX + "NAME"
@@ -144,7 +144,7 @@ class CasJsonDeserializer:
 
     def _parse_view(self, cas: Cas, view_name: str, json_view: Dict[str, any], feature_structures: Dict[str, any]):
         view = self._get_or_create_view(cas, view_name)
-        for member_id in json_view[VIEW_INDEX_FIELD]:
+        for member_id in json_view[VIEW_MEMBERS_FIELD]:
             fs = feature_structures[member_id]
             view.add_annotation(fs, keep_id=True)
 
@@ -365,7 +365,7 @@ class CasJsonSerializer:
 
 
     def _serialize_view(self, view: View):
-        return {VIEW_SOFA_FIELD: view.sofa.xmiID, VIEW_INDEX_FIELD: sorted(x.xmiID for x in view.get_all_annotations())}
+        return {VIEW_SOFA_FIELD: view.sofa.xmiID, VIEW_MEMBERS_FIELD: sorted(x.xmiID for x in view.get_all_annotations())}
 
     def _to_external_type_name(self, type_name: str):
         if type_name.startswith("uima.noNamespace."):

@@ -596,7 +596,7 @@ class TypeSystem:
         else:
             raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
 
-    def get_types(self, built_in=False) -> Iterator[Type]:
+    def get_types(self, built_in: bool = False) -> Iterator[Type]:
         """Returns all types of this type system. Normally, this excludes the built-in types
 
         Args:

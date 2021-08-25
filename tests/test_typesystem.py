@@ -4,8 +4,16 @@ from pathlib import Path
 import pytest
 
 from cassis import TypeSystem, load_typesystem
-from cassis.typesystem import _COLLECTION_TYPES, TOP_TYPE_NAME, Feature, TypeCheckError, TYPE_NAME_STRING, \
-    TYPE_NAME_BOOLEAN, TYPE_NAME_TOP, TYPE_NAME_INTEGER
+from cassis.typesystem import (
+    _COLLECTION_TYPES,
+    TOP_TYPE_NAME,
+    TYPE_NAME_BOOLEAN,
+    TYPE_NAME_INTEGER,
+    TYPE_NAME_STRING,
+    TYPE_NAME_TOP,
+    Feature,
+    TypeCheckError,
+)
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -28,7 +36,9 @@ def test_feature_can_be_added():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     actual_type = typesystem.get_type("test.Type")
     assert actual_type.typesystem == typesystem
@@ -44,7 +54,9 @@ def test_feature_adding_warns_if_redefined_identically():
 
     test_type = typesystem.create_type(name="test.Type")
 
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
     with pytest.warns(UserWarning):
         typesystem.create_feature(
             type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
@@ -55,7 +67,9 @@ def test_feature_adding_throws_if_redefined_differently():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     with pytest.raises(ValueError):
         typesystem.create_feature(
@@ -78,7 +92,9 @@ def test_type_can_be_created():
 def test_type_can_create_instances():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     annotation = test_type(begin=0, end=42, testFeature="testValue")
 

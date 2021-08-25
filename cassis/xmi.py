@@ -7,8 +7,14 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, Type, TypeNotFoundError, TypeSystem, \
-    TYPE_NAME_SOFA
+from cassis.typesystem import (
+    _PRIMITIVE_ARRAY_TYPES,
+    TYPE_NAME_SOFA,
+    FeatureStructure,
+    Type,
+    TypeNotFoundError,
+    TypeSystem,
+)
 
 
 @attr.s
@@ -253,7 +259,7 @@ class CasXmiDeserializer:
 
         return cas
 
-    def _parse_sofa(self, typesystem, elem) -> Sofa:
+    def _parse_sofa(self, typesystem: TypeSystem, elem) -> Sofa:
         attributes = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
@@ -485,14 +491,12 @@ class CasXmiSerializer:
                 for e in value.elements:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif (
-                ts.is_primitive_array(feature.rangeType)
-                and not feature.multipleReferencesAllowed
-                and value.elements
-            ):
+            elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed and value.elements:
                 elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
             elif (
-                feature.rangeType.name == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements
+                feature.rangeType.name == "uima.cas.FSArray"
+                and not feature.multipleReferencesAllowed
+                and value.elements
             ):
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == "sofa":

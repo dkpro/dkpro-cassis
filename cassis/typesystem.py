@@ -176,8 +176,8 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
-def is_collection(type_: [str, "Type"], feature: "Feature") -> bool:
-    """Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
+def is_collection(type_: Union[str, "Type"], feature: "Feature") -> bool:
+    """Checks if the given feature for the type identified by `type` is a collection, e.g. list or array.
 
     Args:
         type_: The type to which the feature belongs (`Type` or name as string)
@@ -229,7 +229,7 @@ def is_primitive_collection(type_: "Type") -> bool:
         return is_primitive_collection(type_.supertype)
 
 
-def is_primitive_array(type_: [str, "Type"]) -> bool:
+def is_primitive_array(type_: Union[str, "Type"]) -> bool:
     """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
 
     Args:
@@ -246,7 +246,7 @@ def is_primitive_array(type_: [str, "Type"]) -> bool:
     return type_name in _PRIMITIVE_ARRAY_TYPES
 
 
-def is_array(type_: [str, "Type"]) -> bool:
+def is_array(type_: Union[str, "Type"]) -> bool:
     """Checks if the type identified by `type` is an array.
 
     Args:
@@ -729,7 +729,7 @@ class TypeSystem:
             parent_type = self.get_type(parent) if isinstance(parent, str) else parent
             return self.is_instance_of(super_type, parent_type)
 
-    def is_collection(self, type_: [str, "Type"], feature: "Feature") -> bool:
+    def is_collection(self, type_: Union[str, "Type"], feature: "Feature") -> bool:
         """Checks if the given feature for the type identified by ``type_`is a collection, e.g. list or array.
 
         Args:
@@ -740,7 +740,7 @@ class TypeSystem:
         """
         return is_collection(self.get_type(type_) if isinstance(type_, str) else type_, feature)
 
-    def is_primitive(self, type_: [str, Type]) -> bool:
+    def is_primitive(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type_name` is a primitive type.
 
         Args:
@@ -750,7 +750,7 @@ class TypeSystem:
         """
         return is_primitive(self.get_type(type_) if isinstance(type_, str) else type_)
 
-    def is_primitive_collection(self, type_: [str, Type]) -> bool:
+    def is_primitive_collection(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is a primitive collection, e.g. list or array of primitives.
 
         Args:
@@ -760,7 +760,7 @@ class TypeSystem:
         """
         return is_primitive_collection(self.get_type(type_) if isinstance(type_, str) else type_)
 
-    def is_primitive_array(self, type_: [str, Type]) -> bool:
+    def is_primitive_array(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
 
         Args:
@@ -770,7 +770,7 @@ class TypeSystem:
         """
         return is_primitive_array(type_)
 
-    def is_array(self, type_: [str, Type]) -> bool:
+    def is_array(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is an array.
 
         Args:
@@ -780,7 +780,7 @@ class TypeSystem:
         """
         return is_array(type_)
 
-    def subsumes(self, parent: [str, Type], child: [str, Type]) -> bool:
+    def subsumes(self, parent: Union[str, Type], child: Union[str, Type]) -> bool:
         """Determines if the type `child` is a child of `parent`.
 
         Args:
@@ -1043,7 +1043,9 @@ class TypeSystemDeserializer:
                 if isinstance(f.rangeType, str):
                     f.rangeType = ts.get_type(f.rangeType) if f.rangeType in _PREDEFINED_TYPES else types[f.rangeType]
                 if isinstance(f.elementType, str):
-                    f.elementType = ts.get_type(f.elementType) if f.elementType in _PREDEFINED_TYPES else types[f.elementType]
+                    f.elementType = (
+                        ts.get_type(f.elementType) if f.elementType in _PREDEFINED_TYPES else types[f.elementType]
+                    )
 
         # Some CAS handling libraries add predefined types to the typesystem XML.
         # Here we check that the redefinition of predefined types adheres to the definition in UIMA

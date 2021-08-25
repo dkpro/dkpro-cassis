@@ -4,7 +4,7 @@ import attr
 import pytest
 
 from cassis.cas import Cas
-from cassis.typesystem import TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_INTEGER
+from cassis.typesystem import TYPE_NAME_INTEGER, TYPE_NAME_INTEGER_ARRAY
 from tests.fixtures import *
 
 # Cas

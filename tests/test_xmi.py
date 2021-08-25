@@ -3,7 +3,7 @@ from pathlib import Path
 from lxml import etree
 
 from cassis import *
-from cassis.typesystem import TypeNotFoundError, TYPE_NAME_SOFA
+from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 

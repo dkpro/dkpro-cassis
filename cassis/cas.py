@@ -9,7 +9,7 @@ import deprecation
 from attr import validators
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem, TYPE_NAME_SOFA
+from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 

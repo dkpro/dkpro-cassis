@@ -460,7 +460,12 @@ class Type:
         Returns:
             The feature with name `name` or `None` if it does not exist.
         """
-        return self._features.get(name, None)
+        if name in self._features:
+            return self._features[name]
+        elif name in self._inherited_features:
+            return self._inherited_features[name]
+        else:
+            return None
 
     def add_feature(self, feature: Feature, inherited: bool = False):
         """Add the given feature to his type.
@@ -530,7 +535,9 @@ class Type:
 
         if self._cached_all_features is None:
             # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
-            self._cached_all_features = list(unique_everseen(chain(self._features.values(), self._inherited_features.values())))
+            self._cached_all_features = list(
+                unique_everseen(chain(self._features.values(), self._inherited_features.values()))
+            )
 
         return self._cached_all_features
 

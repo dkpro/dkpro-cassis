@@ -3,7 +3,7 @@ from pathlib import Path
 from lxml import etree
 
 from cassis import *
-from cassis.typesystem import TypeNotFoundError, TYPE_NAME_SOFA
+from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -230,8 +230,8 @@ def test_serializing_with_unset_xmi_ids_works():
     typesystem = TypeSystem()
     cas = Cas(typesystem)
     FooType = typesystem.create_type("foo.test.Foo")
-    typesystem.create_feature(FooType, "bar", "bar.test.Bar")
     BarType = typesystem.create_type("bar.test.Bar")
+    typesystem.create_feature(FooType, "bar", "bar.test.Bar")
 
     # Check that two annotations of the same type get the same namespace
     foo1 = FooType()

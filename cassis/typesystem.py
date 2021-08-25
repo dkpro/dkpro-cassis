@@ -176,8 +176,8 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
-def is_collection(type_: [str, "Type"], feature: "Feature") -> bool:
-    """Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
+def is_collection(type_: Union[str, "Type"], feature: "Feature") -> bool:
+    """Checks if the given feature for the type identified by `type` is a collection, e.g. list or array.
 
     Args:
         type_: The type to which the feature belongs (`Type` or name as string)
@@ -190,7 +190,7 @@ def is_collection(type_: [str, "Type"], feature: "Feature") -> bool:
     if type_name in _COLLECTION_TYPES and feature.name == "elements":
         return True
     else:
-        return feature.rangeTypeName in _COLLECTION_TYPES
+        return feature.rangeType.name in _COLLECTION_TYPES
 
 
 def is_primitive(type_: "Type") -> bool:
@@ -229,7 +229,7 @@ def is_primitive_collection(type_: "Type") -> bool:
         return is_primitive_collection(type_.supertype)
 
 
-def is_primitive_array(type_: [str, "Type"]) -> bool:
+def is_primitive_array(type_: Union[str, "Type"]) -> bool:
     """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
 
     Args:
@@ -246,7 +246,7 @@ def is_primitive_array(type_: [str, "Type"]) -> bool:
     return type_name in _PRIMITIVE_ARRAY_TYPES
 
 
-def is_array(type_: [str, "Type"]) -> bool:
+def is_array(type_: Union[str, "Type"]) -> bool:
     """Checks if the type identified by `type` is an array.
 
     Args:
@@ -357,9 +357,9 @@ class Feature:
     """A feature defines one attribute of a feature structure"""
 
     name = attr.ib()  # type: str
-    rangeTypeName = attr.ib()  # type: str
+    rangeType = attr.ib()  # type: "Type"
     description = attr.ib(default=None)  # type: str
-    elementType = attr.ib(default=None)  # type: str
+    elementType = attr.ib(default=None)  # type: "Type"
     multipleReferencesAllowed = attr.ib(default=None)  # type: bool
     _has_reserved_name = attr.ib(default=False)  # type: bool
 
@@ -369,11 +369,13 @@ class Feature:
         if self.name != other.name or self.description != other.description:
             return False
 
-        if self.rangeTypeName != other.rangeTypeName:
+        if self.rangeType.name != other.rangeType.name:
             return False
 
         # If elementType is `None`, then we assume the default is `TOP`
-        if (self.elementType or TOP_TYPE_NAME) != (other.elementType or TOP_TYPE_NAME):
+        element_type_name = self.elementType.name if self.elementType else None
+        other_element_type_name = other.elementType.name if other.elementType else None
+        if (element_type_name or TOP_TYPE_NAME) != (other_element_type_name or TOP_TYPE_NAME):
             return False
 
         # If multipleReferencesAllowed is `None`, then we assume the default is `False`
@@ -588,7 +590,7 @@ class TypeSystem:
         # Array
         t = self.create_type(name="uima.cas.ArrayBase", supertypeName="uima.cas.TOP")
         # FIXME "elements" is not actually a feature according to the UIMA Java SDK
-        self.create_feature(t, name="elements", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="elements", rangeType="uima.cas.TOP", multipleReferencesAllowed=True)
 
         self.create_type(name="uima.cas.FSArray", supertypeName="uima.cas.ArrayBase")
         self.create_type(name="uima.cas.BooleanArray", supertypeName="uima.cas.ArrayBase")
@@ -605,47 +607,47 @@ class TypeSystem:
         self.create_type(name="uima.cas.FSList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyFSList", supertypeName="uima.cas.FSList")
         t = self.create_type(name="uima.cas.NonEmptyFSList", supertypeName="uima.cas.FSList")
-        self.create_feature(t, name="head", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
-        self.create_feature(t, name="tail", rangeTypeName="uima.cas.FSList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeType="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="tail", rangeType="uima.cas.FSList", multipleReferencesAllowed=True)
 
         # FloatList
         self.create_type(name="uima.cas.FloatList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyFloatList", supertypeName="uima.cas.FloatList")
         t = self.create_type(name="uima.cas.NonEmptyFloatList", supertypeName="uima.cas.FloatList")
-        self.create_feature(t, name="head", rangeTypeName="uima.cas.Float")
-        self.create_feature(t, name="tail", rangeTypeName="uima.cas.FloatList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeType="uima.cas.Float")
+        self.create_feature(t, name="tail", rangeType="uima.cas.FloatList", multipleReferencesAllowed=True)
 
         # IntegerList
         self.create_type(name="uima.cas.IntegerList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyIntegerList", supertypeName="uima.cas.IntegerList")
         t = self.create_type(name="uima.cas.NonEmptyIntegerList", supertypeName="uima.cas.IntegerList")
-        self.create_feature(t, name="head", rangeTypeName="uima.cas.Integer")
-        self.create_feature(t, name="tail", rangeTypeName="uima.cas.IntegerList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeType="uima.cas.Integer")
+        self.create_feature(t, name="tail", rangeType="uima.cas.IntegerList", multipleReferencesAllowed=True)
 
         # StringList
         self.create_type(name="uima.cas.StringList", supertypeName="uima.cas.ListBase")
         self.create_type(name="uima.cas.EmptyStringList", supertypeName="uima.cas.StringList")
         t = self.create_type(name="uima.cas.NonEmptyStringList", supertypeName="uima.cas.StringList")
-        self.create_feature(t, name="head", rangeTypeName="uima.cas.String")
-        self.create_feature(t, name="tail", rangeTypeName="uima.cas.StringList", multipleReferencesAllowed=True)
+        self.create_feature(t, name="head", rangeType="uima.cas.String")
+        self.create_feature(t, name="tail", rangeType="uima.cas.StringList", multipleReferencesAllowed=True)
 
         # Sofa
         t = self.create_type(name="uima.cas.Sofa", supertypeName="uima.cas.TOP")
-        self.create_feature(t, name="sofaNum", rangeTypeName="uima.cas.Integer")
-        self.create_feature(t, name="sofaID", rangeTypeName="uima.cas.String")
-        self.create_feature(t, name="mimeType", rangeTypeName="uima.cas.String")
-        self.create_feature(t, name="sofaArray", rangeTypeName="uima.cas.TOP", multipleReferencesAllowed=True)
-        self.create_feature(t, name="sofaString", rangeTypeName="uima.cas.String")
-        self.create_feature(t, name="sofaURI", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="sofaNum", rangeType="uima.cas.Integer")
+        self.create_feature(t, name="sofaID", rangeType="uima.cas.String")
+        self.create_feature(t, name="mimeType", rangeType="uima.cas.String")
+        self.create_feature(t, name="sofaArray", rangeType="uima.cas.TOP", multipleReferencesAllowed=True)
+        self.create_feature(t, name="sofaString", rangeType="uima.cas.String")
+        self.create_feature(t, name="sofaURI", rangeType="uima.cas.String")
 
         # AnnotationBase
         t = self.create_type(name="uima.cas.AnnotationBase", supertypeName="uima.cas.TOP")
-        self.create_feature(t, name="sofa", rangeTypeName="uima.cas.Sofa")
+        self.create_feature(t, name="sofa", rangeType="uima.cas.Sofa")
 
         # Annotation
         t = self.create_type(name="uima.tcas.Annotation", supertypeName="uima.cas.AnnotationBase")
-        self.create_feature(t, name="begin", rangeTypeName="uima.cas.Integer")
-        self.create_feature(t, name="end", rangeTypeName="uima.cas.Integer")
+        self.create_feature(t, name="begin", rangeType="uima.cas.Integer")
+        self.create_feature(t, name="end", rangeType="uima.cas.Integer")
 
         if add_document_annotation_type:
             self._add_document_annotation_type()
@@ -711,15 +713,23 @@ class TypeSystem:
         """Returns all types of this type system"""
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 
-    def is_instance_of(self, type_name: str, parent_name: str) -> bool:
+    def is_instance_of(self, type_: Union[Type, str], parent: Union[Type, str]) -> bool:
+        if not parent:
+            return False
+
+        type_name = type_ if isinstance(type_, str) else type_.name
+        parent_name = parent if isinstance(parent, str) else parent.name
+
         if type_name == parent_name:
             return True
         elif type_name == TOP_TYPE_NAME:
             return False
         else:
-            return self.is_instance_of(self.get_type(type_name).supertype.name, parent_name)
+            super_type = self.get_type(type_).supertype if isinstance(type_, str) else type_.supertype
+            parent_type = self.get_type(parent) if isinstance(parent, str) else parent
+            return self.is_instance_of(super_type, parent_type)
 
-    def is_collection(self, type_: [str, "Type"], feature: "Feature") -> bool:
+    def is_collection(self, type_: Union[str, "Type"], feature: "Feature") -> bool:
         """Checks if the given feature for the type identified by ``type_`is a collection, e.g. list or array.
 
         Args:
@@ -730,7 +740,7 @@ class TypeSystem:
         """
         return is_collection(self.get_type(type_) if isinstance(type_, str) else type_, feature)
 
-    def is_primitive(self, type_: [str, Type]) -> bool:
+    def is_primitive(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type_name` is a primitive type.
 
         Args:
@@ -740,7 +750,7 @@ class TypeSystem:
         """
         return is_primitive(self.get_type(type_) if isinstance(type_, str) else type_)
 
-    def is_primitive_collection(self, type_: [str, Type]) -> bool:
+    def is_primitive_collection(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is a primitive collection, e.g. list or array of primitives.
 
         Args:
@@ -750,7 +760,7 @@ class TypeSystem:
         """
         return is_primitive_collection(self.get_type(type_) if isinstance(type_, str) else type_)
 
-    def is_primitive_array(self, type_: [str, Type]) -> bool:
+    def is_primitive_array(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
 
         Args:
@@ -760,7 +770,7 @@ class TypeSystem:
         """
         return is_primitive_array(type_)
 
-    def is_array(self, type_: [str, Type]) -> bool:
+    def is_array(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is an array.
 
         Args:
@@ -770,7 +780,7 @@ class TypeSystem:
         """
         return is_array(type_)
 
-    def subsumes(self, parent: [str, Type], child: [str, Type]) -> bool:
+    def subsumes(self, parent: Union[str, Type], child: Union[str, Type]) -> bool:
         """Determines if the type `child` is a child of `parent`.
 
         Args:
@@ -788,8 +798,8 @@ class TypeSystem:
         self,
         type_: Type,
         name: str,
-        rangeTypeName: str,
-        elementType: str = None,
+        rangeType: Union[Type, str],
+        elementType: Union[Type, str] = None,
         description: str = None,
         multipleReferencesAllowed: bool = None,
     ) -> Feature:
@@ -821,8 +831,8 @@ class TypeSystem:
 
         feature = Feature(
             name=name,
-            rangeTypeName=rangeTypeName,
-            elementType=elementType,
+            rangeType=self.get_type(rangeType) if isinstance(rangeType, str) else rangeType,
+            elementType=self.get_type(elementType) if isinstance(elementType, str) else elementType,
             description=description,
             multipleReferencesAllowed=multipleReferencesAllowed,
             has_reserved_name=has_reserved_name,
@@ -899,7 +909,7 @@ class TypeSystem:
 
         t = self.get_type(fs.type.name)
         for f in t.all_features:
-            if f.rangeTypeName == "uima.cas.FSArray":
+            if f.rangeType.name == "uima.cas.FSArray":
                 feature_value = fs.value(f.name)
                 if not feature_value.elements:
                     continue
@@ -908,7 +918,7 @@ class TypeSystem:
                 for e in feature_value.elements:
                     if not self.subsumes(element_type, e.type.name):
                         msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
-                            f.rangeTypeName, e.type.name, element_type
+                            f.rangeType.name, e.type.name, element_type.name
                         )
                         errors.append(TypeCheckError(fs.xmiID, msg))
 
@@ -919,7 +929,7 @@ class TypeSystem:
 
     def _add_document_annotation_type(self):
         t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
-        self.create_feature(t, name="language", rangeTypeName="uima.cas.String")
+        self.create_feature(t, name="language", rangeType="uima.cas.String")
 
 
 # Deserializing
@@ -989,10 +999,10 @@ class TypeSystemDeserializer:
 
                 f = Feature(
                     name=feature_name,
-                    rangeTypeName=rangeTypeName,
+                    rangeType=rangeTypeName,  # value should actually be a Type, but we still need to load these
                     description=description,
                     multipleReferencesAllowed=multipleReferencesAllowed,
-                    elementType=elementType,
+                    elementType=elementType,  # value should actually be a Type, but we still need to load these
                 )
                 features[type_name].append(f)
 
@@ -1010,7 +1020,7 @@ class TypeSystemDeserializer:
         # the list of redefined predefined types so that is written back on serialization.
         if _DOCUMENT_ANNOTATION_TYPE not in types:
             t = Type(name=_DOCUMENT_ANNOTATION_TYPE, supertype=ts.get_type("uima.tcas.Annotation"))
-            features[t.name].append(Feature(name="language", rangeTypeName="uima.cas.String"))
+            features[t.name].append(Feature(name="language", rangeType="uima.cas.String"))
             types[t.name] = t
             type_dependencies[t.name].add("uima.tcas.Annotation")
         else:
@@ -1026,6 +1036,16 @@ class TypeSystemDeserializer:
                 supertype = types[supertype_name]
 
             t.supertype = supertype
+
+        # Fill in actual types into the features
+        for fl in features.values():
+            for f in fl:
+                if isinstance(f.rangeType, str):
+                    f.rangeType = ts.get_type(f.rangeType) if f.rangeType in _PREDEFINED_TYPES else types[f.rangeType]
+                if isinstance(f.elementType, str):
+                    f.elementType = (
+                        ts.get_type(f.elementType) if f.elementType in _PREDEFINED_TYPES else types[f.elementType]
+                    )
 
         # Some CAS handling libraries add predefined types to the typesystem XML.
         # Here we check that the redefinition of predefined types adheres to the definition in UIMA
@@ -1067,7 +1087,7 @@ class TypeSystemDeserializer:
                 ts.create_feature(
                     t,
                     name=f.name,
-                    rangeTypeName=f.rangeTypeName,
+                    rangeType=f.rangeType,
                     elementType=f.elementType,
                     description=f.description,
                     multipleReferencesAllowed=f.multipleReferencesAllowed,
@@ -1156,7 +1176,7 @@ class TypeSystemSerializer:
         description.text = feature.description
 
         rangeTypeName = etree.SubElement(featureDescription, "rangeTypeName")
-        rangeTypeName.text = feature.rangeTypeName
+        rangeTypeName.text = feature.rangeType.name
 
         if feature.multipleReferencesAllowed is not None:
             multipleReferencesAllowed = etree.SubElement(featureDescription, "multipleReferencesAllowed")
@@ -1164,7 +1184,7 @@ class TypeSystemSerializer:
 
         if feature.elementType is not None:
             elementType = etree.SubElement(featureDescription, "elementType")
-            elementType.text = feature.elementType
+            elementType.text = feature.elementType.name
 
 
 def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:

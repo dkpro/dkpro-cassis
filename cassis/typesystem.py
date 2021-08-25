@@ -274,6 +274,11 @@ class TypeNotFoundError(Exception):
     message: str = attr.ib()  # Description of the error
 
 
+@attr.s
+class AnnotationHasNoSofa(Exception):
+    message: str = attr.ib()  # Description of the error
+
+
 @attr.s(slots=True, hash=False, eq=True, order=True)
 class FeatureStructure:
     """The base class for all feature structure instances"""
@@ -294,7 +299,9 @@ class FeatureStructure:
         """
         if hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end"):
             if self.sofa is None:
-                return None
+                raise AnnotationHasNoSofa(
+                    "Annotations must have a SofA (be added to a CAS) before get_covered_text() can be called"
+                )
             if self.sofa.sofaString is None:
                 return None
             return self.sofa.sofaString[self.begin : self.end]
@@ -675,11 +682,10 @@ class TypeSystem:
             The newly created type
         """
         if supertypeName in _INHERITANCE_FINAL_TYPES:
-            raise ValueError(f"[{name}] cannot inhert from [{supertypeName}] because the latter is inheritance final")
+            raise ValueError(f"[{name}] cannot inherit from [{supertypeName}] because the latter is inheritance final")
 
         if self.contains_type(name) and name not in _PREDEFINED_TYPES:
-            msg = "Type with name [{0}] already exists!".format(name)
-            raise ValueError(msg)
+            raise ValueError(f"Type with name [{name}] already exists!")
 
         supertype = self.get_type(supertypeName)
         new_type = Type(name=name, supertype=supertype, description=description, typesystem=self)
@@ -709,8 +715,16 @@ class TypeSystem:
         else:
             raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
 
-    def get_types(self) -> Iterator[Type]:
-        """Returns all types of this type system"""
+    def get_types(self, built_in: bool = False) -> Iterator[Type]:
+        """Returns all types of this type system. Normally, this excludes the built-in types
+
+        Args:
+            built_in: Also include the built-in types
+
+        """
+        if built_in:
+            return self._types.values()
+
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 
     def is_instance_of(self, type_: Union[Type, str], parent: Union[Type, str]) -> bool:

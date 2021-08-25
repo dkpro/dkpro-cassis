@@ -37,8 +37,8 @@ class OffsetConverter:
     """
 
     def __init__(self):
-        self._uima_to_cassis: Dict[int, int] = {}
-        self._cassis_to_uima: Dict[int, int] = {}
+        self._uima_to_cassis: Dict[int, int] = {0: 0}
+        self._cassis_to_uima: Dict[int, int] = {0: 0}
 
     def create_index(self, sofa_string: str):
         self._uima_to_cassis.clear()

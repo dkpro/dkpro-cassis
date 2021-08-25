@@ -1,9 +1,9 @@
 from cassis.typesystem import TYPE_NAME_ANNOTATION
 from tests.fixtures import *
-from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator
+from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 
 
-def test_minimal_cas():
+def test_cas_to_comparable_text_on_minimal_cas():
     cas = Cas()
     cas.sofa_string = "ABCDE"
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
@@ -23,12 +23,23 @@ def test_minimal_cas():
     assert cas_to_comparable_text(cas) == expected
 
 
-def test_multi_feature_random():
+def test_cas_to_comparable_text_on_multi_feature_random():
     generator = MultiFeatureRandomCasGenerator()
     for i in range(0, 10):
         generator.size = (i + 1) * 10
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
         print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
-        actual = cas_to_comparable_text(randomized_cas)
-        print(actual)
+        cas_to_comparable_text(randomized_cas)
+        # At this point, we are just testing if there is no exception during rendering
+
+
+def test_cas_to_comparable_text_on_multi_type_random():
+    generator = MultiTypeRandomCasGenerator()
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        typesystem = generator.generate_type_system()
+        randomized_cas = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        cas_to_comparable_text(randomized_cas)
+        # At this point, we are just testing if there is no exception during rendering

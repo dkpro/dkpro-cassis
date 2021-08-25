@@ -7,8 +7,7 @@ from typing import Dict, Iterable
 import attr
 
 from cassis import Cas
-from cassis.typesystem import TYPE_NAME_ANNOTATION, FeatureStructure, Type, \
-    FEATURE_BASE_NAME_SOFA
+from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type
 
 _EXCLUDED_FEATURES = {FEATURE_BASE_NAME_SOFA}
 _NULL_VALUE = "<NULL>"
@@ -31,7 +30,7 @@ def cas_to_comparable_text(
     if not out:
         out = StringIO()
 
-    csv_writer = csv.writer(out,dialect=csv.unix_dialect)
+    csv_writer = csv.writer(out, dialect=csv.unix_dialect)
     for t in types_sorted:
         type_ = cas.typesystem.get_type(t)
 
@@ -77,11 +76,11 @@ def _render_feature_structure(
 
     if max_covered_text > 0:
         covered_text = fs.get_covered_text()
-        if len(covered_text) >= max_covered_text:
+        if covered_text and len(covered_text) >= max_covered_text:
             prefix = covered_text[0 : (max_covered_text // 2)]
             suffix = covered_text[-(max_covered_text // 2) :]
             covered_text = f"{prefix}...{suffix}"
-        row_data.append(covered_text)
+        row_data.append(covered_text if covered_text is not None else _NULL_VALUE)
 
     for feature in sorted(type_.all_features, key=lambda v: v.name):
         if feature.name in _EXCLUDED_FEATURES:
@@ -137,7 +136,7 @@ def _generate_anchors(
     for t in types_sorted:
         type_ = cas.typesystem.get_type(t)
         feature_structures = all_feature_structures_by_type[type_.name]
-        feature_structures.sort(key=cmp_to_key(lambda a,b: _compare_fs(type_, a, b)))
+        feature_structures.sort(key=cmp_to_key(lambda a, b: _compare_fs(type_, a, b)))
 
         for fs in feature_structures:
             add_index_mark = mark_indexed and fs in indexed_feature_structures

@@ -176,6 +176,93 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
+def is_collection(type_: [str, "Type"], feature: "Feature") -> bool:
+    """Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
+
+    Args:
+        type_: The type to which the feature belongs (`Type` or name as string)
+        feature: The feature to query for.
+    Returns:
+        Returns True if the given feature is a collection type, else False
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+
+    if type_name in _COLLECTION_TYPES and feature.name == "elements":
+        return True
+    else:
+        return feature.rangeTypeName in _COLLECTION_TYPES
+
+
+def is_primitive(type_: "Type") -> bool:
+    """Checks if the type identified by `type` is a primitive type.
+
+    Args:
+        type_: Type to query for
+    Returns:
+        Returns True if the type identified by `type` is a primitive type, else False
+    """
+    type_name = type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+    elif type_name in _PRIMITIVE_TYPES:
+        return True
+    else:
+        return is_primitive(type_.supertype)
+
+
+def is_primitive_collection(type_: "Type") -> bool:
+    """Checks if the type identified by `type` is a primitive collection, e.g. list or array of primitives.
+
+    Args:
+        type_: Type to query for
+    Returns:
+        Returns True if the type identified by `type` is a primitive collection type, else False
+    """
+    type_name = type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+    elif type_name in _PRIMITIVE_COLLECTION_TYPES:
+        return True
+    else:
+        return is_primitive_collection(type_.supertype)
+
+
+def is_primitive_array(type_: [str, "Type"]) -> bool:
+    """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
+
+    Args:
+        type_: Type to query for (`Type` or name as string)
+    Returns:
+        Returns `True` if the type identified by `type` is a primitive array type, else `False`
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+
+    # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
+    return type_name in _PRIMITIVE_ARRAY_TYPES
+
+
+def is_array(type_: [str, "Type"]) -> bool:
+    """Checks if the type identified by `type` is an array.
+
+    Args:
+        type_: Type to query for (`Type` or name as string)
+    Returns:
+        Returns `True` if the type identified by `type` is an array type, else `False`
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+
+    # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
+    return type_name in _ARRAY_TYPES
+
+
 @attr.s
 class TypeCheckError(Exception):
     xmiID: int = attr.ib()  # xmiID of the feature structure with type error
@@ -632,90 +719,69 @@ class TypeSystem:
         else:
             return self.is_instance_of(self.get_type(type_name).supertype.name, parent_name)
 
-    def is_primitive(self, type_name: str) -> bool:
-        """Checks if the type identified by `type_name` is a primitive type.
+    def is_collection(self, type_: [str, "Type"], feature: "Feature") -> bool:
+        """Checks if the given feature for the type identified by ``type_`is a collection, e.g. list or array.
 
         Args:
-            type_name: The name of the type to query for.
-        Returns:
-            Returns True if the type identified by `type_name` is a primitive type, else False
-        """
-        if type_name == TOP_TYPE_NAME:
-            return False
-        elif type_name in _PRIMITIVE_TYPES:
-            return True
-        else:
-            return self.is_primitive(self.get_type(type_name).supertype.name)
-
-    def is_collection(self, type_name: str, feature: Feature) -> bool:
-        """Checks if the given feature for the type identified by ``type_name`is a collection, e.g. list or array.
-
-        Args:
-            type_name: The type name to which the feature belongs.
+            type_: The type to which the feature belongs (`Type` or name as string)
             feature: The feature to query for.
         Returns:
             Returns True if the given feature is a collection type, else False
         """
-        if type_name in _COLLECTION_TYPES and feature.name == "elements":
-            return True
-        else:
-            return feature.rangeTypeName in _COLLECTION_TYPES
+        return is_collection(self.get_type(type_) if isinstance(type_, str) else type_, feature)
 
-    def is_primitive_collection(self, type_name) -> bool:
-        """Checks if the type identified by `type_name` is a primitive collection, e.g. list or array of primitives.
+    def is_primitive(self, type_: [str, Type]) -> bool:
+        """Checks if the type identified by `type_name` is a primitive type.
 
         Args:
-            type_name: The name of the type to query for.
+            type_: Type to query for (`Type` or name as string)
         Returns:
-            Returns True if the type identified by `type_name` is a primitive collection type, else False
+            Returns True if the type identified by `type` is a primitive type, else False
         """
-        if type_name == TOP_TYPE_NAME:
-            return False
-        elif type_name in _PRIMITIVE_COLLECTION_TYPES:
-            return True
-        else:
-            return self.is_primitive_collection(self.get_type(type_name).supertype)
+        return is_primitive(self.get_type(type_) if isinstance(type_, str) else type_)
 
-    def is_primitive_array(self, type_name: str) -> bool:
-        """Checks if the type identified by `type_name` is a primitive array, e.g. array of primitives.
+    def is_primitive_collection(self, type_: [str, Type]) -> bool:
+        """Checks if the type identified by `type` is a primitive collection, e.g. list or array of primitives.
 
         Args:
-            type_name: The name of the type to query for.
+            type_: Type to query for (`Type` or name as string)
         Returns:
-            Returns `True` if the type identified by `type_name` is a primitive array type, else `False`
+            Returns True if the type identified by `type` is a primitive collection type, else False
         """
-        if type_name == TOP_TYPE_NAME:
-            return False
+        return is_primitive_collection(self.get_type(type_) if isinstance(type_, str) else type_)
 
-        # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
-        return type_name in _PRIMITIVE_ARRAY_TYPES
-
-    def is_array(self, type_name: str) -> bool:
-        """Checks if the type identified by `type_name` is an array.
+    def is_primitive_array(self, type_: [str, Type]) -> bool:
+        """Checks if the type identified by `type` is a primitive array, e.g. array of primitives.
 
         Args:
-            type_name: The name of the type to query for.
+            type_: Type to query for (`Type` or name as string)
         Returns:
-            Returns `True` if the type identified by `type_name` is an array type, else `False`
+            Returns `True` if the type identified by `type` is a primitive array type, else `False`
         """
-        if type_name == TOP_TYPE_NAME:
-            return False
+        return is_primitive_array(type_)
 
-        # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
-        return type_name in _ARRAY_TYPES
-
-    def subsumes(self, parent_name: str, child_name: str) -> bool:
-        """Determines if the type `child_name` is a child of `parent_name`.
+    def is_array(self, type_: [str, Type]) -> bool:
+        """Checks if the type identified by `type` is an array.
 
         Args:
-            parent_name: Name of the parent type
-            child_name: Name of the child type
+            type_: Type to query for (`Type` or name as string)
+        Returns:
+            Returns `True` if the type identified by `type` is an array type, else `False`
+        """
+        return is_array(type_)
+
+    def subsumes(self, parent: [str, Type], child: [str, Type]) -> bool:
+        """Determines if the type `child` is a child of `parent`.
+
+        Args:
+            parent_name: Parent type (`Type` or name as string)
+            child_name: Child type (`Type` or name as string)
 
         Returns:
-            True if `parent_name` subsumes `child_name` else False
+            True if `parent` subsumes `child` else False
         """
-        parent_type = self.get_type(parent_name)
-        child_type = self.get_type(child_name)
+        parent_type = self.get_type(parent) if isinstance(parent, str) else parent.name
+        child_type = self.get_type(child) if isinstance(child, str) else child.name
         return parent_type.subsumes(child_type)
 
     def create_feature(

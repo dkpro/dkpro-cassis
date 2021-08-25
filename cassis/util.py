@@ -36,9 +36,7 @@ def cas_to_comparable_text(
 
         csv_writer.writerow([type_.name])
 
-        is_annotation_type = covered_text and cas.typesystem.subsumes(
-            parent_name=TYPE_NAME_ANNOTATION, child_name=type_.name
-        )
+        is_annotation_type = covered_text and cas.typesystem.subsumes(parent=TYPE_NAME_ANNOTATION, child=type_)
         csv_writer.writerow(_render_header(type_, covered_text=is_annotation_type))
 
         feature_structures_of_type = all_feature_structures_by_type.get(type_.name)
@@ -116,9 +114,9 @@ def _group_feature_structures_by_type(
 ) -> Dict[str, Iterable[FeatureStructure]]:
     fs_by_type = {}
     for fs in feature_structures:
-        by_type_list = fs_by_type.get(fs.type)
+        by_type_list = fs_by_type.get(fs.type.name)
         if not by_type_list:
-            by_type_list = fs_by_type[fs.type] = []
+            by_type_list = fs_by_type[fs.type.name] = []
         by_type_list.append(fs)
     return fs_by_type
 
@@ -150,7 +148,7 @@ def _generate_anchors(
 
 
 def _generate_anchor(fs: FeatureStructure, add_index_mark: bool) -> str:
-    anchor = fs.type.rsplit(".", 2)[-1]  # Get the short type name (no package)
+    anchor = fs.type.name.rsplit(".", 2)[-1]  # Get the short type name (no package)
 
     if _is_annotation_fs(fs):
         anchor += f"[{fs.begin}-{fs.end}]"

@@ -519,7 +519,7 @@ class Type:
         return iter(self._features.values())
 
     @property
-    def all_features(self) -> Iterator[Feature]:
+    def all_features(self) -> List[Feature]:
         """Returns an iterator over the features of this type. Inherited features are included. To
         just retrieve immediate features, use `features`.
 

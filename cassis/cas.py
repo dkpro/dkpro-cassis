@@ -632,7 +632,10 @@ class Cas:
         return all_errors
 
     def _find_all_fs(
-        self, generate_missing_ids: bool = True, include_inlinable_arrays: bool = False
+        self,
+        generate_missing_ids: bool = True,
+        include_inlinable_arrays: bool = False,
+        seeds: Iterable = None,
     ) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
@@ -640,9 +643,12 @@ class Cas:
         all_fs = {}
 
         openlist = []
-        for sofa in self.sofas:
-            view = self.get_view(sofa.sofaID)
-            openlist.extend(view.select_all())
+        if seeds is not None:  # Using "is not None" to distinguish empty seeds from not using seeds at all
+            openlist.extend(seeds)
+        else:
+            for sofa in self.sofas:
+                view = self.get_view(sofa.sofaID)
+                openlist.extend(view.select_all())
 
         ts = self.typesystem
         while openlist:

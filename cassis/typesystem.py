@@ -205,7 +205,11 @@ class FeatureStructure:
 
         """
         if hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end"):
-            return self.sofa.sofaString[self.begin : self.end]
+            if self.sofa is None:
+                return None
+            if self.sofa.sofaString is None:
+                return None
+            return self.sofa.sofaString[self.begin: self.end]
         else:
             raise NotImplementedError()
 

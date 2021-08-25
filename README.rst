@@ -53,7 +53,7 @@ Currently supported features are:
 - Type inheritance
 - Multiple SofA support
 - Type system can be changed after loading
-- Reference, array and list features
+- Primitive and reference features and arrays of primitives and references
 
 Some features are still under development, e.g.
 
@@ -317,7 +317,7 @@ Type checking
 
 When adding annotations, no type checking is performed for simplicity reasons.
 In order to check types, call the :code:`cas.typecheck()` method. Currently, it only
-checks whether elements in uima.cas.FSArray` or :code:`uima.cas.FSList` are
+checks whether elements in `uima.cas.FSArray` are
 adhere to the specified :code:`elementType`.
 
 DKPro Core Integration

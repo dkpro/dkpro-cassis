@@ -756,8 +756,8 @@ def test_bad_feature_path(small_typesystem_xml):
 def test_cannot_extend_final_type():
     cas = Cas()
 
-    for type_ in cas.typesystem.get_types():
-        if type_.name.endswith("Array"):
+    for type in cas.typesystem.get_types(built_in=True):
+        if type.name.endswith("Array"):
             with pytest.raises(ValueError):
                 cas.typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")
 

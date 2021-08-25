@@ -31,7 +31,7 @@ install_requires = [
 
 test_dependencies = [
     "tox==3.24.*",
-    "pytest>=6.2.4",
+    "pytest==6.2.*",
     "lxml-asserts==0.1.*",
     "pytest-lazy-fixture==0.6.*",
     "codecov==2.1.*",
@@ -40,7 +40,7 @@ test_dependencies = [
 
 dev_dependencies = [
     "black==21.7b0",
-    "isort=~5.9.*"
+    "isort==5.9.*"
 ]
 
 doc_dependencies = [

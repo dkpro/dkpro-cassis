@@ -122,7 +122,7 @@ class CasJsonDeserializer:
             typesystem.create_feature(
                 new_type,
                 name=key,
-                rangeTypeName=json_feature[RANGE_FIELD],
+                rangeType=json_feature[RANGE_FIELD],
                 description=json_feature.get(DESCRIPTION_FIELD),
                 elementType=json_feature.get(ELEMENT_TYPE_FIELD),
                 multipleReferencesAllowed=json_feature.get(MULTIPLE_REFERENCES_ALLOWED_FIELD),
@@ -249,14 +249,14 @@ class CasJsonSerializer:
         for view in cas.views:
             views[view.sofa.sofaID] = self._serialize_view(view)
             if view.sofa.sofaArray:
-                json_sofa_array_fs = self._serialize_feature_structure(cas, view.sofa.sofaArray)
+                json_sofa_array_fs = self._serialize_feature_structure(view.sofa.sofaArray)
                 feature_structures.append(json_sofa_array_fs)
-            json_sofa_fs = self._serialize_feature_structure(cas, view.sofa)
+            json_sofa_fs = self._serialize_feature_structure(view.sofa)
             feature_structures.append(json_sofa_fs)
 
         # Find all fs, even the ones that are not directly added to a sofa
         for fs in sorted(cas._find_all_fs(include_inlinable_arrays=True), key=lambda a: a.xmiID):
-            json_fs = self._serialize_feature_structure(cas, fs)
+            json_fs = self._serialize_feature_structure(fs)
             feature_structures.append(json_fs)
 
         if isinstance(sink, BytesIO):
@@ -295,7 +295,7 @@ class CasJsonSerializer:
 
         json_feature = {
             NAME_FIELD: feature_name,
-            RANGE_FIELD: self._to_external_type_name(feature.rangeTypeName),
+            RANGE_FIELD: self._to_external_type_name(feature.rangeType.name),
         }
 
         if feature.description:
@@ -309,8 +309,7 @@ class CasJsonSerializer:
 
         return json_feature
 
-    def _serialize_feature_structure(self, cas, fs) -> dict:
-        ts = cas.typesystem
+    def _serialize_feature_structure(self, fs) -> dict:
         type_name = fs.type.name
 
         json_fs = OrderedDict()
@@ -321,7 +320,7 @@ class CasJsonSerializer:
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
             return json_fs
-        elif ts.is_primitive_array(type_name):
+        elif is_primitive_array(fs.type):
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = fs.elements
             return json_fs
@@ -350,7 +349,7 @@ class CasJsonSerializer:
             #    sofa: Sofa = getattr(fs, "sofa")
             #    value = sofa._offset_converter.cassis_to_uima(value)
 
-            if ts.is_primitive(feature.rangeTypeName):
+            if is_primitive(feature.rangeType):
                 json_fs[feature_name] = value
             else:
                 # We need to encode non-primitive features as a reference

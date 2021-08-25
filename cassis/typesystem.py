@@ -596,8 +596,16 @@ class TypeSystem:
         else:
             raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
 
-    def get_types(self) -> Iterator[Type]:
-        """Returns all types of this type system"""
+    def get_types(self, built_in: bool = False) -> Iterator[Type]:
+        """Returns all types of this type system. Normally, this excludes the built-in types
+
+        Args:
+            built_in: Also include the built-in types
+
+        """
+        if built_in:
+            return self._types.values()
+
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 
     def is_instance_of(self, type_name: str, parent_name: str) -> bool:

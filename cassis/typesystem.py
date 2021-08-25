@@ -194,7 +194,7 @@ class FeatureStructure:
     xmiID = attr.ib(default=None, eq=False)  # int: xmiID of this feature structure instance
 
     def value(self, name: str):
-        """ Returns the value of the feature `name`. """
+        """Returns the value of the feature `name`."""
         return getattr(self, name)
 
     def get_covered_text(self) -> str:
@@ -209,7 +209,7 @@ class FeatureStructure:
                 return None
             if self.sofa.sofaString is None:
                 return None
-            return self.sofa.sofaString[self.begin: self.end]
+            return self.sofa.sofaString[self.begin : self.end]
         else:
             raise NotImplementedError()
 
@@ -233,7 +233,7 @@ class FeatureStructure:
         return cur
 
     def set(self, path: str, value: Any):
-        """ Recursively sets an attribute, e.g. fs.set("a.b.c", 42) would set attribute `c` of `b` of `a` to `42`. """
+        """Recursively sets an attribute, e.g. fs.set("a.b.c", 42) would set attribute `c` of `b` of `a` to `42`."""
 
         if "." not in path:
             setattr(self, path, value)
@@ -322,7 +322,7 @@ class Type:
     _constructor = attr.ib(default=None, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
 
     def __attrs_post_init__(self):
-        """ Build the constructor that can create feature structures of this type """
+        """Build the constructor that can create feature structures of this type"""
         name = _string_to_valid_classname(self.name)
         fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
         fields["type"] = attr.ib(default=self.name)
@@ -597,7 +597,7 @@ class TypeSystem:
             raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
 
     def get_types(self) -> Iterator[Type]:
-        """ Returns all types of this type system """
+        """Returns all types of this type system"""
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 
     def is_instance_of(self, type_name: str, parent_name: str) -> bool:

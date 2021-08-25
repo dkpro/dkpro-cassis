@@ -35,8 +35,8 @@ class OffsetConverter:
     """
 
     def __init__(self):
-        self._uima_to_cassis: Dict[int, int] = {}
-        self._cassis_to_uima: Dict[int, int] = {}
+        self._uima_to_cassis: Dict[int, int] = {0: 0}
+        self._cassis_to_uima: Dict[int, int] = {0: 0}
 
     def create_index(self, sofa_string: str):
         self._uima_to_cassis.clear()
@@ -424,7 +424,7 @@ class Cas:
     # FS handling
 
     def _get_feature_structures(self, type_name) -> List[FeatureStructure]:
-        """ Returns a list of all feature structures of type `type_name` and child types. """
+        """Returns a list of all feature structures of type `type_name` and child types."""
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 

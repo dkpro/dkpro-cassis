@@ -275,6 +275,16 @@ def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, d
     assert size_cassis_to_uima_before != size_cassis_to_uima_after
 
 
+def test_offsets_work_for_empty_sofastring():
+    xmi = """<?xml version="1.0" encoding="UTF-8"?> <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" 
+    xmlns:tcas="http:///uima/tcas.ecore" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> <cas:NULL xmi:id="0" 
+    /> <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="0" language="en" /> <cas:Sofa xmi:id="1" 
+    sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="" /> <cas:View sofa="1" members="2" /> </xmi:XMI> """
+
+    # assert no exception
+    load_cas_from_xmi(xmi)
+
+
 # Leniency
 
 

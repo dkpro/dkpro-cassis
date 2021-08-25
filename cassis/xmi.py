@@ -7,7 +7,8 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, Type, TypeNotFoundError, TypeSystem
+from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, Type, TypeNotFoundError, TypeSystem, \
+    TYPE_NAME_SOFA
 
 
 @attr.s
@@ -83,7 +84,7 @@ class CasXmiDeserializer:
                 pass
             elif elem.tag == TAG_CAS_SOFA:
                 if event == "end":
-                    sofa = self._parse_sofa(elem)
+                    sofa = self._parse_sofa(typesystem, elem)
                     sofas[sofa.xmiID] = sofa
             elif elem.tag == TAG_CAS_VIEW:
                 if event == "end":
@@ -252,10 +253,11 @@ class CasXmiDeserializer:
 
         return cas
 
-    def _parse_sofa(self, elem) -> Sofa:
+    def _parse_sofa(self, typesystem, elem) -> Sofa:
         attributes = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
+        attributes["type"] = typesystem.get_type(TYPE_NAME_SOFA)
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         self._max_sofa_num = max(attributes["sofaNum"], self._max_sofa_num)
 

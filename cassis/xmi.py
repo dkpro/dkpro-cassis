@@ -7,7 +7,14 @@ import attr
 from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
-from cassis.typesystem import _PRIMITIVE_ARRAY_TYPES, FeatureStructure, Type, TypeNotFoundError, TypeSystem
+from cassis.typesystem import (
+    _PRIMITIVE_ARRAY_TYPES,
+    TYPE_NAME_SOFA,
+    FeatureStructure,
+    Type,
+    TypeNotFoundError,
+    TypeSystem,
+)
 
 
 @attr.s
@@ -83,7 +90,7 @@ class CasXmiDeserializer:
                 pass
             elif elem.tag == TAG_CAS_SOFA:
                 if event == "end":
-                    sofa = self._parse_sofa(elem)
+                    sofa = self._parse_sofa(typesystem, elem)
                     sofas[sofa.xmiID] = sofa
             elif elem.tag == TAG_CAS_VIEW:
                 if event == "end":
@@ -155,7 +162,7 @@ class CasXmiDeserializer:
         StringArray = typesystem.get_type("uima.cas.StringArray")
         referenced_fs = set()
         for xmi_id, fs in feature_structures.items():
-            t = typesystem.get_type(fs.type)
+            t = typesystem.get_type(fs.type.name)
 
             for feature in t.all_features:
                 feature_name = feature.name
@@ -167,25 +174,25 @@ class CasXmiDeserializer:
                     setattr(fs, feature_name, sofa)
                     continue
 
-                if typesystem.is_instance_of(fs.type, "uima.cas.StringArray"):
+                if typesystem.is_instance_of(fs.type.name, "uima.cas.StringArray"):
                     # We already parsed string arrays to a Python list of string
                     # before, so we do not need to work more on this
                     continue
-                elif typesystem.is_primitive(feature.rangeTypeName):
+                elif typesystem.is_primitive(feature.rangeType):
                     # TODO: Parse feature values to their real type here, e.g. parse ints or floats
                     continue
                 elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
                     # Separately rendered arrays (typically used with multipleReferencesAllowed = True)
                     elements = self._parse_primitive_array(fs.type, value)
                     setattr(fs, feature_name, elements)
-                elif typesystem.is_primitive_array(feature.rangeTypeName):
+                elif typesystem.is_primitive_array(feature.rangeType):
                     # Array feature rendered inline (multipleReferencesAllowed = False|None)
                     # We also end up here for array features that were rendered as child elements. No need to parse
                     # them again, so we check if the value is still a string (i.e. attribute value) and only then
                     # process it
                     if isinstance(value, str):
-                        FSType = typesystem.get_type(feature.rangeTypeName)
-                        elements = FSType(elements=self._parse_primitive_array(feature.rangeTypeName, value))
+                        FSType = feature.rangeType
+                        elements = FSType(elements=self._parse_primitive_array(feature.rangeType, value))
                         setattr(fs, feature_name, elements)
                 else:
                     # Resolve references here
@@ -193,7 +200,7 @@ class CasXmiDeserializer:
                         continue
 
                     # Resolve references
-                    if fs.type == "uima.cas.FSArray" or feature.rangeTypeName == "uima.cas.FSArray":
+                    if fs.type.name == "uima.cas.FSArray" or feature.rangeType.name == "uima.cas.FSArray":
                         # An array of references is a list of integers separated
                         # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
                         targets = []
@@ -202,7 +209,7 @@ class CasXmiDeserializer:
                             target = feature_structures[target_id]
                             targets.append(target)
                             referenced_fs.add(target_id)
-                        if feature.rangeTypeName == "uima.cas.FSArray":
+                        if feature.rangeType.name == "uima.cas.FSArray":
                             # Wrap inline array into the appropriate array object
                             ArrayType = typesystem.get_type("uima.cas.FSArray")
                             targets = ArrayType(elements=targets)
@@ -241,7 +248,7 @@ class CasXmiDeserializer:
                 fs = feature_structures[member_id]
 
                 # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
-                if typesystem.is_instance_of(fs.type, "uima.tcas.Annotation"):
+                if typesystem.is_instance_of(fs.type.name, "uima.tcas.Annotation"):
                     fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
                     fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
 
@@ -252,10 +259,11 @@ class CasXmiDeserializer:
 
         return cas
 
-    def _parse_sofa(self, elem) -> Sofa:
+    def _parse_sofa(self, typesystem: TypeSystem, elem) -> Sofa:
         attributes = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
+        attributes["type"] = typesystem.get_type(TYPE_NAME_SOFA)
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         self._max_sofa_num = max(attributes["sofaNum"], self._max_sofa_num)
 
@@ -305,18 +313,19 @@ class CasXmiDeserializer:
         if not typesystem.is_primitive_array(type_name):
             for feature_name, feature_value in children.items():
                 feature = AnnotationType.get_feature(feature_name)
-                if typesystem.is_primitive_array(feature.rangeTypeName):
-                    ArrayType = typesystem.get_type(feature.rangeTypeName)
+                if typesystem.is_primitive_array(feature.rangeType):
+                    ArrayType = feature.rangeType
                     attributes[feature_name] = ArrayType(elements=attributes[feature_name])
 
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         return AnnotationType(**attributes)
 
-    def _parse_primitive_array(self, type_name: str, value: str) -> List:
+    def _parse_primitive_array(self, type_: Type, value: str) -> List:
         """Primitive collections are serialized as white space seperated primitive values"""
 
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
+        type_name = type_.name
         if type_name == "uima.cas.FloatArray" or type_name == "uima.cas.DoubleArray":
             return [float(e) for e in elements]
         elif (
@@ -385,7 +394,7 @@ class CasXmiSerializer:
     def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
         ts = cas.typesystem
 
-        type_name = fs.type
+        type_name = fs.type.name
         if "." not in type_name:
             type_name = f"uima.noNamespace.{type_name}"
 
@@ -424,8 +433,8 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Case where arrays are rendered as separate elements (not inline) for use with multipleReferencesAllowed = True
-        if ts.is_primitive_array(fs.type) or fs.type == "uima.cas.FSArray" and fs.elements:
-            if ts.is_instance_of(fs.type, "uima.cas.StringArray"):
+        if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray" and fs.elements:
+            if ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):
                 # String arrays need to be serialized to a series of child elements, as strings can
                 # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
                 # serialize it as an attribute, it would look like
@@ -441,15 +450,15 @@ class CasXmiSerializer:
                 for e in fs.elements:
                     child = etree.SubElement(elem, "elements")
                     child.text = e
-            elif fs.type == "uima.cas.FSArray":
+            elif fs.type.name == "uima.cas.FSArray":
                 elements = " ".join(str(e.xmiID) for e in fs.elements)
                 elem.attrib["elements"] = elements
             else:
-                elem.attrib["elements"] = self._serialize_primitive_array(fs.type, fs.elements)
+                elem.attrib["elements"] = self._serialize_primitive_array(fs.type.name, fs.elements)
             return
 
         # Serialize feature attributes
-        t = ts.get_type(fs.type)
+        t = fs.type
         for feature in t.all_features:
             if feature.name in CasXmiSerializer._COMMON_FIELD_NAMES:
                 continue
@@ -466,31 +475,33 @@ class CasXmiSerializer:
                 continue
 
             # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
-            if ts.is_instance_of(fs.type, "uima.tcas.Annotation") and feature_name == "begin" or feature_name == "end":
+            if (
+                ts.is_instance_of(fs.type.name, "uima.tcas.Annotation")
+                and feature_name == "begin"
+                or feature_name == "end"
+            ):
                 sofa: Sofa = getattr(fs, "sofa")
                 value = sofa._offset_converter.cassis_to_uima(value)
 
             if (
-                ts.is_instance_of(feature.rangeTypeName, "uima.cas.StringArray")
+                ts.is_instance_of(feature.rangeType, "uima.cas.StringArray")
                 and not feature.multipleReferencesAllowed
                 and value.elements
             ):
                 for e in value.elements:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
+            elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed and value.elements:
+                elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
             elif (
-                ts.is_primitive_array(feature.rangeTypeName)
+                feature.rangeType.name == "uima.cas.FSArray"
                 and not feature.multipleReferencesAllowed
                 and value.elements
-            ):
-                elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeTypeName, value.elements)
-            elif (
-                feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements
             ):
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)
-            elif ts.is_primitive(feature.rangeTypeName):
+            elif ts.is_primitive(feature.rangeType):
                 elem.attrib[feature_name] = str(value)
             else:
                 # We need to encode non-primitive features as a reference

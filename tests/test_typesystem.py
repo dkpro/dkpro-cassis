@@ -4,7 +4,16 @@ from pathlib import Path
 import pytest
 
 from cassis import TypeSystem, load_typesystem
-from cassis.typesystem import _COLLECTION_TYPES, TOP_TYPE_NAME, Feature, TypeCheckError
+from cassis.typesystem import (
+    _COLLECTION_TYPES,
+    TOP_TYPE_NAME,
+    TYPE_NAME_BOOLEAN,
+    TYPE_NAME_INTEGER,
+    TYPE_NAME_STRING,
+    TYPE_NAME_TOP,
+    Feature,
+    TypeCheckError,
+)
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -27,12 +36,16 @@ def test_feature_can_be_added():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     actual_type = typesystem.get_type("test.Type")
+    assert actual_type.typesystem == typesystem
+
     actual_feature = actual_type.get_feature("testFeature")
     assert actual_feature.name == "testFeature"
-    assert actual_feature.rangeTypeName == "String"
+    assert actual_feature.rangeType.name == TYPE_NAME_STRING
     assert actual_feature.description == "A test feature"
 
 
@@ -41,10 +54,12 @@ def test_feature_adding_warns_if_redefined_identically():
 
     test_type = typesystem.create_type(name="test.Type")
 
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
     with pytest.warns(UserWarning):
         typesystem.create_feature(
-            type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature"
+            type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
         )
 
 
@@ -52,11 +67,13 @@ def test_feature_adding_throws_if_redefined_differently():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     with pytest.raises(ValueError):
         typesystem.create_feature(
-            type_=test_type, name="testFeature", rangeTypeName="Boolean", description="A test feature"
+            type_=test_type, name="testFeature", rangeType=TYPE_NAME_BOOLEAN, description="A test feature"
         )
 
 
@@ -69,13 +86,15 @@ def test_type_can_be_created():
     test_type = typesystem.create_type(name="test.Type")
 
     assert test_type.name == "test.Type"
-    assert test_type.supertypeName == "uima.tcas.Annotation"
+    assert test_type.supertype.name == "uima.tcas.Annotation"
 
 
 def test_type_can_create_instances():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type")
-    typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
+    typesystem.create_feature(
+        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+    )
 
     annotation = test_type(begin=0, end=42, testFeature="testValue")
 
@@ -88,10 +107,10 @@ def test_type_can_create_instance_with_inherited_fields():
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name="test.ParentType")
-    typesystem.create_feature(type_=parent_type, name="parentFeature", rangeTypeName="String")
+    typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
-    typesystem.create_feature(type_=child_type, name="childFeature", rangeTypeName="Integer")
+    typesystem.create_feature(type_=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
 
     annotation = child_type(parentFeature="parent", childFeature="child")
 
@@ -249,7 +268,7 @@ def test_is_primitive_when_parent_is_primitive():
 def test_is_collection(type_name: str, feature_name: str, expected: bool):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)
-    feature = Feature("test_feature", rangeTypeName=feature_name)
+    feature = Feature("test_feature", rangeType=typesystem.get_type(feature_name))
     t.add_feature(feature)
 
     assert typesystem.is_collection(type_name, feature) == expected
@@ -259,7 +278,7 @@ def test_is_collection(type_name: str, feature_name: str, expected: bool):
 def test_is_collection_for_builtin_collections_with_elements(type_name: str):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)
-    feature = Feature("elements", rangeTypeName="uima.cas.TOP")
+    feature = Feature("elements", rangeType=typesystem.get_type(TYPE_NAME_TOP))
 
     assert typesystem.is_collection(type_name, feature) is True
 
@@ -301,6 +320,7 @@ def test_is_primitive_collection(type_name: str, expected: bool):
 @pytest.mark.parametrize(
     "type_name, expected",
     [
+        ("uima.cas.TOP", False),
         ("uima.cas.ArrayBase", False),
         ("uima.cas.FSArray", False),
         ("uima.cas.FloatArray", True),
@@ -353,9 +373,30 @@ def test_is_aray():
         ("uima.cas.TOP", "uima.cas.TOP", True),
     ],
 )
-def test_subsumes(parent_name: str, child_name: str, expected: bool):
+def test_subsumes_deprecated(parent_name: str, child_name: str, expected: bool):
     ts = TypeSystem()
     assert ts.subsumes(parent_name, child_name) == expected
+
+
+@pytest.mark.parametrize(
+    "parent_name, child_name, expected",
+    [
+        ("uima.cas.ArrayBase", "uima.cas.ShortArray", True),
+        ("uima.cas.FSList", "uima.cas.ShortArray", False),
+        ("uima.cas.ListBase", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FSList", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FloatList", "uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.EmptyIntegerList", "uima.cas.IntegerList", False),
+        ("uima.cas.Sofa", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.TOP", True),
+    ],
+)
+def test_subsumes(parent_name: str, child_name: str, expected: bool):
+    ts = TypeSystem()
+    parent_type = ts.get_type(parent_name)
+    child_type = ts.get_type(child_name)
+    assert parent_type.subsumes(child_type) == expected
 
 
 # Deserializing
@@ -390,34 +431,34 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert annotation type
     annotation_type = typesystem.get_type("uima.tcas.DocumentAnnotation")
     assert annotation_type.name == "uima.tcas.DocumentAnnotation"
-    assert annotation_type.supertypeName == "uima.tcas.Annotation"
+    assert annotation_type.supertype.name == "uima.tcas.Annotation"
 
     language_feature = annotation_type.get_feature("language")
     assert language_feature.name == "language"
-    assert language_feature.rangeTypeName == "uima.cas.String"
+    assert language_feature.rangeType.name == "uima.cas.String"
 
     # Assert token type
     token_type = typesystem.get_type("cassis.Token")
     assert token_type.name == "cassis.Token"
-    assert token_type.supertypeName == "uima.tcas.Annotation"
+    assert token_type.supertype.name == "uima.tcas.Annotation"
 
     token_id_feature = token_type.get_feature("id")
     assert token_id_feature.name == "id"
-    assert token_id_feature.rangeTypeName == "uima.cas.Integer"
+    assert token_id_feature.rangeType.name == "uima.cas.Integer"
 
     token_pos_feature = token_type.get_feature("pos")
     assert token_pos_feature.name == "pos"
-    assert token_pos_feature.rangeTypeName == "uima.cas.String"
+    assert token_pos_feature.rangeType.name == "uima.cas.String"
     assert token_pos_feature.multipleReferencesAllowed is True
 
     # Assert sentence type
     sentence_type = typesystem.get_type("cassis.Sentence")
     assert sentence_type.name == "cassis.Sentence"
-    assert sentence_type.supertypeName == "uima.tcas.Annotation"
+    assert sentence_type.supertype.name == "uima.tcas.Annotation"
 
     sentence_type_id_feature = sentence_type.get_feature("id")
     assert sentence_type_id_feature.name == "id"
-    assert sentence_type_id_feature.rangeTypeName == "uima.cas.Integer"
+    assert sentence_type_id_feature.rangeType.name == "uima.cas.Integer"
     assert sentence_type_id_feature.multipleReferencesAllowed is False
 
 
@@ -510,7 +551,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
     ts.create_feature(
         type_=t,
         name=name,
-        rangeTypeName=rangeTypeName,
+        rangeType=rangeTypeName,
         elementType=elementType,
         multipleReferencesAllowed=multipleReferencesAllowed,
     )
@@ -528,10 +569,10 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
     [
         ("arrayNoElementType", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Different elementTypes
         ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.AnnotationBase", True),  # Different elementTypes
-        ("arrayMultiRefsOk", "uima.cas.FSList", "uima.cas.Annotation", True),  # Incompatible rangeTypes
-        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.Annotation", False),  # Different multiref
-        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.cas.Annotation", True),  # Different multiref
-        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.Annotation", None),  # Different multiref default
+        ("arrayMultiRefsOk", "uima.cas.FSList", "uima.tcas.Annotation", True),  # Incompatible rangeTypes
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.TOP", False),  # Different multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.cas.TOP", True),  # Different multiref
+        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.TOP", None),  # Different multiref default
     ],
 )
 def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elementType, multipleReferencesAllowed):
@@ -543,7 +584,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
     ts.create_feature(
         type_=t,
         name=name,
-        rangeTypeName=rangeTypeName,
+        rangeType=rangeTypeName,
         elementType=elementType,
         multipleReferencesAllowed=multipleReferencesAllowed,
     )
@@ -565,13 +606,13 @@ def test_that_merging_types_with_different_compatible_supertypes_works():
     result = merge_typesystems(ts1, ts2)
     sub = result.get_type("test.Sub")
 
-    assert sub.supertypeName == "test.Super"
+    assert sub.supertype.name == "test.Super"
 
     # Also check the other order
     result = merge_typesystems(ts2, ts1)
     sub = result.get_type("test.Sub")
 
-    assert sub.supertypeName == "test.Super"
+    assert sub.supertype.name == "test.Super"
 
 
 def test_that_merging_types_with_different_incompatible_supertypes_throws():
@@ -604,9 +645,9 @@ def test_typchecking_fs_array():
     MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
     FSArray = cas.typesystem.get_type("uima.cas.FSArray")
 
-    cas.typesystem.create_feature(type_=MyValue, name="value", rangeTypeName="uima.cas.String")
+    cas.typesystem.create_feature(type_=MyValue, name="value", rangeType="uima.cas.String")
     cas.typesystem.create_feature(
-        type_=MyCollection, name="members", rangeTypeName="uima.cas.FSArray", elementType="test.MyValue"
+        type_=MyCollection, name="members", rangeType="uima.cas.FSArray", elementType="test.MyValue"
     )
 
     members = FSArray(elements=[MyValue(value="foo"), MyValue(value="bar"), MyOtherValue()])
@@ -719,3 +760,10 @@ def test_cannot_extend_final_type():
         if type.name.endswith("Array"):
             with pytest.raises(ValueError):
                 cas.typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")
+
+
+def test_create_same_type_twice_fails():
+    typesystem = TypeSystem()
+    typesystem.create_type("my.Type")
+    with pytest.raises(ValueError):
+        typesystem.create_type("my.Type")

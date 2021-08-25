@@ -9,7 +9,7 @@ import deprecation
 from attr import validators
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
+from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -77,6 +77,9 @@ class OffsetConverter:
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
 
+    #: "Type": The type
+    type = attr.ib()
+
     #: int: The sofaNum
     sofaNum = attr.ib(validator=validators.instance_of(int))
 
@@ -138,7 +141,7 @@ class View:
         return self._indices
 
     def add_annotation_to_index(self, annotation: FeatureStructure):
-        self._indices[annotation.type].add(annotation)
+        self._indices[annotation.type.name].add(annotation)
 
     def get_all_annotations(self) -> List[FeatureStructure]:
         """Gets all the annotations in this view.
@@ -159,7 +162,7 @@ class View:
         Args:
             annotation: The annotation to remove.
         """
-        self._indices[annotation.type].remove(annotation)
+        self._indices[annotation.type.name].remove(annotation)
 
 
 class Index:
@@ -227,7 +230,7 @@ class Cas:
             sofaNum = self._get_next_sofa_num()
 
         # Create sofa
-        sofa = Sofa(xmiID=xmiID, sofaNum=sofaNum, sofaID=name)
+        sofa = Sofa(xmiID=xmiID, sofaNum=sofaNum, sofaID=name, type=self.typesystem.get_type(TYPE_NAME_SOFA))
 
         # Create view
         view = View(sofa=sofa)
@@ -270,8 +273,8 @@ class Cas:
             keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
 
         """
-        if not self._lenient and not self._typesystem.contains_type(annotation.type):
-            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type)
+        if not self._lenient and not self._typesystem.contains_type(annotation.type.name):
+            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type.name)
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
@@ -619,10 +622,10 @@ class Cas:
 
             all_fs[fs.xmiID] = fs
 
-            t = ts.get_type(fs.type)
+            t = ts.get_type(fs.type.name)
 
             # Arrays contents are handled separately - they only have one "virtual" feature: elements
-            if t.supertypeName == "uima.cas.ArrayBase":
+            if t.supertype.name == "uima.cas.ArrayBase":
                 if t.name == "uima.cas.FSArray" and fs.elements:
                     for ref in fs.elements:
                         if not ref or ref.xmiID in all_fs:
@@ -637,7 +640,7 @@ class Cas:
                 if feature_name == "sofa":
                     continue
 
-                if ts.is_primitive(feature.rangeTypeName):
+                if ts.is_primitive(feature.rangeType):
                     continue
 
                 feature_value = getattr(fs, feature_name)
@@ -647,10 +650,10 @@ class Cas:
                 if (
                     not include_inlinable_arrays
                     and not feature.multipleReferencesAllowed
-                    and ts.is_array(feature.rangeTypeName)
+                    and ts.is_array(feature.rangeType)
                 ):
                     # For inlined FSArrays, we still need to scan their members
-                    if feature.rangeTypeName == "uima.cas.FSArray" and feature_value.elements:
+                    if feature.rangeType.name == "uima.cas.FSArray" and feature_value.elements:
                         for ref in feature_value.elements:
                             if not ref or ref.xmiID in all_fs:
                                 continue
@@ -659,7 +662,7 @@ class Cas:
 
                 if not hasattr(feature_value, "xmiID"):
                     raise AttributeError(
-                        f"Feature [{feature_name}] should point to a [{feature.rangeTypeName}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
+                        f"Feature [{feature_name}] should point to a [{feature.rangeType.name}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
                     )
 
                 if feature_value.xmiID in all_fs:

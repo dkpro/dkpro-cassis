@@ -30,6 +30,8 @@ def test_feature_can_be_added():
     typesystem.create_feature(type_=test_type, name="testFeature", rangeTypeName="String", description="A test feature")
 
     actual_type = typesystem.get_type("test.Type")
+    assert actual_type.typesystem == typesystem
+
     actual_feature = actual_type.get_feature("testFeature")
     assert actual_feature.name == "testFeature"
     assert actual_feature.rangeTypeName == "String"
@@ -69,7 +71,7 @@ def test_type_can_be_created():
     test_type = typesystem.create_type(name="test.Type")
 
     assert test_type.name == "test.Type"
-    assert test_type.supertypeName == "uima.tcas.Annotation"
+    assert test_type.supertype.name == "uima.tcas.Annotation"
 
 
 def test_type_can_create_instances():
@@ -353,9 +355,30 @@ def test_is_aray():
         ("uima.cas.TOP", "uima.cas.TOP", True),
     ],
 )
-def test_subsumes(parent_name: str, child_name: str, expected: bool):
+def test_subsumes_deprecated(parent_name: str, child_name: str, expected: bool):
     ts = TypeSystem()
     assert ts.subsumes(parent_name, child_name) == expected
+
+
+@pytest.mark.parametrize(
+    "parent_name, child_name, expected",
+    [
+        ("uima.cas.ArrayBase", "uima.cas.ShortArray", True),
+        ("uima.cas.FSList", "uima.cas.ShortArray", False),
+        ("uima.cas.ListBase", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FSList", "uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FloatList", "uima.cas.NonEmptyIntegerList", False),
+        ("uima.cas.EmptyIntegerList", "uima.cas.IntegerList", False),
+        ("uima.cas.Sofa", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.Sofa", True),
+        ("uima.cas.TOP", "uima.cas.TOP", True),
+    ],
+)
+def test_subsumes(parent_name: str, child_name: str, expected: bool):
+    ts = TypeSystem()
+    parent_type = ts.get_type(parent_name)
+    child_type = ts.get_type(child_name)
+    assert parent_type.subsumes(child_type) == expected
 
 
 # Deserializing
@@ -390,7 +413,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert annotation type
     annotation_type = typesystem.get_type("uima.tcas.DocumentAnnotation")
     assert annotation_type.name == "uima.tcas.DocumentAnnotation"
-    assert annotation_type.supertypeName == "uima.tcas.Annotation"
+    assert annotation_type.supertype.name == "uima.tcas.Annotation"
 
     language_feature = annotation_type.get_feature("language")
     assert language_feature.name == "language"
@@ -399,7 +422,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert token type
     token_type = typesystem.get_type("cassis.Token")
     assert token_type.name == "cassis.Token"
-    assert token_type.supertypeName == "uima.tcas.Annotation"
+    assert token_type.supertype.name == "uima.tcas.Annotation"
 
     token_id_feature = token_type.get_feature("id")
     assert token_id_feature.name == "id"
@@ -413,7 +436,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert sentence type
     sentence_type = typesystem.get_type("cassis.Sentence")
     assert sentence_type.name == "cassis.Sentence"
-    assert sentence_type.supertypeName == "uima.tcas.Annotation"
+    assert sentence_type.supertype.name == "uima.tcas.Annotation"
 
     sentence_type_id_feature = sentence_type.get_feature("id")
     assert sentence_type_id_feature.name == "id"
@@ -565,13 +588,13 @@ def test_that_merging_types_with_different_compatible_supertypes_works():
     result = merge_typesystems(ts1, ts2)
     sub = result.get_type("test.Sub")
 
-    assert sub.supertypeName == "test.Super"
+    assert sub.supertype.name == "test.Super"
 
     # Also check the other order
     result = merge_typesystems(ts2, ts1)
     sub = result.get_type("test.Sub")
 
-    assert sub.supertypeName == "test.Super"
+    assert sub.supertype.name == "test.Super"
 
 
 def test_that_merging_types_with_different_incompatible_supertypes_throws():

@@ -272,7 +272,7 @@ class CasJsonSerializer:
 
     def _serialize_type(self, type_: Type):
         type_name = self._to_external_type_name(type_.name)
-        supertype_name = self._to_external_type_name(type_.supertypeName)
+        supertype_name = self._to_external_type_name(type_.supertype.name)
 
         json_type = {
             NAME_FIELD: type_name,
@@ -310,27 +310,27 @@ class CasJsonSerializer:
         return json_feature
 
     def _serialize_feature_structure(self, cas, fs) -> dict:
+        ts = cas.typesystem
+        type_name = fs.type.name
+
         json_fs = OrderedDict()
         json_fs[ID_FIELD] = fs.xmiID
-        json_fs[TYPE_FIELD] = fs.type
+        json_fs[TYPE_FIELD] = type_name
 
-        ts = cas.typesystem
-        t = ts.get_type(fs.type)
-
-        if t.name == TYPE_NAME_BYTE_ARRAY:
+        if type_name == TYPE_NAME_BYTE_ARRAY:
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
             return json_fs
-        elif ts.is_primitive_array(t.name):
+        elif ts.is_primitive_array(type_name):
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = fs.elements
             return json_fs
-        elif TYPE_NAME_FS_ARRAY == t.name:
+        elif TYPE_NAME_FS_ARRAY == type_name:
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = [self._serialize_ref(e) for e in fs.elements]
             return json_fs
 
-        for feature in t.all_features:
+        for feature in fs.type.all_features:
             if feature.name in CasJsonSerializer._COMMON_FIELD_NAMES:
                 continue
 

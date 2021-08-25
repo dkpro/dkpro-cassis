@@ -424,7 +424,7 @@ class Cas:
     # FS handling
 
     def _get_feature_structures(self, type_name) -> List[FeatureStructure]:
-        """ Returns a list of all feature structures of type `type_name` and child types. """
+        """Returns a list of all feature structures of type `type_name` and child types."""
         t = self._typesystem.get_type(type_name)
         types = {c.name for c in t.descendants}
 

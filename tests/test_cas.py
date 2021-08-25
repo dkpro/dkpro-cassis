@@ -4,6 +4,7 @@ import attr
 import pytest
 
 from cassis.cas import Cas
+from cassis.typesystem import TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_INTEGER
 from tests.fixtures import *
 
 # Cas
@@ -462,8 +463,8 @@ def test_scanning_for_transitively_referenced_integer_array():
     typesystem.create_feature(
         Foo,
         "ref",
-        rangeTypeName="uima.cas.IntegerArray",
-        elementType="uima.cas.Integer",
+        rangeType=typesystem.get_type(TYPE_NAME_INTEGER_ARRAY),
+        elementType=typesystem.get_type(TYPE_NAME_INTEGER),
         multipleReferencesAllowed=True,
     )
 
@@ -472,7 +473,7 @@ def test_scanning_for_transitively_referenced_integer_array():
     foo = Foo()
     cas.add(foo)
 
-    IntegerArray = typesystem.get_type("uima.cas.IntegerArray")
+    IntegerArray = typesystem.get_type(TYPE_NAME_INTEGER_ARRAY)
     int_array = IntegerArray()
     int_array.elements = [1, 2, 3]
     foo.ref = int_array

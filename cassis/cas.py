@@ -640,7 +640,7 @@ class Cas:
                 if feature_name == "sofa":
                     continue
 
-                if ts.is_primitive(feature.rangeTypeName):
+                if ts.is_primitive(feature.rangeType):
                     continue
 
                 feature_value = getattr(fs, feature_name)
@@ -650,10 +650,10 @@ class Cas:
                 if (
                     not include_inlinable_arrays
                     and not feature.multipleReferencesAllowed
-                    and ts.is_array(feature.rangeTypeName)
+                    and ts.is_array(feature.rangeType)
                 ):
                     # For inlined FSArrays, we still need to scan their members
-                    if feature.rangeTypeName == "uima.cas.FSArray" and feature_value.elements:
+                    if feature.rangeType.name == "uima.cas.FSArray" and feature_value.elements:
                         for ref in feature_value.elements:
                             if not ref or ref.xmiID in all_fs:
                                 continue
@@ -662,7 +662,7 @@ class Cas:
 
                 if not hasattr(feature_value, "xmiID"):
                     raise AttributeError(
-                        f"Feature [{feature_name}] should point to a [{feature.rangeTypeName}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
+                        f"Feature [{feature_name}] should point to a [{feature.rangeType.name}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
                     )
 
                 if feature_value.xmiID in all_fs:

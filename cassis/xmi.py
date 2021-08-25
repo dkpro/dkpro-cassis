@@ -478,9 +478,15 @@ class CasXmiSerializer:
                 for e in value.elements:
                     child = etree.SubElement(elem, feature_name)
                     child.text = e
-            elif ts.is_primitive_array(feature.rangeTypeName) and not feature.multipleReferencesAllowed and value.elements:
+            elif (
+                ts.is_primitive_array(feature.rangeTypeName)
+                and not feature.multipleReferencesAllowed
+                and value.elements
+            ):
                 elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeTypeName, value.elements)
-            elif feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements:
+            elif (
+                feature.rangeTypeName == "uima.cas.FSArray" and not feature.multipleReferencesAllowed and value.elements
+            ):
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == "sofa":
                 elem.attrib[feature_name] = str(value.xmiID)

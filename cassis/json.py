@@ -363,9 +363,11 @@ class CasJsonSerializer:
 
         return fs.xmiID
 
-
     def _serialize_view(self, view: View):
-        return {VIEW_SOFA_FIELD: view.sofa.xmiID, VIEW_MEMBERS_FIELD: sorted(x.xmiID for x in view.get_all_annotations())}
+        return {
+            VIEW_SOFA_FIELD: view.sofa.xmiID,
+            VIEW_MEMBERS_FIELD: sorted(x.xmiID for x in view.get_all_annotations()),
+        }
 
     def _to_external_type_name(self, type_name: str):
         if type_name.startswith("uima.noNamespace."):

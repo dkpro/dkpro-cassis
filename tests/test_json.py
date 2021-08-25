@@ -1,6 +1,5 @@
 import json
 
-from cassis.cas import NAME_DEFAULT_SOFA
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal

@@ -418,6 +418,7 @@ class Type:
     _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
     _constructor_fn = attr.ib(init=False, eq=False, order=False, repr=False)
     _constructor = attr.ib(default=None, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _cached_all_features = attr.ib(default=None, eq=False, order=False, repr=False)
 
     def __attrs_post_init__(self):
         """Build the constructor that can create feature structures of this type"""
@@ -469,6 +470,7 @@ class Type:
             inherited: Indicates whether this feature is inherited from a parent or not
 
         """
+        self._cached_all_features = None
         target = self._features if not inherited else self._inherited_features
 
         # Check that feature is not defined in on current type
@@ -526,8 +528,11 @@ class Type:
 
         """
 
-        # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
-        return unique_everseen(chain(self._features.values(), self._inherited_features.values()))
+        if self._cached_all_features is None:
+            # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
+            self._cached_all_features = list(unique_everseen(chain(self._features.values(), self._inherited_features.values())))
+
+        return self._cached_all_features
 
     @property
     def children(self) -> Iterator["Type"]:

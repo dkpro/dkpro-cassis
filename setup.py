@@ -20,29 +20,27 @@ AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.6.0"
 
 install_requires = [
-    "lxml>=4.5.0",
-    "attrs>=19.3.0",
-    "sortedcontainers>=2.1.0",
-    "toposort>=1.5",
-    "more-itertools>=8.2.0",
-    "deprecation>=2.0.7",
-    "importlib_resources>=1.0.2"
+    "lxml==4.6.*",
+    "attrs==21.2.*",
+    "sortedcontainers==2.4.*",
+    "toposort==1.6",
+    "more-itertools==8.8.*",
+    "deprecation==2.1.*",
+    "importlib_resources==5.2.*"
 ]
 
 test_dependencies = [
-    "tox",
-    "pytest>=5.2.1",
-    "lxml-asserts",
-    "pytest-lazy-fixture",
-    "codecov",
-    "pytest-cov",
+    "tox==3.24.*",
+    "pytest>=6.2.4",
+    "lxml-asserts==0.1.*",
+    "pytest-lazy-fixture==0.6.*",
+    "codecov==2.1.*",
+    "pytest-cov==2.12.*",
 ]
 
 dev_dependencies = [
-    "black",
-    "twine",
-    "pygments",
-    "isort"
+    "black==21.7b0",
+    "isort=~5.9.*"
 ]
 
 doc_dependencies = [
@@ -52,9 +50,9 @@ doc_dependencies = [
 ]
 
 extras = {
-    "test" : test_dependencies,
-    "dev": dev_dependencies,
-    "doc": doc_dependencies
+    "test": test_dependencies,
+    "dev":  dev_dependencies,
+    "doc":  doc_dependencies
 }
 
 # The rest you shouldn"t have to touch too much :)

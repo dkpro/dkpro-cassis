@@ -297,7 +297,7 @@ class FeatureStructure:
                 return None
             if self.sofa.sofaString is None:
                 return None
-            return self.sofa.sofaString[self.begin: self.end]
+            return self.sofa.sofaString[self.begin : self.end]
         else:
             raise NotImplementedError()
 
@@ -780,8 +780,8 @@ class TypeSystem:
         Returns:
             True if `parent` subsumes `child` else False
         """
-        parent_type = self.get_type(parent) if isinstance(parent, str) else parent.name
-        child_type = self.get_type(child) if isinstance(child, str) else child.name
+        parent_type = self.get_type(parent) if isinstance(parent, str) else parent
+        child_type = self.get_type(child) if isinstance(child, str) else child
         return parent_type.subsumes(child_type)
 
     def create_feature(

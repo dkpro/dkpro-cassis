@@ -4,7 +4,13 @@ import attr
 import pytest
 
 from cassis.cas import Cas
-from cassis.typesystem import TYPE_NAME_INTEGER, TYPE_NAME_INTEGER_ARRAY
+from cassis.typesystem import (
+    TYPE_NAME_ANNOTATION,
+    TYPE_NAME_INTEGER,
+    TYPE_NAME_INTEGER_ARRAY,
+    TYPE_NAME_TOP,
+    AnnotationHasNoSofa,
+)
 from tests.fixtures import *
 
 # Cas
@@ -481,3 +487,21 @@ def test_scanning_for_transitively_referenced_integer_array():
     all_fs = list(cas._find_all_fs())
 
     assert int_array in all_fs
+
+
+def test_covered_text_on_non_annotation():
+    cas = Cas()
+    Top = cas.typesystem.get_type(TYPE_NAME_TOP)
+    top = Top()
+    cas.add(top)
+    with pytest.raises(NotImplementedError):
+        top.get_covered_text()
+
+
+def test_covered_text_on_annotation_without_sofa():
+    cas = Cas()
+    Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
+    ann = Annotation()
+
+    with pytest.raises(AnnotationHasNoSofa):
+        ann.get_covered_text()

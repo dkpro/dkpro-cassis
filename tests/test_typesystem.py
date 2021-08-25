@@ -320,6 +320,7 @@ def test_is_primitive_collection(type_name: str, expected: bool):
 @pytest.mark.parametrize(
     "type_name, expected",
     [
+        ("uima.cas.TOP", False),
         ("uima.cas.ArrayBase", False),
         ("uima.cas.FSArray", False),
         ("uima.cas.FloatArray", True),
@@ -755,7 +756,14 @@ def test_bad_feature_path(small_typesystem_xml):
 def test_cannot_extend_final_type():
     cas = Cas()
 
-    for type in cas.typesystem.get_types():
-        if type.name.endswith("Array"):
+    for type_ in cas.typesystem.get_types():
+        if type_.name.endswith("Array"):
             with pytest.raises(ValueError):
                 cas.typesystem.create_type("ArraySubType", "uima.cas.IntegerArray")
+
+
+def test_create_same_type_twice_fails():
+    typesystem = TypeSystem()
+    typesystem.create_type("my.Type")
+    with pytest.raises(ValueError):
+        typesystem.create_type("my.Type")

@@ -3,7 +3,7 @@ from pathlib import Path
 from lxml import etree
 
 from cassis import *
-from cassis.typesystem import TypeNotFoundError
+from cassis.typesystem import TypeNotFoundError, TYPE_NAME_SOFA
 from tests.fixtures import *
 from tests.util import assert_xml_equal
 
@@ -55,6 +55,7 @@ def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
 
     expected_sofas = [
         Sofa(
+            type=typesystem.get_type(TYPE_NAME_SOFA),
             xmiID=15,
             sofaNum=1,
             sofaID="_InitialView",

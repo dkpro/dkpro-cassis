@@ -9,7 +9,7 @@ import deprecation
 from attr import validators
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem
+from cassis.typesystem import FeatureStructure, TypeCheckError, TypeSystem, TYPE_NAME_SOFA
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -76,6 +76,9 @@ class OffsetConverter:
 @attr.s(slots=True)
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
+
+    #: "Type": The type
+    type = attr.ib()
 
     #: int: The sofaNum
     sofaNum = attr.ib(validator=validators.instance_of(int))
@@ -227,7 +230,7 @@ class Cas:
             sofaNum = self._get_next_sofa_num()
 
         # Create sofa
-        sofa = Sofa(xmiID=xmiID, sofaNum=sofaNum, sofaID=name)
+        sofa = Sofa(xmiID=xmiID, sofaNum=sofaNum, sofaID=name, type=self.typesystem.get_type(TYPE_NAME_SOFA))
 
         # Create view
         view = View(sofa=sofa)

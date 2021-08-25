@@ -604,9 +604,7 @@ class Cas:
         """
         # If `path` is None, then serialize to a string and return it
         if path is None:
-            sink = BytesIO()
-            serializer.serialize(sink, self, pretty_print=pretty_print)
-            return sink.getvalue().decode("utf-8")
+            return serializer.serialize(None, self, pretty_print=pretty_print)
         elif isinstance(path, str):
             with open(path, "wb") as f:
                 serializer.serialize(f, self, pretty_print=pretty_print)

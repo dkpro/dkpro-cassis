@@ -234,7 +234,7 @@ class CasJsonSerializer:
     def __init__(self):
         pass
 
-    def serialize(self, sink: Union[IO, str], cas: Cas, pretty_print=True):
+    def serialize(self, sink: Union[IO, str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
         data = {}
         types = data[TYPES_FIELD] = {}
         views = data[VIEWS_FIELD] = {}
@@ -265,10 +265,12 @@ class CasJsonSerializer:
         if sink:
             json.dump(data, sink, sort_keys=False, indent=2 if pretty_print else None)
         else:
-            json.dumps(data, sort_keys=False, indent=2 if pretty_print else None)
+            return json.dumps(data, sort_keys=False, indent=2 if pretty_print else None)
 
         if isinstance(sink, TextIOWrapper):
             sink.detach()  # Prevent TextIOWrapper from closing the BytesIO
+
+        return None
 
     def _serialize_type(self, type_: Type):
         type_name = self._to_external_type_name(type_.name)

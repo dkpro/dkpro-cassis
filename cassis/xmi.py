@@ -363,7 +363,7 @@ class CasXmiSerializer:
         self._urls_to_prefixes = {}
         self._duplicate_namespaces = defaultdict(int)
 
-    def serialize(self, sink: Union[IO, str], cas: Cas, pretty_print=True):
+    def serialize(self, sink: Union[IO, str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
         xmi_attrs = {"{http://www.omg.org/XMI}version": "2.0"}
 
         root = etree.Element(etree.QName(self._nsmap["xmi"], "XMI"), nsmap=self._nsmap, **xmi_attrs)
@@ -383,7 +383,16 @@ class CasXmiSerializer:
         doc = etree.ElementTree(root)
         etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
 
+        return_str = sink is None
+        if return_str:
+            sink = BytesIO()
+
         doc.write(sink, xml_declaration=True, pretty_print=pretty_print, encoding="UTF-8")
+
+        if return_str:
+            return sink.getvalue().decode("utf-8")
+
+        return None
 
     def _serialize_cas_null(self, root: etree.Element):
         name = etree.QName(self._nsmap["cas"], "NULL")

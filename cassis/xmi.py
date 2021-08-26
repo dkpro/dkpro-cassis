@@ -187,11 +187,10 @@ class CasXmiDeserializer:
 
             for feature in t.all_features:
                 feature_name = feature.name
-                value = getattr(fs, feature_name)
+                value = fs[feature_name]
 
                 if feature_name == "sofa":
-                    sofa = sofas[value]
-                    setattr(fs, feature_name, sofa)
+                    fs[feature_name] = sofas[value]
                     continue
 
                 if typesystem.is_instance_of(fs.type.name, TYPE_NAME_STRING_ARRAY):
@@ -199,12 +198,11 @@ class CasXmiDeserializer:
                     # before, so we do not need to work more on this
                     continue
                 elif typesystem.is_primitive(feature.rangeType):
-                    setattr(fs, feature_name, self._parse_primitive_value(feature.rangeType, value))
+                    fs[feature_name] = self._parse_primitive_value(feature.rangeType, value)
                     continue
                 elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
                     # Separately rendered arrays (typically used with multipleReferencesAllowed = True)
-                    elements = self._parse_primitive_array(fs.type, value)
-                    setattr(fs, feature_name, elements)
+                    fs[feature_name] = self._parse_primitive_array(fs.type, value)
                 elif typesystem.is_primitive_array(feature.rangeType):
                     # Array feature rendered inline (multipleReferencesAllowed = False|None)
                     # We also end up here for array features that were rendered as child elements. No need to parse
@@ -212,8 +210,7 @@ class CasXmiDeserializer:
                     # process it
                     if isinstance(value, str):
                         FSType = feature.rangeType
-                        elements = FSType(elements=self._parse_primitive_array(feature.rangeType, value))
-                        setattr(fs, feature_name, elements)
+                        fs[feature_name] = FSType(elements=self._parse_primitive_array(feature.rangeType, value))
                 else:
                     # Resolve references here
                     if value is None:
@@ -233,12 +230,11 @@ class CasXmiDeserializer:
                             # Wrap inline array into the appropriate array object
                             ArrayType = typesystem.get_type(TYPE_NAME_FS_ARRAY)
                             targets = ArrayType(elements=targets)
-                        setattr(fs, feature_name, targets)
+                        fs[feature_name] = targets
                     else:
                         target_id = int(value)
-                        target = feature_structures[target_id]
+                        fs[feature_name] = feature_structures[target_id]
                         referenced_fs.add(target_id)
-                        setattr(fs, feature_name, target)
 
         cas = Cas(typesystem=typesystem, lenient=lenient)
         for sofa in sofas.values():
@@ -501,7 +497,7 @@ class CasXmiSerializer:
                 feature_name = feature.name[:-1]
 
             # Skip over 'None' features
-            value = getattr(fs, feature.name)
+            value = fs[feature.name]
             if value is None:
                 continue
 
@@ -511,7 +507,7 @@ class CasXmiSerializer:
                 and feature_name == FEATURE_BASE_NAME_BEGIN
                 or feature_name == FEATURE_BASE_NAME_END
             ):
-                sofa: Sofa = getattr(fs, FEATURE_BASE_NAME_SOFA)
+                sofa: Sofa = fs.sofa
                 value = sofa._offset_converter.cassis_to_uima(value)
 
             if (

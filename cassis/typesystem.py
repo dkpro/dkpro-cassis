@@ -460,7 +460,12 @@ class Type:
         Returns:
             The feature with name `name` or `None` if it does not exist.
         """
-        return self._features.get(name, None)
+        if name in self._features:
+            return self._features[name]
+        elif name in self._inherited_features:
+            return self._inherited_features[name]
+        else:
+            return None
 
     def add_feature(self, feature: Feature, inherited: bool = False):
         """Add the given feature to his type.
@@ -470,6 +475,8 @@ class Type:
             inherited: Indicates whether this feature is inherited from a parent or not
 
         """
+        # Clear the feature cache when adding a new feature. Note that this method is also called by supertypes when
+        # a feature is added to them so that the subtypes receive the new feature as an inherited feature.
         self._cached_all_features = None
         target = self._features if not inherited else self._inherited_features
 
@@ -528,9 +535,14 @@ class Type:
 
         """
 
+        # In particular during (de)serialization, this method is called often and it should be fast. Thus we cache
+        # the vetted list of all features instead of recalculating it every time, in particular since the type system
+        # should be mostly static after the initial setup
         if self._cached_all_features is None:
             # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
-            self._cached_all_features = list(unique_everseen(chain(self._features.values(), self._inherited_features.values())))
+            self._cached_all_features = list(
+                unique_everseen(chain(self._features.values(), self._inherited_features.values()))
+            )
 
         return self._cached_all_features
 

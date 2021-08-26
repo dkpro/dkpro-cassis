@@ -32,12 +32,12 @@ TYPESYSTEM_FIXTURES = [
 # Feature
 
 
-def test_feature_can_be_added():
+def test_feature_can_be_created():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
     typesystem.create_feature(
-        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+        domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
     )
 
     actual_type = typesystem.get_type("test.Type")
@@ -45,21 +45,22 @@ def test_feature_can_be_added():
 
     actual_feature = actual_type.get_feature("testFeature")
     assert actual_feature.name == "testFeature"
+    assert actual_feature.domainType.name == test_type.name
     assert actual_feature.rangeType.name == TYPE_NAME_STRING
     assert actual_feature.description == "A test feature"
 
 
-def test_feature_adding_warns_if_redefined_identically():
+def test_feature_creation_warns_if_redefined_identically():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
 
     typesystem.create_feature(
-        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+        domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
     )
     with pytest.warns(UserWarning):
         typesystem.create_feature(
-            type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+            domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
         )
 
 
@@ -68,12 +69,12 @@ def test_feature_adding_throws_if_redefined_differently():
 
     test_type = typesystem.create_type(name="test.Type")
     typesystem.create_feature(
-        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+        domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
     )
 
     with pytest.raises(ValueError):
         typesystem.create_feature(
-            type_=test_type, name="testFeature", rangeType=TYPE_NAME_BOOLEAN, description="A test feature"
+            domainType=test_type, name="testFeature", rangeType=TYPE_NAME_BOOLEAN, description="A test feature"
         )
 
 
@@ -81,7 +82,7 @@ def test_get_feature_own():
     typesystem = TypeSystem()
 
     test_type = typesystem.create_type(name="test.Type")
-    feature = typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+    feature = typesystem.create_feature(domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING)
 
     assert test_type.get_feature("testFeature") == feature
 
@@ -90,7 +91,7 @@ def test_get_feature_inherited():
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name="test.ParentType")
-    parent_feature = typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
+    parent_feature = typesystem.create_feature(domainType=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
 
@@ -105,9 +106,8 @@ def test_type_can_get_all_features():
     expected_features = [test_type.get_feature("begin"), test_type.get_feature("end"), test_type.get_feature("sofa")]
 
     for feature_name in ["a", "b", "c", "d"]:
-        feature = Feature(f"test_feature_{feature_name}", rangeType=TYPE_NAME_STRING)
+        feature = typesystem.create_feature(test_type, f"test_feature_{feature_name}", rangeType=TYPE_NAME_STRING)
         expected_features.append(feature)
-        test_type.add_feature(feature)
 
     actual_all_features = test_type.all_features
 
@@ -124,11 +124,11 @@ def test_type_can_get_all_features_with_in_between_added_features():
     parent_type = typesystem.create_type(name="test.ParentType", supertypeName=TYPE_NAME_TOP)
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
-    child_feature = typesystem.create_feature(type_=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
+    child_feature = typesystem.create_feature(domainType=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
 
     assert child_type.all_features == [child_feature]
 
-    parent_feature = typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
+    parent_feature = typesystem.create_feature(domainType=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
 
     assert child_type.all_features == [child_feature, parent_feature]
 
@@ -149,7 +149,7 @@ def test_type_can_create_instances():
     typesystem = TypeSystem()
     test_type = typesystem.create_type(name="test.Type")
     typesystem.create_feature(
-        type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
+        domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
     )
 
     annotation = test_type(begin=0, end=42, testFeature="testValue")
@@ -163,10 +163,10 @@ def test_type_can_create_instance_with_inherited_fields():
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name="test.ParentType")
-    typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
+    typesystem.create_feature(domainType=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
 
     child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
-    typesystem.create_feature(type_=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
+    typesystem.create_feature(domainType=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
 
     annotation = child_type(parentFeature="parent", childFeature="child")
 
@@ -327,8 +327,7 @@ def test_is_primitive_when_parent_is_primitive():
 def test_is_collection(type_name: str, feature_name: str, expected: bool):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)
-    feature = Feature("test_feature", rangeType=typesystem.get_type(feature_name))
-    t.add_feature(feature)
+    feature = typesystem.create_feature(t, "test_feature", rangeType=typesystem.get_type(feature_name))
 
     assert typesystem.is_collection(type_name, feature) == expected
 
@@ -337,7 +336,7 @@ def test_is_collection(type_name: str, feature_name: str, expected: bool):
 def test_is_collection_for_builtin_collections_with_elements(type_name: str):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)
-    feature = Feature("elements", rangeType=typesystem.get_type(TYPE_NAME_TOP))
+    feature = typesystem.create_feature(t, "elements", rangeType=typesystem.get_type(TYPE_NAME_TOP))
 
     assert typesystem.is_collection(type_name, feature) is True
 
@@ -608,7 +607,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
     ts.create_feature(
-        type_=t,
+        domainType=t,
         name=name,
         rangeType=rangeTypeName,
         elementType=elementType,
@@ -641,7 +640,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
     ts = TypeSystem()
     t = ts.create_type("test.ArraysAndListsWithElementTypes", supertypeName="uima.cas.TOP")
     ts.create_feature(
-        type_=t,
+        domainType=t,
         name=name,
         rangeType=rangeTypeName,
         elementType=elementType,
@@ -704,9 +703,9 @@ def test_typchecking_fs_array():
     MyCollection = cas.typesystem.create_type("test.MyCollection", supertypeName="uima.cas.TOP")
     FSArray = cas.typesystem.get_type("uima.cas.FSArray")
 
-    cas.typesystem.create_feature(type_=MyValue, name="value", rangeType="uima.cas.String")
+    cas.typesystem.create_feature(domainType=MyValue, name="value", rangeType="uima.cas.String")
     cas.typesystem.create_feature(
-        type_=MyCollection, name="members", rangeType="uima.cas.FSArray", elementType="test.MyValue"
+        domainType=MyCollection, name="members", rangeType="uima.cas.FSArray", elementType="test.MyValue"
     )
 
     members = FSArray(elements=[MyValue(value="foo"), MyValue(value="bar"), MyOtherValue()])

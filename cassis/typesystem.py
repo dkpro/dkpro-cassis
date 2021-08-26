@@ -364,6 +364,7 @@ class Feature:
     """A feature defines one attribute of a feature structure"""
 
     name = attr.ib()  # type: str
+    domainType = attr.ib()  # type: "Type"
     rangeType = attr.ib()  # type: "Type"
     description = attr.ib(default=None)  # type: str
     elementType = attr.ib(default=None)  # type: "Type"
@@ -373,6 +374,7 @@ class Feature:
     def __eq__(self, other):
         if not isinstance(other, Feature):
             return False
+
         if self.name != other.name or self.description != other.description:
             return False
 
@@ -467,7 +469,7 @@ class Type:
         else:
             return None
 
-    def add_feature(self, feature: Feature, inherited: bool = False):
+    def _add_feature(self, feature: Feature, inherited: bool = False):
         """Add the given feature to his type.
 
         Args:
@@ -512,7 +514,7 @@ class Type:
         self.__attrs_post_init__()
 
         for child_type in self._children.values():
-            child_type.add_feature(feature, inherited=True)
+            child_type._add_feature(feature, inherited=True)
 
     @property
     def features(self) -> Iterator[Feature]:
@@ -711,7 +713,7 @@ class TypeSystem:
             supertype._children[name] = new_type
 
             for feature in supertype.all_features:
-                new_type.add_feature(feature, inherited=True)
+                new_type._add_feature(feature, inherited=True)
 
         self._types[name] = new_type
         return new_type
@@ -827,7 +829,7 @@ class TypeSystem:
 
     def create_feature(
         self,
-        type_: Type,
+        domainType: Union[Type, str],
         name: str,
         rangeType: Union[Type, str],
         elementType: Union[Type, str] = None,
@@ -837,9 +839,9 @@ class TypeSystem:
         """Adds a feature to the given type.
 
         Args:
-            type_: The type to which the feature will be added
+            domainType: The type to which the feature will be added
             name: The name of the new feature
-            rangeTypeName: The feature's rangeTypeName specifies the type of value that the feature can take.
+            rangeType: The feature's rangeTypeName specifies the type of value that the feature can take.
             elementType: The elementType of a feature is optional, and applies only when the rangeTypeName
                 is uima.cas.FSArray or uima.cas.FSList The elementType specifies what type of value can be
                 assigned as an element of the array or list.
@@ -860,8 +862,11 @@ class TypeSystem:
             has_reserved_name = True
             warnings.warn(msg)
 
+        resolved_domain_type = self.get_type(domainType) if isinstance(domainType, str) else domainType
+
         feature = Feature(
             name=name,
+            domainType=resolved_domain_type,
             rangeType=self.get_type(rangeType) if isinstance(rangeType, str) else rangeType,
             elementType=self.get_type(elementType) if isinstance(elementType, str) else elementType,
             description=description,
@@ -869,7 +874,7 @@ class TypeSystem:
             has_reserved_name=has_reserved_name,
         )
 
-        type_.add_feature(feature)
+        resolved_domain_type._add_feature(feature)
 
         return feature
 
@@ -1029,6 +1034,7 @@ class TypeSystemDeserializer:
                 elementType = self._get_elem_as_str(fd.find("{*}elementType"))
 
                 f = Feature(
+                    domainType=type_name,     # value should actually be a Type, but we still need to load these
                     name=feature_name,
                     rangeType=rangeTypeName,  # value should actually be a Type, but we still need to load these
                     description=description,
@@ -1050,10 +1056,10 @@ class TypeSystemDeserializer:
         # it, we add the standard DocumentAnnotation type. In case it is already defined, we add it to
         # the list of redefined predefined types so that is written back on serialization.
         if _DOCUMENT_ANNOTATION_TYPE not in types:
-            t = Type(name=_DOCUMENT_ANNOTATION_TYPE, supertype=ts.get_type("uima.tcas.Annotation"))
-            features[t.name].append(Feature(name="language", rangeType="uima.cas.String"))
+            t = Type(name=_DOCUMENT_ANNOTATION_TYPE, supertype=ts.get_type(TYPE_NAME_ANNOTATION))
+            features[t.name].append(Feature(domainType=t, name="language", rangeType=TYPE_NAME_STRING))
             types[t.name] = t
-            type_dependencies[t.name].add("uima.tcas.Annotation")
+            type_dependencies[t.name].add(TYPE_NAME_ANNOTATION)
         else:
             ts._defines_predefined_type(_DOCUMENT_ANNOTATION_TYPE)
 
@@ -1068,15 +1074,17 @@ class TypeSystemDeserializer:
 
             t.supertype = supertype
 
+        def resolve_type(type_: Union[str, Type]):
+            if isinstance(type_, str):
+                return ts.get_type(type_) if type_ in _PREDEFINED_TYPES else types[type_]
+            return type_
+
         # Fill in actual types into the features
         for fl in features.values():
             for f in fl:
-                if isinstance(f.rangeType, str):
-                    f.rangeType = ts.get_type(f.rangeType) if f.rangeType in _PREDEFINED_TYPES else types[f.rangeType]
-                if isinstance(f.elementType, str):
-                    f.elementType = (
-                        ts.get_type(f.elementType) if f.elementType in _PREDEFINED_TYPES else types[f.elementType]
-                    )
+                f.domainType = resolve_type(f.domainType)
+                f.rangeType = resolve_type(f.rangeType)
+                f.elementType = resolve_type(f.elementType)
 
         # Some CAS handling libraries add predefined types to the typesystem XML.
         # Here we check that the redefinition of predefined types adheres to the definition in UIMA
@@ -1258,7 +1266,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                 )
 
                 for feature in t.features:
-                    created_type.add_feature(feature)
+                    created_type._add_feature(feature)
             else:
                 # Type is already defined
                 existing_type = merged_ts.get_type(t.name)
@@ -1282,7 +1290,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
 
                 # If the type is already defined, merge features
                 for feature in t.features:
-                    existing_type.add_feature(feature)
+                    existing_type._add_feature(feature)
 
             merged_types.add(t.name)
             updated_type_list.remove(t)

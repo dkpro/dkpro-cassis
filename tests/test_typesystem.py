@@ -77,6 +77,62 @@ def test_feature_adding_throws_if_redefined_differently():
         )
 
 
+def test_get_feature_own():
+    typesystem = TypeSystem()
+
+    test_type = typesystem.create_type(name="test.Type")
+    feature = typesystem.create_feature(type_=test_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+
+    assert test_type.get_feature("testFeature") == feature
+
+
+def test_get_feature_inherited():
+    typesystem = TypeSystem()
+
+    parent_type = typesystem.create_type(name="test.ParentType")
+    parent_feature = typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
+
+    child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
+
+    assert parent_type.get_feature("parentFeature") == parent_feature
+    assert child_type.get_feature("parentFeature") == parent_feature
+
+
+def test_type_can_get_all_features():
+    typesystem = TypeSystem()
+    test_type = typesystem.create_type(name="test.Type")
+
+    expected_features = [test_type.get_feature("begin"), test_type.get_feature("end"), test_type.get_feature("sofa")]
+
+    for feature_name in ["a", "b", "c", "d"]:
+        feature = Feature(f"test_feature_{feature_name}", rangeType=TYPE_NAME_STRING)
+        expected_features.append(feature)
+        test_type.add_feature(feature)
+
+    actual_all_features = test_type.all_features
+
+    actual_all_features.sort()
+    expected_features.sort()
+
+    assert actual_all_features == expected_features
+
+
+def test_type_can_get_all_features_with_in_between_added_features():
+    typesystem = TypeSystem()
+    typesystem = TypeSystem()
+
+    parent_type = typesystem.create_type(name="test.ParentType", supertypeName=TYPE_NAME_TOP)
+
+    child_type = typesystem.create_type(name="test.ChildType", supertypeName=parent_type.name)
+    child_feature = typesystem.create_feature(type_=child_type, name="childFeature", rangeType=TYPE_NAME_INTEGER)
+
+    assert child_type.all_features == [child_feature]
+
+    parent_feature = typesystem.create_feature(type_=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
+
+    assert child_type.all_features == [child_feature, parent_feature]
+
+
 # Type
 
 
@@ -166,6 +222,9 @@ def test_type_inherits_from_annotation():
     assert annotation.begin == 0
     assert annotation.end == 42
     assert annotation.sofa == 1337
+
+
+# Type checking
 
 
 @pytest.mark.parametrize(
@@ -352,7 +411,7 @@ def test_is_primitive_collection(type_name: str, expected: bool):
     assert typesystem.is_primitive_array(type_name) == expected
 
 
-def test_is_aray():
+def test_is_array():
     cas = Cas()
 
     for type in cas.typesystem.get_types():

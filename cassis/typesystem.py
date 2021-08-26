@@ -1034,7 +1034,7 @@ class TypeSystemDeserializer:
                 elementType = self._get_elem_as_str(fd.find("{*}elementType"))
 
                 f = Feature(
-                    domainType=type_name,     # value should actually be a Type, but we still need to load these
+                    domainType=type_name,  # value should actually be a Type, but we still need to load these
                     name=feature_name,
                     rangeType=rangeTypeName,  # value should actually be a Type, but we still need to load these
                     description=description,

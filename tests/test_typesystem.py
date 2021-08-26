@@ -55,13 +55,49 @@ def test_feature_creation_warns_if_redefined_identically():
 
     test_type = typesystem.create_type(name="test.Type")
 
-    typesystem.create_feature(
+    feature1 = typesystem.create_feature(
         domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
     )
+
     with pytest.warns(UserWarning):
-        typesystem.create_feature(
+        feature2 = typesystem.create_feature(
             domainType=test_type, name="testFeature", rangeType=TYPE_NAME_STRING, description="A test feature"
         )
+
+    assert feature1.domainType.name == test_type.name
+    assert feature2.domainType.name == test_type.name
+
+
+def test_feature_domain_when_feature_redefined_in_child():
+    typesystem = TypeSystem()
+
+    parent_type = typesystem.create_type(name="test.Parent")
+    child_type = typesystem.create_type(name="test.Child", supertypeName="test.Parent")
+
+    feature_parent = typesystem.create_feature(domainType=parent_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+
+    assert feature_parent.domainType.name == parent_type.name
+
+    feature_child = typesystem.create_feature(domainType=child_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+
+    assert feature_parent.domainType.name == parent_type.name
+    assert feature_child.domainType.name == child_type.name
+
+
+def test_feature_domain_when_feature_added_to_parent_retroactively():
+    typesystem = TypeSystem()
+
+    parent_type = typesystem.create_type(name="test.Parent")
+    child_type = typesystem.create_type(name="test.Child", supertypeName="test.Parent")
+
+    feature_child = typesystem.create_feature(domainType=child_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+
+    assert feature_child.domainType.name == child_type.name
+
+    feature_parent = typesystem.create_feature(domainType=parent_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+
+    assert feature_parent.domainType.name == parent_type.name
+    assert feature_child.domainType.name == child_type.name
 
 
 def test_feature_adding_throws_if_redefined_differently():

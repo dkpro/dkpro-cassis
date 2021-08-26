@@ -475,6 +475,8 @@ class Type:
             inherited: Indicates whether this feature is inherited from a parent or not
 
         """
+        # Clear the feature cache when adding a new feature. Note that this method is also called by supertypes when
+        # a feature is added to them so that the subtypes receive the new feature as an inherited feature.
         self._cached_all_features = None
         target = self._features if not inherited else self._inherited_features
 
@@ -533,6 +535,9 @@ class Type:
 
         """
 
+        # In particular during (de)serialization, this method is called often and it should be fast. Thus we cache
+        # the vetted list of all features instead of recalculating it every time, in particular since the type system
+        # should be mostly static after the initial setup
         if self._cached_all_features is None:
             # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
             self._cached_all_features = list(

@@ -3,3 +3,5 @@ source=cassis
 omit=
     setup.py
     cassis/__init__.py
+    tests/*
+    docs/*

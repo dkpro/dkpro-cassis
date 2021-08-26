@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from random import Random
 
 from cassis import Cas, TypeSystem
@@ -10,18 +10,18 @@ class StringArrayMode(Enum):
     Instead of generating an empty string, generate a {@code null} value (mainly for XCAS).
     """
 
-    EMPTY_STRINGS_AS_NULL = 1
+    EMPTY_STRINGS_AS_NULL = auto()
 
     """
     Instead of generating a {@code null} value, generate an empty string (mainly for XMI).
     """
-    NULL_STRINGS_AS_EMPTY = 2
+    NULL_STRINGS_AS_EMPTY = auto()
 
     """
     Generate both {@code null} values and empty strings (this is what (de)serializers should
     normally support and be tested with).
     """
-    ALLOW_NULL_AND_EMPTY_STRINGS = 3
+    ALLOW_NULL_AND_EMPTY_STRINGS = auto()
 
 
 class MultiTypeRandomCasGenerator:

@@ -1,7 +1,27 @@
+from enum import Enum
 from random import Random
 
 from cassis import Cas, TypeSystem
 from cassis.typesystem import *
+
+
+class StringArrayMode(Enum):
+    """
+    Instead of generating an empty string, generate a {@code null} value (mainly for XCAS).
+    """
+
+    EMPTY_STRINGS_AS_NULL = 1
+
+    """
+    Instead of generating a {@code null} value, generate an empty string (mainly for XMI).
+    """
+    NULL_STRINGS_AS_EMPTY = 2
+
+    """
+    Generate both {@code null} values and empty strings (this is what (de)serializers should
+    normally support and be tested with).
+    """
+    ALLOW_NULL_AND_EMPTY_STRINGS = 3
 
 
 class MultiTypeRandomCasGenerator:
@@ -27,6 +47,7 @@ class MultiTypeRandomCasGenerator:
 
     def generate_cas(self, typesystem: TypeSystem) -> Cas:
         cas = Cas(typesystem)
+        cas.sofa_string = "x" * 130
 
         types = [t for t in typesystem.get_types()]
         types.remove(cas.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION))
@@ -49,13 +70,14 @@ class MultiFeatureRandomCasGenerator:
     BYTE_VALUES = [1, 0, 255, 0, 9]
     LONG_VALUES = [1, 0, -1, 9223372036854775807, -9223372036854775808, 11, -11]
     SHORT_VALUES = [1, 0, -1, 32767, -32768, 22, -22]
-    DOUBLE_VALUES = [1, 0, -1, 999999999999, -999999999999, 33, -33.33]
-    FLOAT_VALUES = [1, 0, -1, 999999999999, -999999999999, 17, -22.33]
+    DOUBLE_VALUES = [1.0, 0.0, -1.0, 999999999999.0, -999999999999.0, 33.0, -33.33]
+    FLOAT_VALUES = [1.0, 0.0, -1.0, 999999999999.0, -999999999999.0, 17.0, -22.33]
     BOOL_VALUES = [True, False]
 
     def __init__(self):
         self.size = 10
         self.rnd = Random()
+        self.string_array_mode = StringArrayMode.ALLOW_NULL_AND_EMPTY_STRINGS
 
     def generate_type_system(self) -> TypeSystem:
         typesystem = TypeSystem()
@@ -140,7 +162,16 @@ class MultiFeatureRandomCasGenerator:
         akof.akofABoolean = BooleanArray(
             elements=[self.rnd.choice(self.BOOL_VALUES) for i in range(0, self.rnd.randint(1, 3))]
         )
-        akof.akofAString = StringArray(
-            elements=[self.rnd.choice(self.STRING_VALUES) for i in range(0, self.rnd.randint(1, 3))]
-        )
+        akof.akofAString = StringArray(elements=[self.random_string() for i in range(0, self.rnd.randint(1, 3))])
         return akof
+
+    def random_string(self):
+        value = self.rnd.choice(self.STRING_VALUES)
+        if self.string_array_mode == StringArrayMode.ALLOW_NULL_AND_EMPTY_STRINGS:
+            return value
+        elif self.string_array_mode == StringArrayMode.EMPTY_STRINGS_AS_NULL:
+            return None if not value else value
+        elif self.string_array_mode == StringArrayMode.NULL_STRINGS_AS_EMPTY:
+            return "" if not value else value
+        else:
+            raise ValueError(f"Unknown string array mode: {self.string_array_mode}")

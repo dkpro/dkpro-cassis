@@ -140,9 +140,9 @@ def _generate_anchors(
             add_index_mark = mark_indexed and fs in indexed_feature_structures
             anchor = _generate_anchor(fs, add_index_mark)
             disambiguation_id = disambiguation_by_prefix.get(anchor)
+            disambiguation_by_prefix[anchor] += 1
             if unique_anchors and disambiguation_id:
                 anchor += f"({disambiguation_id})"
-            disambiguation_by_prefix[anchor] += 1
             fs_id_to_anchor[fs.xmiID] = anchor
     return fs_id_to_anchor
 

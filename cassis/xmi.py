@@ -9,7 +9,28 @@ from lxml import etree
 from cassis.cas import Cas, IdGenerator, Sofa, View
 from cassis.typesystem import (
     _PRIMITIVE_ARRAY_TYPES,
+    FEATURE_BASE_NAME_BEGIN,
+    FEATURE_BASE_NAME_END,
+    FEATURE_BASE_NAME_SOFA,
+    TYPE_NAME_ANNOTATION,
+    TYPE_NAME_BOOLEAN,
+    TYPE_NAME_BOOLEAN_ARRAY,
+    TYPE_NAME_BYTE,
+    TYPE_NAME_BYTE_ARRAY,
+    TYPE_NAME_DOUBLE,
+    TYPE_NAME_DOUBLE_ARRAY,
+    TYPE_NAME_FLOAT,
+    TYPE_NAME_FLOAT_ARRAY,
+    TYPE_NAME_FS_ARRAY,
+    TYPE_NAME_INTEGER,
+    TYPE_NAME_INTEGER_ARRAY,
+    TYPE_NAME_LONG,
+    TYPE_NAME_LONG_ARRAY,
+    TYPE_NAME_SHORT,
+    TYPE_NAME_SHORT_ARRAY,
     TYPE_NAME_SOFA,
+    TYPE_NAME_STRING,
+    TYPE_NAME_STRING_ARRAY,
     FeatureStructure,
     Type,
     TypeNotFoundError,
@@ -169,17 +190,16 @@ class CasXmiDeserializer:
                 value = getattr(fs, feature_name)
 
                 if feature_name == "sofa":
-
                     sofa = sofas[value]
                     setattr(fs, feature_name, sofa)
                     continue
 
-                if typesystem.is_instance_of(fs.type.name, "uima.cas.StringArray"):
+                if typesystem.is_instance_of(fs.type.name, TYPE_NAME_STRING_ARRAY):
                     # We already parsed string arrays to a Python list of string
                     # before, so we do not need to work more on this
                     continue
                 elif typesystem.is_primitive(feature.rangeType):
-                    # TODO: Parse feature values to their real type here, e.g. parse ints or floats
+                    setattr(fs, feature_name, self._parse_primitive_value(feature.rangeType, value))
                     continue
                 elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
                     # Separately rendered arrays (typically used with multipleReferencesAllowed = True)
@@ -200,7 +220,7 @@ class CasXmiDeserializer:
                         continue
 
                     # Resolve references
-                    if fs.type.name == "uima.cas.FSArray" or feature.rangeType.name == "uima.cas.FSArray":
+                    if fs.type.name == TYPE_NAME_FS_ARRAY or feature.rangeType.name == TYPE_NAME_FS_ARRAY:
                         # An array of references is a list of integers separated
                         # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
                         targets = []
@@ -209,9 +229,9 @@ class CasXmiDeserializer:
                             target = feature_structures[target_id]
                             targets.append(target)
                             referenced_fs.add(target_id)
-                        if feature.rangeType.name == "uima.cas.FSArray":
+                        if feature.rangeType.name == TYPE_NAME_FS_ARRAY:
                             # Wrap inline array into the appropriate array object
-                            ArrayType = typesystem.get_type("uima.cas.FSArray")
+                            ArrayType = typesystem.get_type(TYPE_NAME_FS_ARRAY)
                             targets = ArrayType(elements=targets)
                         setattr(fs, feature_name, targets)
                     else:
@@ -326,20 +346,31 @@ class CasXmiDeserializer:
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
         type_name = type_.name
-        if type_name == "uima.cas.FloatArray" or type_name == "uima.cas.DoubleArray":
+        if type_name in [TYPE_NAME_FLOAT_ARRAY, TYPE_NAME_DOUBLE_ARRAY]:
             return [float(e) for e in elements]
-        elif (
-            type_name == "uima.cas.IntegerArray"
-            or type_name == "uima.cas.ShortArray"
-            or type_name == "uima.cas.LongArray"
-        ):
+        elif type_name in [TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_SHORT_ARRAY, TYPE_NAME_LONG_ARRAY]:
             return [int(e) for e in elements]
-        elif type_name == "uima.cas.BooleanArray":
+        elif type_name == TYPE_NAME_BOOLEAN_ARRAY:
             return [self._parse_bool(e) for e in elements]
-        elif type_name == "uima.cas.ByteArray":
+        elif type_name == TYPE_NAME_BYTE_ARRAY:
             return list(bytearray.fromhex(value))
         else:
-            raise ValueError(f"Not a primitive collection: {type_name}")
+            raise ValueError(f"Not a primitive collection type: {type_name}")
+
+    def _parse_primitive_value(self, type_: Type, value: str) -> Union[float, int, bool, str, None]:
+        type_name = type_.name
+        if value is None:
+            return None
+        elif type_name == TYPE_NAME_STRING:
+            return value
+        elif type_name in [TYPE_NAME_FLOAT, TYPE_NAME_DOUBLE]:
+            return float(value)
+        elif type_name in [TYPE_NAME_INTEGER, TYPE_NAME_SHORT, TYPE_NAME_LONG, TYPE_NAME_BYTE]:
+            return int(value)
+        elif type_name == TYPE_NAME_BOOLEAN:
+            return self._parse_bool(value)
+        else:
+            raise ValueError(f"Not a primitive type: {type_name}")
 
     def _parse_bool(self, s: str) -> bool:
         if s == "true":
@@ -476,15 +507,15 @@ class CasXmiSerializer:
 
             # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
             if (
-                ts.is_instance_of(fs.type.name, "uima.tcas.Annotation")
-                and feature_name == "begin"
-                or feature_name == "end"
+                ts.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION)
+                and feature_name == FEATURE_BASE_NAME_BEGIN
+                or feature_name == FEATURE_BASE_NAME_END
             ):
-                sofa: Sofa = getattr(fs, "sofa")
+                sofa: Sofa = getattr(fs, FEATURE_BASE_NAME_SOFA)
                 value = sofa._offset_converter.cassis_to_uima(value)
 
             if (
-                ts.is_instance_of(feature.rangeType, "uima.cas.StringArray")
+                ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_ARRAY)
                 and not feature.multipleReferencesAllowed
                 and value.elements
             ):
@@ -494,13 +525,15 @@ class CasXmiSerializer:
             elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed and value.elements:
                 elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
             elif (
-                feature.rangeType.name == "uima.cas.FSArray"
+                feature.rangeType.name == TYPE_NAME_FS_ARRAY
                 and not feature.multipleReferencesAllowed
                 and value.elements
             ):
                 elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
-            elif feature_name == "sofa":
+            elif feature_name == FEATURE_BASE_NAME_SOFA:
                 elem.attrib[feature_name] = str(value.xmiID)
+            elif feature.rangeType.name == TYPE_NAME_BOOLEAN:
+                elem.attrib[feature_name] = "true" if value else "false"
             elif ts.is_primitive(feature.rangeType):
                 elem.attrib[feature_name] = str(value)
             else:
@@ -531,9 +564,9 @@ class CasXmiSerializer:
         if type_name not in _PRIMITIVE_ARRAY_TYPES:
             raise ValueError(f"Not a primitive array: {type_name}")
 
-        if type_name == "uima.cas.BooleanArray":
+        if type_name == TYPE_NAME_BOOLEAN_ARRAY:
             return " ".join(str(e).lower() for e in values)
-        elif type_name == "uima.cas.ByteArray":
+        elif type_name == TYPE_NAME_BYTE_ARRAY:
             return "".join("{:02X}".format(x) for x in values)
         else:
             return " ".join(str(e) for e in values)

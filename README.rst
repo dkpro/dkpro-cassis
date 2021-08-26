@@ -225,10 +225,10 @@ Creating types and adding features
     typesystem = TypeSystem()
 
     parent_type = typesystem.create_type(name='example.ParentType')
-    typesystem.create_feature(type_=parent_type, name='parentFeature', rangeType=TYPE_NAME_STRING)
+    typesystem.create_feature(domainType=parent_type, name='parentFeature', rangeType=TYPE_NAME_STRING)
 
     child_type = typesystem.create_type(name='example.ChildType', supertypeName=parent_type.name)
-    typesystem.create_feature(type_=child_type, name='childFeature', rangeType=TYPE_NAME_INTEGER)
+    typesystem.create_feature(domainType=child_type, name='childFeature', rangeType=TYPE_NAME_INTEGER)
 
     annotation = child_type(parentFeature='parent', childFeature='child')
 
@@ -351,8 +351,8 @@ available as a member variable :code:`self_` or :code:`type_` on the respective 
     typesystem = TypeSystem()
 
     ExampleType = typesystem.create_type(name='example.Type')
-    typesystem.create_feature(type_=ExampleType, name='self', rangeType=TYPE_NAME_STRING)
-    typesystem.create_feature(type_=ExampleType, name='type', rangeType=TYPE_NAME_STRING)
+    typesystem.create_feature(domainType=ExampleType, name='self', rangeType=TYPE_NAME_STRING)
+    typesystem.create_feature(domainType=ExampleType, name='type', rangeType=TYPE_NAME_STRING)
 
     annotation = ExampleType(self_="Test string1", type_="Test string2")
 

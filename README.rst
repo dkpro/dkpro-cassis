@@ -59,7 +59,6 @@ Some features are still under development, e.g.
 
 - Proper type checking
 - XML/XMI schema validation
-- Type unmarshalling from string to the actual type specified in the type system
 
 Installation
 ------------

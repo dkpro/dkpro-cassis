@@ -5,6 +5,11 @@ from lxml import etree
 from cassis import *
 from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
+from tests.test_files.test_cas_generators import (
+    MultiFeatureRandomCasGenerator,
+    MultiTypeRandomCasGenerator,
+    StringArrayMode,
+)
 from tests.util import assert_xml_equal
 
 # Deserializing
@@ -331,3 +336,36 @@ def test_multiple_references_allowed_true():
     root = etree.fromstring(actual_xmi.encode("utf-8"))
     assert len(root.xpath("//cas:IntegerArray", namespaces=root.nsmap)) == 0
     assert len(root.xpath("//noNamespace:Foo/@intArray", namespaces=root.nsmap)) == 1
+
+
+def test_multi_type_random_serialization_deserialization():
+    generator = MultiTypeRandomCasGenerator()
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        typesystem = generator.generate_type_system()
+        expected_cas = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in expected_cas.views)}")
+
+        xmi = expected_cas.to_xmi()
+        actual_cas = load_cas_from_xmi(xmi, typesystem)
+
+        actual = cas_to_comparable_text(actual_cas)
+        expected = cas_to_comparable_text(expected_cas)
+        assert actual == expected
+
+
+def test_multi_feature_random_serialization_deserialization():
+    generator = MultiFeatureRandomCasGenerator()
+    generator.string_array_mode = StringArrayMode.EMPTY_STRINGS_AS_NULL
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        typesystem = generator.generate_type_system()
+        expected_cas = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in expected_cas.views)}")
+
+        xmi = expected_cas.to_xmi()
+        actual_cas = load_cas_from_xmi(xmi, typesystem)
+
+        actual = cas_to_comparable_text(actual_cas)
+        expected = cas_to_comparable_text(expected_cas)
+        assert actual == expected

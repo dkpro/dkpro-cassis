@@ -198,6 +198,13 @@ class CasJsonDeserializer:
         fs = AnnotationType(**attributes)
 
         self._resolve_references(fs, ref_features, feature_structures)
+
+        # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
+        if typesystem.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION):
+            sofa = fs.sofa
+            fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
+            fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
+
         return fs
 
     def _parse_primitive_array(self, type_name: str, elements: [list, str]) -> List:
@@ -234,7 +241,9 @@ class CasJsonSerializer:
     def __init__(self):
         pass
 
-    def serialize(self, sink: Union[IO, str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
+    def serialize(
+        self, sink: Union[IO, str, None], cas: Cas, pretty_print: bool = True, ensure_ascii: bool = False
+    ) -> Union[str, None]:
         data = {}
         types = data[TYPES_FIELD] = {}
         views = data[VIEWS_FIELD] = {}
@@ -263,9 +272,9 @@ class CasJsonSerializer:
             sink = TextIOWrapper(sink, encoding="utf-8", write_through=True)
 
         if sink:
-            json.dump(data, sink, sort_keys=False, indent=2 if pretty_print else None)
+            json.dump(data, sink, sort_keys=False, indent=2 if pretty_print else None, ensure_ascii=ensure_ascii)
         else:
-            return json.dumps(data, sort_keys=False, indent=2 if pretty_print else None)
+            return json.dumps(data, sort_keys=False, indent=2 if pretty_print else None, ensure_ascii=ensure_ascii)
 
         if isinstance(sink, TextIOWrapper):
             sink.detach()  # Prevent TextIOWrapper from closing the BytesIO
@@ -347,9 +356,9 @@ class CasJsonSerializer:
                 continue
 
             # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
-            # if ts.is_instance_of(fs.type, "uima.tcas.Annotation") and feature_name == "begin" or feature_name == "end":
-            #    sofa: Sofa = getattr(fs, "sofa")
-            #    value = sofa._offset_converter.cassis_to_uima(value)
+            if feature.domainType.name == TYPE_NAME_ANNOTATION and feature_name == "begin" or feature_name == "end":
+                sofa: Sofa = getattr(fs, "sofa")
+                value = sofa._offset_converter.cassis_to_uima(value)
 
             if is_primitive(feature.rangeType):
                 json_fs[feature_name] = value

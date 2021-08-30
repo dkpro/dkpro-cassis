@@ -1,6 +1,5 @@
 import sys
 from collections import defaultdict
-from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -37,15 +36,15 @@ class OffsetConverter:
     """
 
     def __init__(self):
-        self._uima_to_cassis: Dict[int, int] = {0: 0}
-        self._cassis_to_uima: Dict[int, int] = {0: 0}
+        self._uima_to_cassis: Union[Dict[int, int], None] = None
+        self._cassis_to_uima: Union[Dict[int, int], None] = None
 
     def create_index(self, sofa_string: str):
-        self._uima_to_cassis.clear()
-        self._cassis_to_uima.clear()
-
         if sofa_string is None:
             return
+
+        self._uima_to_cassis = {0: 0}
+        self._cassis_to_uima = {0: 0}
 
         count_uima = 0
         count_cassis = 0
@@ -67,11 +66,19 @@ class OffsetConverter:
     def uima_to_cassis(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
+
+        if self._uima_to_cassis is None:
+            return idx
+
         return self._uima_to_cassis[idx]
 
     def cassis_to_uima(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
+
+        if self._cassis_to_uima is None:
+            return idx
+
         return self._cassis_to_uima[idx]
 
 
@@ -572,9 +579,11 @@ class Cas:
         """
         from cassis.xmi import CasXmiSerializer
 
-        return self._serialize(CasXmiSerializer(), path, pretty_print)
+        return self._serialize(CasXmiSerializer(), path, pretty_print=pretty_print)
 
-    def to_json(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
+    def to_json(
+        self, path: Union[str, Path, None] = None, pretty_print: bool = False, ensure_ascii=False
+    ) -> Optional[str]:
         """Creates a JSON representation of this CAS.
 
         Args:
@@ -588,14 +597,13 @@ class Cas:
         """
         from cassis.json import CasJsonSerializer
 
-        return self._serialize(CasJsonSerializer(), path, pretty_print)
+        return self._serialize(CasJsonSerializer(), path, pretty_print=pretty_print, ensure_ascii=ensure_ascii)
 
-    def _serialize(self, serializer, path: Union[str, Path, None] = None, pretty_print: bool = False):
+    def _serialize(self, serializer, path: Union[str, Path, None] = None, **kwargs):
         """Runs this CAS through the given serializer.
 
         Args:
             path: File path, if `None` is provided the result is returned as a string
-            pretty_print: `True` if the resulting data should be pretty-printed, else `False`
 
 
         Returns:
@@ -604,13 +612,13 @@ class Cas:
         """
         # If `path` is None, then serialize to a string and return it
         if path is None:
-            return serializer.serialize(None, self, pretty_print=pretty_print)
+            return serializer.serialize(None, self, **kwargs)
         elif isinstance(path, str):
             with open(path, "wb") as f:
-                serializer.serialize(f, self, pretty_print=pretty_print)
+                serializer.serialize(f, self, **kwargs)
         elif isinstance(path, Path):
             with path.open("wb") as f:
-                serializer.serialize(f, self, pretty_print=pretty_print)
+                serializer.serialize(f, self, **kwargs)
         else:
             raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
 

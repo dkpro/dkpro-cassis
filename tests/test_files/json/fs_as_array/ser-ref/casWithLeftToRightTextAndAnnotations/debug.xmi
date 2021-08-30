@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:Annotation xmi:id="2" sofa="1" begin="0" end="3"/>
+    <tcas:Annotation xmi:id="3" sofa="1" begin="4" end="10"/>
+    <tcas:DocumentAnnotation xmi:id="4" sofa="1" begin="0" end="10" language="x-unspecified"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="هذا اختبار"/>
+    <cas:View sofa="1" members="2 3 4"/>
+</xmi:XMI>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <tcas:Annotation xmi:id="2" sofa="1" begin="0" end="2"/>
+    <tcas:Annotation xmi:id="3" sofa="1" begin="3" end="7"/>
+    <tcas:Annotation xmi:id="4" sofa="1" begin="8" end="15"/>
+    <tcas:Annotation xmi:id="5" sofa="1" begin="16" end="18"/>
+    <tcas:Annotation xmi:id="6" sofa="1" begin="19" end="20"/>
+    <tcas:Annotation xmi:id="7" sofa="1" begin="21" end="22"/>
+    <tcas:Annotation xmi:id="8" sofa="1" begin="23" end="30"/>
+    <tcas:Annotation xmi:id="9" sofa="1" begin="31" end="35"/>
+    <tcas:Annotation xmi:id="10" sofa="1" begin="36" end="38"/>
+    <tcas:DocumentAnnotation xmi:id="11" sofa="1" begin="0" end="38" language="x-unspecified"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="&#129395; This &#128115;&#127995;‍♀️ is ✆ a &#129492;&#127998;‍♂️ test &#128123;"/>
+    <cas:View sofa="1" members="2 3 4 5 6 7 8 9 10 11"/>
+</xmi:XMI>

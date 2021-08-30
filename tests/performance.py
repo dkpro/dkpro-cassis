@@ -1,6 +1,8 @@
 from random import Random
 from timeit import default_timer as timer
 
+import pytest
+
 from cassis import load_cas_from_json, load_cas_from_xmi
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator
 
@@ -15,52 +17,40 @@ randomized_cas_xmi = randomized_cas.to_xmi()
 randomized_cas_json = randomized_cas.to_json()
 
 
+@pytest.mark.performance
 def test_xmi_serialization_performance():
     start = timer()
     for i in range(0, iterations):
-        if i % 10 == 0:
-            print(".", end='')
-        if i % 100 == 0:
-            print(f"{i}")
         randomized_cas.to_xmi()
     end = timer()
 
     print(f"XMI: Serializing {iterations} CASes took {end - start} seconds")
 
 
+@pytest.mark.performance
 def test_json_serialization_performance():
     start = timer()
     for i in range(0, iterations):
-        if i % 10 == 0:
-            print(".", end='')
-        if i % 100 == 0:
-            print(f"{i}")
         randomized_cas.to_json()
     end = timer()
 
     print(f"JSON: Serializing {iterations} CASes took {end - start} seconds")
 
 
+@pytest.mark.performance
 def test_xmi_deserialization_performance():
     start = timer()
     for i in range(0, iterations):
-        if i % 10 == 0:
-            print(".", end='')
-        if i % 100 == 0:
-            print(f"{i}")
         load_cas_from_xmi(randomized_cas_xmi, typesystem)
     end = timer()
 
     print(f"XMI: Deserializing {iterations} CASes took {end - start} seconds")
 
 
+@pytest.mark.performance
 def test_json_deserialization_performance():
     start = timer()
     for i in range(0, iterations):
-        if i % 10 == 0:
-            print(".", end='')
-        if i % 100 == 0:
-            print(f"{i}")
         load_cas_from_json(randomized_cas_json, typesystem)
     end = timer()
 

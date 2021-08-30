@@ -1,0 +1,9 @@
+{
+  "%TYPES" : { },
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 1,
+      "%MEMBERS" : [ ]
+    }
+  }
+}

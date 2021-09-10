@@ -28,6 +28,10 @@ FIXTURES = [
         pytest.lazy_fixture("cas_has_fs_with_no_namespace_xmi"),
         pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
     ),
+    (
+        pytest.lazy_fixture("cas_with_multiple_references_allowed_string_array_xmi"),
+        pytest.lazy_fixture("typesystem_with_multiple_references_allowed_xml"),
+    ),
 ]
 
 
@@ -294,14 +298,14 @@ def test_offsets_work_for_empty_sofastring():
 # Leniency
 
 
-def test_leniency_type_not_in_typeystem_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+def test_leniency_type_not_in_typesystem_lenient(cas_with_leniency_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.warns(UserWarning):
         cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=True)
 
 
-def test_leniency_type_not_in_typeystem_not_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+def test_leniency_type_not_in_typesystem_not_lenient(cas_with_leniency_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.raises(TypeNotFoundError):

@@ -104,6 +104,20 @@ def cas_with_empty_array_references_xmi(cas_with_empty_array_references_path):
         return f.read()
 
 
+# CAS with multipleReferencesAllowed=true on string array
+
+
+@pytest.fixture
+def cas_with_multiple_references_allowed_string_array_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_multiple_references_allowed_string_array.xmi")
+
+
+@pytest.fixture
+def cas_with_multiple_references_allowed_string_array_xmi(cas_with_multiple_references_allowed_string_array_path):
+    with open(cas_with_multiple_references_allowed_string_array_path, "r") as f:
+        return f.read()
+
+
 # CAS with reserved names
 
 
@@ -270,6 +284,20 @@ def typesystem_with_collections_path():
 @pytest.fixture
 def typesystem_with_collections_xml(typesystem_with_collections_path):
     with open(typesystem_with_collections_path, "r") as f:
+        return f.read()
+
+
+# CAS with multipleReferencesAllowed=true on string array
+
+
+@pytest.fixture
+def typesystem_with_multiple_references_allowed_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_multiple_references_allowed.xml")
+
+
+@pytest.fixture
+def typesystem_with_multiple_references_allowed_xml(typesystem_with_multiple_references_allowed_path):
+    with open(typesystem_with_multiple_references_allowed_path, "r") as f:
         return f.read()
 
 

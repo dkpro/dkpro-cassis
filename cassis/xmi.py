@@ -203,7 +203,7 @@ class CasXmiDeserializer:
                 elif typesystem.is_primitive_array(fs.type) and feature_name == "elements":
                     # Separately rendered arrays (typically used with multipleReferencesAllowed = True)
                     fs[feature_name] = self._parse_primitive_array(fs.type, value)
-                elif typesystem.is_primitive_array(feature.rangeType):
+                elif typesystem.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed:
                     # Array feature rendered inline (multipleReferencesAllowed = False|None)
                     # We also end up here for array features that were rendered as child elements. No need to parse
                     # them again, so we check if the value is still a string (i.e. attribute value) and only then
@@ -337,7 +337,7 @@ class CasXmiDeserializer:
         return AnnotationType(**attributes)
 
     def _parse_primitive_array(self, type_: Type, value: str) -> List:
-        """Primitive collections are serialized as white space seperated primitive values"""
+        """Primitive collections are serialized as white space separated primitive values"""
 
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")

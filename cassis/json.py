@@ -268,7 +268,7 @@ class CasJsonSerializer:
             json_fs = self._serialize_feature_structure(fs)
             feature_structures.append(json_fs)
 
-        if not isinstance(sink, TextIOBase):
+        if sink and not isinstance(sink, TextIOBase):
             sink = TextIOWrapper(sink, encoding="utf-8", write_through=True)
 
         if sink:

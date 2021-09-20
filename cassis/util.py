@@ -7,7 +7,7 @@ from typing import Dict, Iterable
 import attr
 
 from cassis import Cas
-from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type
+from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type, TypeSystem, is_array
 
 _EXCLUDED_FEATURES = {FEATURE_BASE_NAME_SOFA}
 _NULL_VALUE = "<NULL>"
@@ -21,7 +21,7 @@ def cas_to_comparable_text(
     covered_text: bool = True,
 ) -> [str, None]:
     indexed_feature_structures = _get_indexed_feature_structures(cas)
-    all_feature_structures_by_type = _group_feature_structures_by_type(cas._find_all_fs(seeds))
+    all_feature_structures_by_type = _group_feature_structures_by_type(cas._find_all_fs(seeds=seeds))
     types_sorted = sorted(all_feature_structures_by_type.keys())
     fs_id_to_anchor = _generate_anchors(
         cas, types_sorted, all_feature_structures_by_type, indexed_feature_structures, mark_indexed=mark_indexed
@@ -32,6 +32,11 @@ def cas_to_comparable_text(
 
     csv_writer = csv.writer(out, dialect=csv.unix_dialect)
     for t in types_sorted:
+        # FIXME This avoids problems with FSArrays which are indexed in a view - need to write a test case for
+        # FSArrays that are in the index and have as elements another set of FSArrays ...
+        if is_array(t):
+            continue
+
         type_ = cas.typesystem.get_type(t)
 
         csv_writer.writerow([type_.name])

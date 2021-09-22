@@ -7,14 +7,49 @@
             <supertypeName>uima.tcas.Annotation</supertypeName>
             <features>
                 <featureDescription>
-                    <name>collection1</name>
+                    <name>strings</name>
                     <description/>
                     <rangeTypeName>uima.cas.StringArray</rangeTypeName>
                 </featureDescription>
                 <featureDescription>
-                    <name>collection2</name>
+                    <name>shorts</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.ShortArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>integers</name>
                     <description/>
                     <rangeTypeName>uima.cas.IntegerArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>longs</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.LongArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>booleans</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.BooleanArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>bytes</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.ByteArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>floats</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.FloatArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>doubles</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.DoubleArray</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>fses</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.FSArray</rangeTypeName>
                 </featureDescription>
             </features>
         </typeDescription>

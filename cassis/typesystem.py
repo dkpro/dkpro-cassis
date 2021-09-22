@@ -987,8 +987,8 @@ def load_typesystem(source: Union[IO, str, Path]) -> TypeSystem:
     if isinstance(source, str):
         return deserializer.deserialize(BytesIO(source.encode("utf-8")))
     elif isinstance(source, Path):
-        with open(source, 'rb') as file:
-            return deserializer.deserialize(file)
+        with source.open('rb') as src:
+            return deserializer.deserialize(src)
     else:
         return deserializer.deserialize(source)
 

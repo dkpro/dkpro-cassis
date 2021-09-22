@@ -74,8 +74,8 @@ def load_cas_from_xmi(
             BytesIO(source.encode("utf-8")), typesystem=typesystem, lenient=lenient, trusted=trusted
         )
     if isinstance(source, Path):
-        with open(source, 'rb') as file:
-            return deserializer.deserialize(file, typesystem=typesystem, lenient=lenient, trusted=trusted)
+        with source.open('rb') as src:
+            return deserializer.deserialize(src, typesystem=typesystem, lenient=lenient, trusted=trusted)
     else:
         return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient, trusted=trusted)
 

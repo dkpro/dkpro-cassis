@@ -971,12 +971,13 @@ class TypeSystem:
 # Deserializing
 
 
-def load_typesystem(source: Union[IO, str]) -> TypeSystem:
+def load_typesystem(source: Union[IO, str, Path]) -> TypeSystem:
     """Loads a type system from a XML source.
 
     Args:
         source: The XML source. If `source` is a string, then it is assumed to be an XML string.
                 If `source` is a file-like object, then the data is read from it.
+                If `source` is a `Path`, then load the file at the given location.
 
     Returns:
         The deserialized type system
@@ -985,6 +986,9 @@ def load_typesystem(source: Union[IO, str]) -> TypeSystem:
     deserializer = TypeSystemDeserializer()
     if isinstance(source, str):
         return deserializer.deserialize(BytesIO(source.encode("utf-8")))
+    elif isinstance(source, Path):
+        with source.open('rb') as src:
+            return deserializer.deserialize(src)
     else:
         return deserializer.deserialize(source)
 

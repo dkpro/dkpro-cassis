@@ -1,6 +1,7 @@
 import warnings
 from collections import defaultdict
 from io import BytesIO
+from pathlib import Path
 from typing import IO, Dict, Iterable, List, Set, Union
 
 import attr
@@ -47,13 +48,14 @@ class ProtoView:
 
 
 def load_cas_from_xmi(
-    source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False, trusted: bool = False
+    source: Union[IO, Path, str], typesystem: TypeSystem = None, lenient: bool = False, trusted: bool = False
 ) -> Cas:
     """Loads a CAS from a XMI source.
 
     Args:
         source: The XML source. If `source` is a string, then it is assumed to be an XML string.
             If `source` is a file-like object, then the data is read from it.
+            If `source` is a `Path`, then load the file at the given location.
         typesystem: The type system that belongs to this CAS. If `None`, an empty type system is provided.
         lenient: If `True`, unknown Types will be ignored. If `False`, unknown Types will cause an exception.
             The default is `False`.
@@ -71,6 +73,9 @@ def load_cas_from_xmi(
         return deserializer.deserialize(
             BytesIO(source.encode("utf-8")), typesystem=typesystem, lenient=lenient, trusted=trusted
         )
+    if isinstance(source, Path):
+        with open(source, 'rb') as file:
+            return deserializer.deserialize(file, typesystem=typesystem, lenient=lenient, trusted=trusted)
     else:
         return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient, trusted=trusted)
 

@@ -348,13 +348,13 @@ class CasXmiDeserializer:
         elements = value.split(" ")
         type_name = type_.name
         if type_name in [TYPE_NAME_FLOAT_ARRAY, TYPE_NAME_DOUBLE_ARRAY]:
-            return [float(e) for e in elements]
+            return [float(e) for e in elements] if value else []
         elif type_name in [TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_SHORT_ARRAY, TYPE_NAME_LONG_ARRAY]:
-            return [int(e) for e in elements]
+            return [int(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_BOOLEAN_ARRAY:
-            return [self._parse_bool(e) for e in elements]
+            return [self._parse_bool(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_BYTE_ARRAY:
-            return list(bytearray.fromhex(value))
+            return list(bytearray.fromhex(value)) if value else []
         else:
             raise ValueError(f"Not a primitive collection type: {type_name}")
 
@@ -518,19 +518,20 @@ class CasXmiSerializer:
             if (
                 ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_ARRAY)
                 and not feature.multipleReferencesAllowed
-                and value.elements
             ):
-                for e in value.elements:
-                    child = etree.SubElement(elem, feature_name)
-                    child.text = e
-            elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed and value.elements:
-                elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
+                if value.elements is not None:  # Compare to none to not skip if elements is empty!
+                    for e in value.elements:
+                        child = etree.SubElement(elem, feature_name)
+                        child.text = e
+            elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed:
+                if value.elements is not None:  # Compare to none to not skip if elements is empty!
+                    elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
             elif (
                 feature.rangeType.name == TYPE_NAME_FS_ARRAY
                 and not feature.multipleReferencesAllowed
-                and value.elements
             ):
-                elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
+                if value.elements is not None:  # Compare to none to not skip if elements is empty!
+                    elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature_name == FEATURE_BASE_NAME_SOFA:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif feature.rangeType.name == TYPE_NAME_BOOLEAN:

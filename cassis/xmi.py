@@ -349,6 +349,9 @@ class CasXmiDeserializer:
     def _parse_primitive_array(self, type_: Type, value: str) -> List:
         """Primitive collections are serialized as white space separated primitive values"""
 
+        if value is None:
+            return None
+
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
         type_name = type_.name
@@ -470,8 +473,10 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Case where arrays are rendered as separate elements (not inline) for use with multipleReferencesAllowed = True
-        if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray" and fs.elements:
-            if ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):
+        if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray":
+            if fs.elements is None:
+                return
+            elif ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):
                 # String arrays need to be serialized to a series of child elements, as strings can
                 # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
                 # serialize it as an attribute, it would look like

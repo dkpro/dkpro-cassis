@@ -70,8 +70,30 @@ class MultiFeatureRandomCasGenerator:
     BYTE_VALUES = [1, 0, 255, 0, 9]
     LONG_VALUES = [1, 0, -1, 9223372036854775807, -9223372036854775808, 11, -11]
     SHORT_VALUES = [1, 0, -1, 32767, -32768, 22, -22]
-    DOUBLE_VALUES = [1.0, 0.0, -1.0, 999999999999.0, -999999999999.0, 33.0, -33.33]
-    FLOAT_VALUES = [1.0, 0.0, -1.0, 999999999999.0, -999999999999.0, 17.0, -22.33]
+    DOUBLE_VALUES = [
+        1.0,
+        0.0,
+        -1.0,
+        999999999999.0,
+        -999999999999.0,
+        33.0,
+        -33.33,
+        float("NaN"),
+        float("-Inf"),
+        float("Inf"),
+    ]
+    FLOAT_VALUES = [
+        1.0,
+        0.0,
+        -1.0,
+        999999999999.0,
+        -999999999999.0,
+        17.0,
+        -22.33,
+        float("NaN"),
+        float("-Inf"),
+        float("Inf"),
+    ]
     BOOL_VALUES = [True, False]
 
     def __init__(self):

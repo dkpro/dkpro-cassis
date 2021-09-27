@@ -76,13 +76,17 @@ def _render_feature_structure(
 ) -> []:
     row_data = [fs_id_to_anchor.get(fs.xmiID)]
 
-    if max_covered_text > 0:
+    if max_covered_text > 0 and _is_annotation_fs(fs):
         covered_text = fs.get_covered_text()
         if covered_text and len(covered_text) >= max_covered_text:
             prefix = covered_text[0 : (max_covered_text // 2)]
             suffix = covered_text[-(max_covered_text // 2) :]
             covered_text = f"{prefix}...{suffix}"
         row_data.append(covered_text if covered_text is not None else _NULL_VALUE)
+
+    if _is_array_fs(fs):
+        row_data.append(_render_feature_value(fs.elements, fs_id_to_anchor))
+        return row_data
 
     for feature in sorted(type_.all_features, key=lambda v: v.name):
         if feature.name in _EXCLUDED_FEATURES:
@@ -97,6 +101,8 @@ def _render_feature_structure(
 def _render_feature_value(feature_value: any, fs_id_to_anchor: Dict[int, str]) -> any:
     if feature_value is None:
         return _NULL_VALUE
+    elif isinstance(feature_value, list):
+        return [_render_feature_value(e, fs_id_to_anchor) for e in feature_value]
     elif _is_array_fs(feature_value):
         return [_render_feature_value(e, fs_id_to_anchor) for e in feature_value.elements]
     elif _is_primitive_value(feature_value):
@@ -171,10 +177,10 @@ def _is_primitive_value(value: any) -> bool:
 
 
 def _is_array_fs(fs: FeatureStructure) -> bool:
-    if not fs:
+    if not isinstance(fs, FeatureStructure):
         return False
 
-    return hasattr(fs, "elements") and isinstance(fs.elements, list)
+    return is_array(fs.type)
 
 
 def _is_annotation_fs(fs: FeatureStructure) -> bool:
@@ -211,6 +217,9 @@ def _compare_fs(type_: Type, a: FeatureStructure, b: FeatureStructure) -> int:
 
 def _feature_structure_hash(type_: Type, fs: FeatureStructure):
     hash_ = 0
+    if _is_array_fs(fs):
+        return len(fs.elements) if fs.elements else 0
+
     # Should be possible to get away with not sorting here assuming that all_features returns the features always in
     # the same order
     for feature in type_.all_features:

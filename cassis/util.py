@@ -7,7 +7,7 @@ from typing import Dict, Iterable, Set
 import attr
 
 from cassis import Cas
-from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type
+from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type, is_array
 
 _EXCLUDED_FEATURES = {FEATURE_BASE_NAME_SOFA}
 _NULL_VALUE = "<NULL>"

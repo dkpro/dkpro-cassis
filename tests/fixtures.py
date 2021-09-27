@@ -188,6 +188,20 @@ def cas_has_fs_with_no_namespace_xmi(cas_has_fs_with_no_namespace_path):
         return f.read()
 
 
+# CAS with special floating point values
+
+
+@pytest.fixture
+def cas_with_floating_point_special_values_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_floating_point_special_values.xmi")
+
+
+@pytest.fixture
+def cas_with_floating_point_special_values_xmi(cas_with_floating_point_special_values_path):
+    with open(cas_with_floating_point_special_values_path, "r") as f:
+        return f.read()
+
+
 # Small type system
 
 
@@ -340,6 +354,20 @@ def inception_typesystem_path():
 @pytest.fixture
 def inception_typesystem_xml(inception_typesystem_path):
     with open(inception_typesystem_path, "r") as f:
+        return f.read()
+
+
+# Floating point special values
+
+
+@pytest.fixture
+def typesystem_with_floating_points_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_floating_points.xml")
+
+
+@pytest.fixture
+def typesystem_with_floating_points_xml(typesystem_with_floating_points_path):
+    with open(typesystem_with_floating_points_path, "r") as f:
         return f.read()
 
 

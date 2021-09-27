@@ -1,6 +1,7 @@
 import warnings
 from collections import defaultdict
 from io import BytesIO
+from math import isinf, isnan
 from pathlib import Path
 from typing import IO, Dict, Iterable, List, Set, Union
 
@@ -37,6 +38,10 @@ from cassis.typesystem import (
     TypeNotFoundError,
     TypeSystem,
 )
+
+NAN_VALUE = "NaN"
+POSITIVE_INFINITE_VALUE = "Infinity"
+NEGATIVE_INFINITE_VALUE = "-Infinity"
 
 
 @attr.s
@@ -530,6 +535,8 @@ class CasXmiSerializer:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif feature.rangeType.name == TYPE_NAME_BOOLEAN:
                 elem.attrib[feature_name] = "true" if value else "false"
+            elif feature.rangeType.name in {TYPE_NAME_DOUBLE, TYPE_NAME_FLOAT}:
+                elem.attrib[feature_name] = self._serialize_float_value(value)
             elif ts.is_primitive(feature.rangeType):
                 elem.attrib[feature_name] = str(value)
             else:
@@ -564,5 +571,17 @@ class CasXmiSerializer:
             return " ".join(str(e).lower() for e in values)
         elif type_name == TYPE_NAME_BYTE_ARRAY:
             return "".join("{:02X}".format(x) for x in values)
+        elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
+            return " ".join(self._serialize_float_value(x) for x in values)
         else:
             return " ".join(str(e) for e in values)
+
+    def _serialize_float_value(self, value) -> Union[float, str]:
+        if isnan(value):
+            return NAN_VALUE
+        elif isinf(value):
+            if value > 0:
+                return POSITIVE_INFINITE_VALUE
+            else:
+                return NEGATIVE_INFINITE_VALUE
+        return str(value)

@@ -10,6 +10,7 @@ FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_fi
 FIXTURES = [
     (os.path.join(FIXTURE_DIR, "casWithSofaDataArray"), []),
     (os.path.join(FIXTURE_DIR, "casWithSofaDataURI"), []),
+    (os.path.join(FIXTURE_DIR, "casWithFloatingPointSpecialValues"), []),
     (os.path.join(FIXTURE_DIR, "casWithText"), [["uima.tcas.DocumentAnnotation", 0, 15, "This is a test."]]),
     (
         os.path.join(FIXTURE_DIR, "casWithoutTextButWithAnnotations"),

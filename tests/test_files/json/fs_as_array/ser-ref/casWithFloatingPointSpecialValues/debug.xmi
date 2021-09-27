@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:noNamespace="http:///uima/noNamespace.ecore" xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <noNamespace:SpecialValuesType xmi:id="1" doubleZero="0.0" doubleOne="1.0" doublePosInfinity="Infinity" doubleNegInfinity="-Infinity" doubleNan="NaN" floatZero="0.0" floatOne="1.0" floatPosInfinity="Infinity" floatNegInfinity="-Infinity" floatNan="NaN"/>
+    <cas:DoubleArray xmi:id="2" elements="0.0 1.0 -Infinity Infinity NaN"/>
+    <cas:FloatArray xmi:id="3" elements="0.0 1.0 -Infinity Infinity NaN"/>
+    <cas:View members="1 2 3"/>
+</xmi:XMI>

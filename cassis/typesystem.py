@@ -1,10 +1,11 @@
 import re
 import warnings
 from collections import defaultdict
+from enum import Enum, auto
 from io import BytesIO
 from itertools import chain, filterfalse
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, Union
 
 import attr
 import deprecation
@@ -170,6 +171,14 @@ _PRIMITIVE_ARRAY_TYPES = {
 _INHERITANCE_FINAL_TYPES = _PRIMITIVE_ARRAY_TYPES
 
 _ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {"uima.cas.FSArray"}
+
+
+class TypeSystemMode(Enum):
+    """How much type system information to include."""
+
+    FULL = auto()
+    MINIMAL = auto()
+    NONE = auto()
 
 
 def _string_to_valid_classname(name: str):
@@ -402,7 +411,7 @@ class Feature:
         return self.name < other.name
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, hash=False, eq=True)
 class Type:
     """Describes types in a type system.
 
@@ -583,6 +592,12 @@ class Type:
                 cur = cur.supertype
 
         return False
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
 class TypeSystem:
@@ -966,6 +981,33 @@ class TypeSystem:
     def _add_document_annotation_type(self):
         t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
         self.create_feature(t, name="language", rangeType="uima.cas.String")
+
+    def transitive_closure(self, seed_types: Set[Type], built_in: bool = False) -> Set[Type]:
+        # Build transitive closure of used types by following parents, features, etc.
+        transitively_referenced_types = set()
+        openlist = []
+        openlist.extend(seed_types)
+        while openlist:
+            type_ = openlist.pop(0)
+
+            if type_ in transitively_referenced_types:
+                continue
+
+            if not built_in and type_.name in _PREDEFINED_TYPES:
+                continue
+
+            transitively_referenced_types.add(type_)
+
+            if type_.supertype and type_.supertype not in transitively_referenced_types:
+                openlist.append(type_.supertype)
+
+            for feature in type_.all_features:
+                if feature.rangeType not in transitively_referenced_types:
+                    openlist.append(feature.rangeType)
+                if feature.elementType and feature.elementType not in transitively_referenced_types:
+                    openlist.append(feature.elementType)
+
+        return transitively_referenced_types
 
 
 # Deserializing

@@ -7,9 +7,14 @@ from cassis import TypeSystem, load_typesystem
 from cassis.typesystem import (
     _COLLECTION_TYPES,
     TOP_TYPE_NAME,
+    TYPE_NAME_ANNOTATION,
+    TYPE_NAME_ANNOTATION_BASE,
+    TYPE_NAME_ARRAY_BASE,
     TYPE_NAME_BOOLEAN,
     TYPE_NAME_INTEGER,
+    TYPE_NAME_SOFA,
     TYPE_NAME_STRING,
+    TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_TOP,
     Feature,
     TypeCheckError,
@@ -861,3 +866,31 @@ def test_create_same_type_twice_fails():
     typesystem.create_type("my.Type")
     with pytest.raises(ValueError):
         typesystem.create_type("my.Type")
+
+
+def test_transitive_closure():
+    typesystem = TypeSystem()
+    base_type = typesystem.create_type("BaseType", supertypeName=TYPE_NAME_ANNOTATION)
+    child_type = typesystem.create_type("ChildType", supertypeName="BaseType")
+    typesystem.create_feature("ChildType", "primitiveFeature", TYPE_NAME_STRING)
+    typesystem.create_feature("ChildType", "arrayFeature", TYPE_NAME_STRING_ARRAY, elementType=TYPE_NAME_STRING)
+    typesystem.create_feature("ChildType", "fsFeature", "BaseType")
+
+    transitive_closure_without_builtins = typesystem.transitive_closure({child_type}, built_in=False)
+
+    assert transitive_closure_without_builtins == {base_type, child_type}
+
+    transitive_closure_with_builtins = typesystem.transitive_closure({child_type}, built_in=True)
+
+    assert transitive_closure_with_builtins == {
+        base_type,
+        child_type,
+        typesystem.get_type(TYPE_NAME_TOP),
+        typesystem.get_type(TYPE_NAME_ANNOTATION_BASE),
+        typesystem.get_type(TYPE_NAME_ANNOTATION),
+        typesystem.get_type(TYPE_NAME_STRING),
+        typesystem.get_type(TYPE_NAME_ARRAY_BASE),
+        typesystem.get_type(TYPE_NAME_STRING_ARRAY),
+        typesystem.get_type(TYPE_NAME_INTEGER),
+        typesystem.get_type(TYPE_NAME_SOFA),
+    }

@@ -1,12 +1,17 @@
 import base64
 import json
+import math
 from collections import OrderedDict
 from io import TextIOBase, TextIOWrapper
+from math import isnan
 
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
 from cassis.typesystem import *
 
 RESERVED_FIELD_PREFIX = "%"
+REF_FEATURE_PREFIX = "@"
+NUMBER_FEATURE_PREFIX = "#"
+ANCHOR_FEATURE_PREFIX = "^"
 TYPE_FIELD = RESERVED_FIELD_PREFIX + "TYPE"
 RANGE_FIELD = RESERVED_FIELD_PREFIX + "RANGE"
 TYPES_FIELD = RESERVED_FIELD_PREFIX + "TYPES"
@@ -15,7 +20,6 @@ VIEWS_FIELD = RESERVED_FIELD_PREFIX + "VIEWS"
 VIEW_SOFA_FIELD = RESERVED_FIELD_PREFIX + "SOFA"
 VIEW_MEMBERS_FIELD = RESERVED_FIELD_PREFIX + "MEMBERS"
 FEATURE_STRUCTURES_FIELD = RESERVED_FIELD_PREFIX + "FEATURE_STRUCTURES"
-REF_FEATURE_PREFIX = "@"
 NAME_FIELD = RESERVED_FIELD_PREFIX + "NAME"
 SUPER_TYPE_FIELD = RESERVED_FIELD_PREFIX + "SUPER_TYPE"
 DESCRIPTION_FIELD = RESERVED_FIELD_PREFIX + "DESCRIPTION"
@@ -26,6 +30,11 @@ FLAGS_FIELD = RESERVED_FIELD_PREFIX + "FLAGS"
 FLAG_DOCUMENT_ANNOTATION = "DocumentAnnotation"
 ARRAY_SUFFIX = "[]"
 ELEMENTS_FIELD = RESERVED_FIELD_PREFIX + "ELEMENTS"
+NAN_VALUE = "NaN"
+POSITIVE_INFINITE_VALUE = "Infinity"
+POSITIVE_INFINITE_VALUE_ABBR = "Inf"
+NEGATIVE_INFINITE_VALUE = "-Infinity"
+NEGATIVE_INFINITE_VALUE_ABBR = "-Inf"
 
 
 def load_cas_from_json(source: Union[IO, str], typesystem: TypeSystem = None) -> Cas:
@@ -193,6 +202,9 @@ class CasJsonDeserializer:
             if key.startswith(REF_FEATURE_PREFIX):
                 ref_features[key[1:]] = value
                 attributes.pop(key)
+            if key.startswith(NUMBER_FEATURE_PREFIX):
+                attributes[key[1:]] = self._parse_float_value(value)
+                attributes.pop(key)
 
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         fs = AnnotationType(**attributes)
@@ -200,16 +212,34 @@ class CasJsonDeserializer:
         self._resolve_references(fs, ref_features, feature_structures)
 
         # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
-        if typesystem.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION):
+        if typesystem.is_instance_of(fs.type, TYPE_NAME_ANNOTATION):
             sofa = fs.sofa
             fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
             fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
 
         return fs
 
+    def _parse_float_value(self, value: Union[str, float]) -> float:
+        if isinstance(value, float):
+            return value
+        elif value == NAN_VALUE:
+            return float("nan")
+        elif value == POSITIVE_INFINITE_VALUE or value == POSITIVE_INFINITE_VALUE_ABBR:
+            return float("inf")
+        elif value == NEGATIVE_INFINITE_VALUE or value == NEGATIVE_INFINITE_VALUE_ABBR:
+            return float("-inf")
+
+        raise ValueError(
+            f"Illegal floating point value [{value}]. Must be a float literal or one of {NAN_VALUE}, "
+            f"{POSITIVE_INFINITE_VALUE}, {POSITIVE_INFINITE_VALUE_ABBR}, {NEGATIVE_INFINITE_VALUE}, or "
+            f"{NEGATIVE_INFINITE_VALUE_ABBR}"
+        )
+
     def _parse_primitive_array(self, type_name: str, elements: [list, str]) -> List:
-        if type_name == TYPE_NAME_BYTE_ARRAY:
+        if elements and type_name == TYPE_NAME_BYTE_ARRAY:
             return base64.b64decode(elements)
+        if elements and (type_name == TYPE_NAME_FLOAT_ARRAY or type_name == TYPE_NAME_DOUBLE_ARRAY):
+            return [self._parse_float_value(v) for v in elements]
         else:
             return elements
 
@@ -242,21 +272,19 @@ class CasJsonSerializer:
         pass
 
     def serialize(
-        self, sink: Union[IO, str, None], cas: Cas, pretty_print: bool = True, ensure_ascii: bool = False
+        self,
+        sink: Union[IO, str, None],
+        cas: Cas,
+        pretty_print: bool = True,
+        ensure_ascii: bool = False,
+        type_system_mode: TypeSystemMode = TypeSystemMode.FULL,
     ) -> Union[str, None]:
-        data = {}
-        types = data[TYPES_FIELD] = {}
-        views = data[VIEWS_FIELD] = {}
-        feature_structures = data[FEATURE_STRUCTURES_FIELD] = []
+        feature_structures = []
 
-        for type_ in cas.typesystem.get_types():
-            if type_.name == TYPE_NAME_DOCUMENT_ANNOTATION:
-                continue
-            json_type = self._serialize_type(type_)
-            types[json_type[NAME_FIELD]] = json_type
-
+        views = {}
         for view in cas.views:
             views[view.sofa.sofaID] = self._serialize_view(view)
+
             if view.sofa.sofaArray:
                 json_sofa_array_fs = self._serialize_feature_structure(view.sofa.sofaArray)
                 feature_structures.append(json_sofa_array_fs)
@@ -264,17 +292,52 @@ class CasJsonSerializer:
             feature_structures.append(json_sofa_fs)
 
         # Find all fs, even the ones that are not directly added to a sofa
+        used_types = set()
         for fs in sorted(cas._find_all_fs(include_inlinable_arrays=True), key=lambda a: a.xmiID):
+            used_types.add(fs.type)
             json_fs = self._serialize_feature_structure(fs)
             feature_structures.append(json_fs)
+
+        types = None
+        if type_system_mode is not TypeSystemMode.NONE:
+            types = {}
+
+            if type_system_mode is TypeSystemMode.MINIMAL:
+                # Build transitive closure of used types by following parents, features, etc.
+                types_to_include = cas.typesystem.transitive_closure(used_types)
+            elif type_system_mode is TypeSystemMode.FULL:
+                types_to_include = cas.typesystem.get_types()
+
+            for type_ in types_to_include:
+                if type_.name == TYPE_NAME_DOCUMENT_ANNOTATION:
+                    continue
+                json_type = self._serialize_type(type_)
+                types[json_type[NAME_FIELD]] = json_type
+
+        data = {}
+        if types is not None:
+            data[TYPES_FIELD] = types
+        if feature_structures is not None:
+            data[FEATURE_STRUCTURES_FIELD] = feature_structures
+        if views is not None:
+            data[VIEWS_FIELD] = views
 
         if sink and not isinstance(sink, TextIOBase):
             sink = TextIOWrapper(sink, encoding="utf-8", write_through=True)
 
         if sink:
-            json.dump(data, sink, sort_keys=False, indent=2 if pretty_print else None, ensure_ascii=ensure_ascii)
+            json.dump(
+                data,
+                sink,
+                sort_keys=False,
+                indent=2 if pretty_print else None,
+                ensure_ascii=ensure_ascii,
+                allow_nan=False,
+            )
         else:
-            return json.dumps(data, sort_keys=False, indent=2 if pretty_print else None, ensure_ascii=ensure_ascii)
+            return json.dumps(
+                data, sort_keys=False, indent=2 if pretty_print else None, ensure_ascii=ensure_ascii, allow_nan=False
+            )
 
         if isinstance(sink, TextIOWrapper):
             sink.detach()  # Prevent TextIOWrapper from closing the BytesIO
@@ -288,8 +351,10 @@ class CasJsonSerializer:
         json_type = {
             NAME_FIELD: type_name,
             SUPER_TYPE_FIELD: supertype_name,
-            DESCRIPTION_FIELD: type_.description,
         }
+
+        if type_.description:
+            json_type[DESCRIPTION_FIELD] = type_.description
 
         for feature in list(type_.features):
             json_feature = self._serialize_feature(json_type, feature)
@@ -331,6 +396,10 @@ class CasJsonSerializer:
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
             return json_fs
+        elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
+            if fs.elements:
+                json_fs[ELEMENTS_FIELD] = [self._serialize_float_value(e) for e in fs.elements]
+            return json_fs
         elif is_primitive_array(fs.type):
             if fs.elements:
                 json_fs[ELEMENTS_FIELD] = fs.elements
@@ -360,12 +429,27 @@ class CasJsonSerializer:
                 sofa: Sofa = getattr(fs, "sofa")
                 value = sofa._offset_converter.cassis_to_uima(value)
 
-            if is_primitive(feature.rangeType):
+            if feature.rangeType.name in {TYPE_NAME_DOUBLE, TYPE_NAME_FLOAT}:
+                float_value = self._serialize_float_value(value)
+                if isinstance(float_value, str):
+                    feature_name = NUMBER_FEATURE_PREFIX + feature_name
+                json_fs[feature_name] = self._serialize_float_value(value)
+            elif is_primitive(feature.rangeType):
                 json_fs[feature_name] = value
             else:
                 # We need to encode non-primitive features as a reference
                 json_fs[REF_FEATURE_PREFIX + feature_name] = self._serialize_ref(value)
         return json_fs
+
+    def _serialize_float_value(self, value) -> Union[float, str]:
+        if isnan(value):
+            return NAN_VALUE
+        elif math.isinf(value):
+            if value > 0:
+                return POSITIVE_INFINITE_VALUE
+            else:
+                return NEGATIVE_INFINITE_VALUE
+        return value
 
     def _serialize_ref(self, fs) -> int:
         if not fs:

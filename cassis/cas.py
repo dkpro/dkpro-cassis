@@ -8,7 +8,7 @@ import deprecation
 from attr import validators
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem
+from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem, TypeSystemMode
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -582,22 +582,33 @@ class Cas:
         return self._serialize(CasXmiSerializer(), path, pretty_print=pretty_print)
 
     def to_json(
-        self, path: Union[str, Path, None] = None, pretty_print: bool = False, ensure_ascii=False
+        self,
+        path: Union[str, Path, None] = None,
+        pretty_print: bool = False,
+        ensure_ascii=False,
+        type_system_mode: TypeSystemMode = TypeSystemMode.FULL,
     ) -> Optional[str]:
         """Creates a JSON representation of this CAS.
 
         Args:
             path: File path, if `None` is provided the result is returned as a string
             pretty_print: `True` if the resulting JSON should be pretty-printed, else `False`
-
+            ensure_ascii: Whether to escape non-ASCII Unicode characters or not
+            type_system_mode: Whether to serialize the full type system (`FUL`), only the types used (`MINIMAL`), or no
+                              type system information at all (`NONE`)
 
         Returns:
             If `path` is None, then the JSON representation of this CAS is returned as a string
-
         """
         from cassis.json import CasJsonSerializer
 
-        return self._serialize(CasJsonSerializer(), path, pretty_print=pretty_print, ensure_ascii=ensure_ascii)
+        return self._serialize(
+            CasJsonSerializer(),
+            path,
+            pretty_print=pretty_print,
+            ensure_ascii=ensure_ascii,
+            type_system_mode=type_system_mode,
+        )
 
     def _serialize(self, serializer, path: Union[str, Path, None] = None, **kwargs):
         """Runs this CAS through the given serializer.

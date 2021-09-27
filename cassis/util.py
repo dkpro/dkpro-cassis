@@ -2,7 +2,7 @@ import csv
 from collections import defaultdict
 from functools import cmp_to_key
 from io import IOBase, StringIO
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Set
 
 import attr
 
@@ -19,6 +19,7 @@ def cas_to_comparable_text(
     seeds: Iterable[FeatureStructure] = None,
     mark_indexed: bool = True,
     covered_text: bool = True,
+    exclude_types: Set[str] = None,
 ) -> [str, None]:
     indexed_feature_structures = _get_indexed_feature_structures(cas)
     all_feature_structures_by_type = _group_feature_structures_by_type(cas._find_all_fs(seeds=seeds))
@@ -32,9 +33,7 @@ def cas_to_comparable_text(
 
     csv_writer = csv.writer(out, dialect=csv.unix_dialect)
     for t in types_sorted:
-        # FIXME This avoids problems with FSArrays which are indexed in a view - need to write a test case for
-        # FSArrays that are in the index and have as elements another set of FSArrays ...
-        if is_array(t):
+        if exclude_types and t in exclude_types:
             continue
 
         type_ = cas.typesystem.get_type(t)

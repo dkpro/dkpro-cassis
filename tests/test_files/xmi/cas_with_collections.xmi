@@ -52,7 +52,15 @@
 
   <cassis:Group xmi:id="20" sofa="1"/>
 
+  <cas:FSArray xmi:id="21" elements="" />
+
+  <cas:FSArray xmi:id="22" />
+
+  <cas:IntegerArray xmi:id="23" elements=""/>
+
+  <cas:IntegerArray xmi:id="24"/>
+
   <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text/plain"
               sofaString="Joe waited for the train . The train was late ."/>
-  <cas:View members="2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" sofa="1"/>
+  <cas:View members="2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24" sofa="1"/>
 </xmi:XMI>

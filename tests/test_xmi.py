@@ -25,6 +25,10 @@ FIXTURES = [
     (pytest.lazy_fixture("cas_with_two_sofas_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
     (pytest.lazy_fixture("cas_with_smileys_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
     (
+        pytest.lazy_fixture("cas_with_floating_point_special_values_xmi"),
+        pytest.lazy_fixture("typesystem_with_floating_points_xml"),
+    ),
+    (
         pytest.lazy_fixture("cas_has_fs_with_no_namespace_xmi"),
         pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
     ),

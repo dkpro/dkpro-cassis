@@ -1,6 +1,7 @@
 import warnings
 from collections import defaultdict
 from io import BytesIO
+from math import isinf, isnan
 from pathlib import Path
 from typing import IO, Dict, Iterable, List, Set, Union
 
@@ -37,6 +38,10 @@ from cassis.typesystem import (
     TypeNotFoundError,
     TypeSystem,
 )
+
+NAN_VALUE = "NaN"
+POSITIVE_INFINITE_VALUE = "Infinity"
+NEGATIVE_INFINITE_VALUE = "-Infinity"
 
 
 @attr.s
@@ -344,6 +349,9 @@ class CasXmiDeserializer:
     def _parse_primitive_array(self, type_: Type, value: str) -> List:
         """Primitive collections are serialized as white space separated primitive values"""
 
+        if value is None:
+            return None
+
         # TODO: Use type name global variable here instead of hardcoded string literal
         elements = value.split(" ")
         type_name = type_.name
@@ -474,8 +482,10 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(fs.xmiID)
 
         # Case where arrays are rendered as separate elements (not inline) for use with multipleReferencesAllowed = True
-        if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray" and fs.elements:
-            if ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):
+        if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray":
+            if fs.elements is None:
+                return
+            elif ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):
                 # String arrays need to be serialized to a series of child elements, as strings can
                 # contain whitespaces. Consider e.g. the array ['likes cats, 'likes dogs']. If we would
                 # serialize it as an attribute, it would look like
@@ -539,6 +549,8 @@ class CasXmiSerializer:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif feature.rangeType.name == TYPE_NAME_BOOLEAN:
                 elem.attrib[feature_name] = "true" if value else "false"
+            elif feature.rangeType.name in {TYPE_NAME_DOUBLE, TYPE_NAME_FLOAT}:
+                elem.attrib[feature_name] = self._serialize_float_value(value)
             elif ts.is_primitive(feature.rangeType):
                 elem.attrib[feature_name] = str(value)
             else:
@@ -573,5 +585,17 @@ class CasXmiSerializer:
             return " ".join(str(e).lower() for e in values)
         elif type_name == TYPE_NAME_BYTE_ARRAY:
             return "".join("{:02X}".format(x) for x in values)
+        elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
+            return " ".join(self._serialize_float_value(x) for x in values)
         else:
             return " ".join(str(e) for e in values)
+
+    def _serialize_float_value(self, value) -> Union[float, str]:
+        if isnan(value):
+            return NAN_VALUE
+        elif isinf(value):
+            if value > 0:
+                return POSITIVE_INFINITE_VALUE
+            else:
+                return NEGATIVE_INFINITE_VALUE
+        return str(value)

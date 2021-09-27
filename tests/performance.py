@@ -13,8 +13,12 @@ iterations = 100
 
 typesystem = generator.generate_type_system()
 randomized_cas = generator.generate_cas(typesystem)
+
 randomized_cas_xmi = randomized_cas.to_xmi()
+randomized_cas_xmi_bytes = randomized_cas_xmi.encode("utf-8")
+
 randomized_cas_json = randomized_cas.to_json()
+randomized_cas_json_bytes = randomized_cas_json.encode("utf-8")
 
 
 @pytest.mark.performance
@@ -24,7 +28,9 @@ def test_xmi_serialization_performance():
         randomized_cas.to_xmi()
     end = timer()
 
-    print(f"XMI: Serializing {iterations} CASes took {end - start} seconds")
+    print(
+        f"XMI: Serializing {iterations} CASes with {generator.size} each took {end - start} seconds ({len(randomized_cas_xmi_bytes)} bytes each)"
+    )
 
 
 @pytest.mark.performance
@@ -34,7 +40,9 @@ def test_json_serialization_performance():
         randomized_cas.to_json()
     end = timer()
 
-    print(f"JSON: Serializing {iterations} CASes took {end - start} seconds")
+    print(
+        f"JSON: Serializing {iterations} CASes with {generator.size} each took {end - start} seconds ({len(randomized_cas_json_bytes)} bytes each)"
+    )
 
 
 @pytest.mark.performance
@@ -44,7 +52,9 @@ def test_xmi_deserialization_performance():
         load_cas_from_xmi(randomized_cas_xmi, typesystem)
     end = timer()
 
-    print(f"XMI: Deserializing {iterations} CASes took {end - start} seconds")
+    print(
+        f"XMI: Deserializing {iterations} CASes with {generator.size} each took {end - start} seconds ({len(randomized_cas_xmi_bytes)} bytes each)"
+    )
 
 
 @pytest.mark.performance
@@ -54,4 +64,6 @@ def test_json_deserialization_performance():
         load_cas_from_json(randomized_cas_json, typesystem)
     end = timer()
 
-    print(f"JSON: Deserializing {iterations} CASes took {end - start} seconds")
+    print(
+        f"JSON: Deserializing {iterations} CASes with {generator.size} each took {end - start} seconds ({len(randomized_cas_json_bytes)} bytes each)"
+    )

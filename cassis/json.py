@@ -1,7 +1,7 @@
 import base64
 import json
 from collections import OrderedDict
-from io import TextIOWrapper
+from io import TextIOBase, TextIOWrapper
 
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
 from cassis.typesystem import *
@@ -268,7 +268,7 @@ class CasJsonSerializer:
             json_fs = self._serialize_feature_structure(fs)
             feature_structures.append(json_fs)
 
-        if isinstance(sink, BytesIO):
+        if sink and not isinstance(sink, TextIOBase):
             sink = TextIOWrapper(sink, encoding="utf-8", write_through=True)
 
         if sink:
@@ -316,7 +316,7 @@ class CasJsonSerializer:
             json_feature[MULTIPLE_REFERENCES_ALLOWED_FIELD] = feature.multipleReferencesAllowed
 
         if feature.elementType is not None:
-            json_feature[ELEMENT_TYPE_FIELD] = self._to_external_type_name(feature.elementType)
+            json_feature[ELEMENT_TYPE_FIELD] = self._to_external_type_name(feature.elementType.name)
 
         return json_feature
 

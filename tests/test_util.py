@@ -43,3 +43,26 @@ def test_cas_to_comparable_text_on_multi_type_random():
         print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
         cas_to_comparable_text(randomized_cas)
         # At this point, we are just testing if there is no exception during rendering
+
+
+def test_cas_to_comparable_text_excluding_types():
+    typesystem = TypeSystem()
+    TypeA = typesystem.create_type("type.A", supertypeName=TYPE_NAME_ANNOTATION)
+    TypeB = typesystem.create_type("type.B", supertypeName=TYPE_NAME_ANNOTATION)
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "ABCDE"
+    for i in range(0, 5):
+        cas.add(TypeA(begin=i, end=i + 1))
+        cas.add(TypeB(begin=i, end=i + 1))
+
+    expected = (
+        '"type.A"\n'
+        '"<ANCHOR>","<COVERED_TEXT>","begin","end"\n'
+        '"A[0-1]*@_InitialView","A","0","1"\n'
+        '"A[1-2]*@_InitialView","B","1","2"\n'
+        '"A[2-3]*@_InitialView","C","2","3"\n'
+        '"A[3-4]*@_InitialView","D","3","4"\n'
+        '"A[4-5]*@_InitialView","E","4","5"\n'
+    )
+
+    assert cas_to_comparable_text(cas, exclude_types=[TypeB.name]) == expected

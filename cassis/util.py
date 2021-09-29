@@ -20,7 +20,7 @@ def cas_to_comparable_text(
     exclude_types: Set[str] = None,
 ) -> [str, None]:
     indexed_feature_structures = _get_indexed_feature_structures(cas)
-    all_feature_structures_by_type = _group_feature_structures_by_type(cas._find_all_fs(seeds))
+    all_feature_structures_by_type = _group_feature_structures_by_type(cas._find_all_fs(seeds=seeds))
     types_sorted = sorted(all_feature_structures_by_type.keys())
     fs_id_to_anchor = _generate_anchors(
         cas, types_sorted, all_feature_structures_by_type, indexed_feature_structures, mark_indexed=mark_indexed

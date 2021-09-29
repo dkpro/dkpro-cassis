@@ -41,7 +41,7 @@ which wraps the spacy NLP library as a web service which can be used in conjunct
 text annotation platform to automatically generate annotation suggestions.
 
 Features
-------------
+--------
 
 Currently supported features are:
 
@@ -158,7 +158,7 @@ Selecting annotations
             print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
 
 Getting and setting (nested) features
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to access a variable but only have its name as a string or have nested feature structures,
 e.g. a feature structure  with feature :code:`a` that has a
@@ -412,4 +412,14 @@ or in a clean environment via
 
     tox
 
+Release
+-------
+
+- Make sure all issues for the milestone are completed, otherwise move them to the next
+- Checkout the ``main`` branch
+- Bump the version in ``cassis/__version__.py`` to a stable one, e.g. ``__version__ = "0.6.0"``, commit and push, wait until the build completed. An example commit message would be ``No issue. Release 0.6.0``
+- Create a tag for that version via e.g. ``git tag v0.6.0`` and push the tags via ``git push --tags``. Pushing a tag triggers the release to pypi
+- Bump the version in ``cassis/__version__.py`` to the next development version, e.g. ``0.7.0-dev``, commit and push that. An example commit message would be ``No issue. Bump version after release``
+- Once the build has completed and pypi accepted the new version, go to the Github release and write the changelog based on the issues in the respective milestone
+- Create a new milestone for the next version
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
-         xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
+         xmi:version="2.0">
     <cas:NULL xmi:id="0"/>
     <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="47" language="x-unspecified"/>
 

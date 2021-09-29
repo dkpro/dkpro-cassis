@@ -1,9 +1,8 @@
 import warnings
 from pathlib import Path
 
-import pytest
+import pytest as pytest
 
-from cassis import TypeSystem, load_typesystem
 from cassis.typesystem import (
     _COLLECTION_TYPES,
     TOP_TYPE_NAME,
@@ -16,7 +15,6 @@ from cassis.typesystem import (
     TYPE_NAME_STRING,
     TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_TOP,
-    Feature,
     TypeCheckError,
 )
 from tests.fixtures import *
@@ -83,7 +81,9 @@ def test_feature_domain_when_feature_redefined_in_child():
 
     assert feature_parent.domainType.name == parent_type.name
 
-    feature_child = typesystem.create_feature(domainType=child_type, name="testFeature", rangeType=TYPE_NAME_STRING)
+    with pytest.warns(UserWarning):
+        # UserWarning: Feature with name [testFeature] already exists in parent!
+        feature_child = typesystem.create_feature(domainType=child_type, name="testFeature", rangeType=TYPE_NAME_STRING)
 
     assert feature_parent.domainType.name == parent_type.name
     assert feature_child.domainType.name == child_type.name
@@ -373,10 +373,12 @@ def test_is_collection(type_name: str, feature_name: str, expected: bool):
     assert typesystem.is_collection(type_name, feature) == expected
 
 
+@pytest.mark.filterwarnings("ignore:Feature with name")
 @pytest.mark.parametrize("type_name", [c for c in _COLLECTION_TYPES])
 def test_is_collection_for_builtin_collections_with_elements(type_name: str):
     typesystem = TypeSystem()
     t = typesystem.get_type(type_name)
+
     feature = typesystem.create_feature(t, "elements", rangeType=typesystem.get_type(TYPE_NAME_TOP))
 
     assert typesystem.is_collection(type_name, feature) is True
@@ -515,6 +517,7 @@ def test_deserializing_from_file(typesystem_path):
         load_typesystem(f)
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_deserializing_from_string(typesystem_xml):
     load_typesystem(typesystem_xml)
@@ -564,6 +567,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
 # Serializing
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_string(typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -573,6 +577,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
     assert_xml_equal(actual_xml, typesystem_xml)
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -584,6 +589,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
         assert_xml_equal(actual, typesystem_xml)
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
 def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -663,6 +669,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
     assert result.contains_type("test.ArraysAndListsWithElementTypes")
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize(
     "name, rangeTypeName, elementType, multipleReferencesAllowed",
     [
@@ -694,6 +701,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
             merge_typesystems(base, ts)
 
 
+@pytest.mark.filterwarnings("ignore:Feature with name")
 def test_that_merging_types_with_different_compatible_supertypes_works():
     ts1 = TypeSystem()
     ts1.create_type("test.Sub", description="Example type.", supertypeName="uima.tcas.Annotation")
@@ -714,6 +722,7 @@ def test_that_merging_types_with_different_compatible_supertypes_works():
     assert sub.supertype.name == "test.Super"
 
 
+@pytest.mark.filterwarnings("ignore:Feature with name")
 def test_that_merging_types_with_different_incompatible_supertypes_throws():
     ts1 = TypeSystem()
     ts1.create_type("test.Sub", description="Example type.", supertypeName="uima.cas.EmptyIntegerList")

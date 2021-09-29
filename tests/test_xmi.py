@@ -2,7 +2,6 @@ from pathlib import Path
 
 from lxml import etree
 
-from cassis import *
 from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import (
@@ -162,6 +161,7 @@ def test_deserializing_references_in_attributes_work(cas_with_references_xmi, we
 # Serializing
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_string(xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -172,6 +172,7 @@ def test_serializing_cas_to_string(xmi, typesystem_xml):
     assert_xml_equal(actual_xml, xmi)
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)
@@ -184,6 +185,7 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
         assert_xml_equal(actual.read(), xmi)
 
 
+@pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
 def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
     typesystem = load_typesystem(typesystem_xml)

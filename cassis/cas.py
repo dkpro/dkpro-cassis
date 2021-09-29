@@ -196,7 +196,7 @@ class Cas:
 
         # Every CAS comes with a an initial view called `_InitialView`
         self._add_view("_InitialView")
-        self._current_view = self._views["_InitialView"]  # type: View
+        self._current_view: View = self._views["_InitialView"]
 
     @property
     def typesystem(self) -> TypeSystem:
@@ -217,7 +217,7 @@ class Cas:
             ValueError: If a view with `name` already exists.
         """
         if name in self._views:
-            raise ValueError("A view with name [{name}] already exists!".format(name=name))
+            raise ValueError(f"A view with name [{name}] already exists!")
 
         self._add_view(name, xmiID=xmiID, sofaNum=sofaNum)
         return self.get_view(name)
@@ -253,7 +253,7 @@ class Cas:
             result._current_view = self._views[name]
             return result
         else:
-            raise KeyError("There is no view with name [{view}] in this CAS!".format(view=name))
+            raise KeyError(f"There is no view with name [{name}] in this CAS!")
 
     @property
     def views(self) -> List[View]:
@@ -274,7 +274,7 @@ class Cas:
 
         """
         if not self._lenient and not self._typesystem.contains_type(annotation.type.name):
-            msg = "Typesystem of CAS does not contain type [{0}]. ".format(annotation.type.name)
+            msg = f"Typesystem of CAS does not contain type [{annotation.type.name}]. "
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
@@ -562,7 +562,7 @@ class Cas:
             with path.open("wb") as f:
                 serializer.serialize(f, self, pretty_print=pretty_print)
         else:
-            raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+            raise TypeError(f"`path` needs to be one of [str, None, Path], but was <{type(path)}>")
 
     def typecheck(self) -> List[TypeCheckError]:
         """Checks whether all feature structures in this CAS are type sound.
@@ -610,7 +610,7 @@ class Cas:
                 if generate_missing_ids:
                     fs.xmiID = self._get_next_xmi_id()
                 else:
-                    raise ValueError("FS has no ID and ID generation is disabled! {fs}".format(fs=fs))
+                    raise ValueError(f"FS has no ID and ID generation is disabled! {fs}")
 
             existing_fs = all_fs.get(fs.xmiID)
             if existing_fs is not None and existing_fs is not fs:

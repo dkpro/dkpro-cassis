@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Union
 
 import attr
-import deprecation
 from deprecation import deprecated
 from lxml import etree
 from more_itertools import unique_everseen
@@ -363,13 +362,13 @@ class FeatureStructure:
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
-    name = attr.ib()  # type: str
-    domainType = attr.ib()  # type: "Type"
-    rangeType = attr.ib()  # type: "Type"
-    description = attr.ib(default=None)  # type: str
-    elementType = attr.ib(default=None)  # type: "Type"
-    multipleReferencesAllowed = attr.ib(default=None)  # type: bool
-    _has_reserved_name = attr.ib(default=False)  # type: bool
+    name: str = attr.ib()
+    domainType: "Type" = attr.ib()
+    rangeType: "Type" = attr.ib()
+    description: str = attr.ib(default=None)
+    elementType: "Type" = attr.ib(default=None)
+    multipleReferencesAllowed: bool = attr.ib(default=None)
+    _has_reserved_name: bool = attr.ib(default=False)
 
     def __eq__(self, other):
         if not isinstance(other, Feature):
@@ -411,15 +410,15 @@ class Type:
 
     """
 
-    name = attr.ib()  # type: str #: Type name of this type
-    supertype = attr.ib()  # type: Type # : The super type (parent) of this type
-    description = attr.ib(default=None)  # type: str #: Description of this type
-    typesystem = attr.ib(default=None)  # type: TypeSystem #: The typesystem this type belongs to
-    _children = attr.ib(factory=dict)  # type: Dict[str, Type]
-    _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
+    name: str = attr.ib()  #: Type name of this type
+    supertype: "Type" = attr.ib()  # : The super type (parent) of this type
+    description: str = attr.ib(default=None)  #: Description of this type
+    typesystem: "TypeSystem" = attr.ib(default=None)  #: The typesystem this type belongs to
+    _children: Dict[str, "Type"] = attr.ib(factory=dict)
+    _features: Dict[str, Feature] = attr.ib(factory=dict)
+    _inherited_features: Dict[str, Feature] = attr.ib(factory=dict)
     _constructor_fn = attr.ib(init=False, eq=False, order=False, repr=False)
-    _constructor = attr.ib(default=None, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _constructor: Callable[[Dict], FeatureStructure] = attr.ib(default=None, eq=False, order=False, repr=False)
     _cached_all_features = attr.ib(default=None, eq=False, order=False, repr=False)
 
     def __attrs_post_init__(self):
@@ -487,10 +486,10 @@ class Type:
             redefined_feature = target[feature.name]
 
             if redefined_feature == feature:
-                msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
+                msg = f"Feature with name [{feature.name}] already exists in [{self.name}]!"
                 warnings.warn(msg)
             else:
-                msg = "Feature with name [{0}] already exists in [{1}] but is redefined differently!".format(
+                msg = "Feature with name [{}] already exists in [{}] but is redefined differently!".format(
                     feature.name, self.name
                 )
                 raise ValueError(msg)
@@ -501,10 +500,10 @@ class Type:
             redefined_feature = self._inherited_features[feature.name]
 
             if redefined_feature == feature:
-                msg = "Feature with name [{0}] already exists in parent!".format(feature.name)
+                msg = f"Feature with name [{feature.name}] already exists in parent!"
                 warnings.warn(msg)
             else:
-                msg = "Feature with name [{0}] already exists in parent but is redefined!".format(feature.name)
+                msg = f"Feature with name [{feature.name}] already exists in parent but is redefined!"
                 raise ValueError(msg)
             return
 
@@ -732,7 +731,7 @@ class TypeSystem:
         if self.contains_type(type_name):
             return self._types[type_name]
         else:
-            raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
+            raise TypeNotFoundError(f"Type with name [{type_name}] not found!")
 
     def get_types(self, built_in: bool = False) -> Iterator[Type]:
         """Returns all types of this type system. Normally, this excludes the built-in types
@@ -928,7 +927,7 @@ class TypeSystem:
             with path.open("wb") as f:
                 serializer.serialize(f, self)
         else:
-            raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+            raise TypeError(f"`path` needs to be one of [str, None, Path], but was <{type(path)}>")
 
     def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
         """Checks whether a feature structure is type sound.
@@ -953,7 +952,7 @@ class TypeSystem:
                 element_type = f.elementType or TOP_TYPE_NAME
                 for e in feature_value.elements:
                     if not self.subsumes(element_type, e.type.name):
-                        msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
+                        msg = "Member of [{}] has unsound type: was [{}], need [{}]!".format(
                             f.rangeType.name, e.type.name, element_type.name
                         )
                         errors.append(TypeCheckError(fs.xmiID, msg))
@@ -1287,7 +1286,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                         # need to do anything
                         pass
                     else:
-                        msg = "Cannot merge type [{0}] with incompatible super types: [{1}] - [{2}]".format(
+                        msg = "Cannot merge type [{}] with incompatible super types: [{}] - [{}]".format(
                             t.name, t.supertype.name, existing_type.supertype.name
                         )
                         raise ValueError(msg)

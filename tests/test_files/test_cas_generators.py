@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from random import Random
 
-from cassis import Cas, TypeSystem
+from cassis import Cas
 from cassis.typesystem import *
 
 
@@ -58,7 +58,7 @@ class MultiTypeRandomCasGenerator:
                 begin = self.rnd.randint(0, 100)
                 end = self.rnd.randint(0, 30) + self.minimum_width
                 fs = T(begin=begin, end=end)
-                cas.add_annotation(fs)
+                cas.add(fs)
 
         return cas
 
@@ -140,7 +140,7 @@ class MultiFeatureRandomCasGenerator:
                 elements=[self.rnd.choice(feature_structures) for i in range(0, self.rnd.randint(1, 3))]
             )
 
-        cas.add_annotations(feature_structures)
+        cas.add_all(feature_structures)
 
         return cas
 

@@ -486,10 +486,10 @@ class Type:
             redefined_feature = target[feature.name]
 
             if redefined_feature == feature:
-                msg = "Feature with name [{0}] already exists in [{1}]!".format(feature.name, self.name)
+                msg = f"Feature with name [{feature.name}] already exists in [{self.name}]!"
                 warnings.warn(msg)
             else:
-                msg = "Feature with name [{0}] already exists in [{1}] but is redefined differently!".format(
+                msg = "Feature with name [{}] already exists in [{}] but is redefined differently!".format(
                     feature.name, self.name
                 )
                 raise ValueError(msg)
@@ -500,10 +500,10 @@ class Type:
             redefined_feature = self._inherited_features[feature.name]
 
             if redefined_feature == feature:
-                msg = "Feature with name [{0}] already exists in parent!".format(feature.name)
+                msg = f"Feature with name [{feature.name}] already exists in parent!"
                 warnings.warn(msg)
             else:
-                msg = "Feature with name [{0}] already exists in parent but is redefined!".format(feature.name)
+                msg = f"Feature with name [{feature.name}] already exists in parent but is redefined!"
                 raise ValueError(msg)
             return
 
@@ -731,7 +731,7 @@ class TypeSystem:
         if self.contains_type(type_name):
             return self._types[type_name]
         else:
-            raise TypeNotFoundError("Type with name [{0}] not found!".format(type_name))
+            raise TypeNotFoundError(f"Type with name [{type_name}] not found!")
 
     def get_types(self, built_in: bool = False) -> Iterator[Type]:
         """Returns all types of this type system. Normally, this excludes the built-in types
@@ -927,7 +927,7 @@ class TypeSystem:
             with path.open("wb") as f:
                 serializer.serialize(f, self)
         else:
-            raise TypeError("`path` needs to be one of [str, None, Path], but was <{0}>".format(type(path)))
+            raise TypeError(f"`path` needs to be one of [str, None, Path], but was <{type(path)}>")
 
     def typecheck(self, fs: FeatureStructure) -> List[TypeCheckError]:
         """Checks whether a feature structure is type sound.
@@ -952,7 +952,7 @@ class TypeSystem:
                 element_type = f.elementType or TOP_TYPE_NAME
                 for e in feature_value.elements:
                     if not self.subsumes(element_type, e.type.name):
-                        msg = "Member of [{0}] has unsound type: was [{1}], need [{2}]!".format(
+                        msg = "Member of [{}] has unsound type: was [{}], need [{}]!".format(
                             f.rangeType.name, e.type.name, element_type.name
                         )
                         errors.append(TypeCheckError(fs.xmiID, msg))
@@ -1286,7 +1286,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                         # need to do anything
                         pass
                     else:
-                        msg = "Cannot merge type [{0}] with incompatible super types: [{1}] - [{2}]".format(
+                        msg = "Cannot merge type [{}] with incompatible super types: [{}] - [{}]".format(
                             t.name, t.supertype.name, existing_type.supertype.name
                         )
                         raise ValueError(msg)

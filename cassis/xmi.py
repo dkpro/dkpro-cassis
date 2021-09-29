@@ -156,7 +156,7 @@ class CasXmiDeserializer:
                         # We saw the opening tag of an array element
                         state = INSIDE_ARRAY
                     else:
-                        raise RuntimeError("Invalid state transition: [{0}] 'start'".format(state))
+                        raise RuntimeError(f"Invalid state transition: [{state}] 'start'")
                 elif event == "end":
                     if state == INSIDE_FS:
                         # We saw the closing tag of a new feature
@@ -181,9 +181,9 @@ class CasXmiDeserializer:
                         children[elem.tag].append(elem.text)
                         state = INSIDE_FS
                     else:
-                        raise RuntimeError("Invalid state transition: [{0}] 'end'".format(state))
+                        raise RuntimeError(f"Invalid state transition: [{state}] 'end'")
                 else:
-                    raise RuntimeError("Invalid XML event: [{0}]".format(event))
+                    raise RuntimeError(f"Invalid XML event: [{event}]")
 
             # Free already processed elements from memory
             if event == "end":
@@ -575,7 +575,7 @@ class CasXmiSerializer:
         if type_name == TYPE_NAME_BOOLEAN_ARRAY:
             return " ".join(str(e).lower() for e in values)
         elif type_name == TYPE_NAME_BYTE_ARRAY:
-            return "".join("{:02X}".format(x) for x in values)
+            return "".join(f"{x:02X}" for x in values)
         elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
             return " ".join(self._serialize_float_value(x) for x in values)
         else:

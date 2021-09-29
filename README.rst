@@ -41,7 +41,7 @@ which wraps the spacy NLP library as a web service which can be used in conjunct
 text annotation platform to automatically generate annotation suggestions.
 
 Features
-------------
+--------
 
 Currently supported features are:
 
@@ -158,7 +158,7 @@ Selecting annotations
             print('Token: begin={0}, end={1}, id={2}, pos={3}'.format(token.begin, token.end, token.id, token.pos)) 
 
 Getting and setting (nested) features
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to access a variable but only have its name as a string or have nested feature structures,
 e.g. a feature structure  with feature :code:`a` that has a

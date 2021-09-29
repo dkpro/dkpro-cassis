@@ -36,6 +36,7 @@ test_dependencies = [
     "pytest-lazy-fixture==0.6.*",
     "codecov==2.1.*",
     "pytest-cov==2.12.*",
+    "rstcheck==3.3.*"
 ]
 
 dev_dependencies = [

@@ -292,7 +292,7 @@ def test_is_instance_of(child_name: str, parent_name: str, expected: bool):
     # manually load the type system
     path = os.path.join(FIXTURE_DIR, "typesystems", "important_dkpro_types.xml")
 
-    with open(path, "r") as f:
+    with open(path) as f:
         ts = load_typesystem(f.read())
 
     assert ts.is_instance_of(child_name, parent_name) == expected
@@ -648,7 +648,7 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
     ],
 )
 def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementType, multipleReferencesAllowed):
-    with open(typesystem_merge_base_path(), "r") as f:
+    with open(typesystem_merge_base_path()) as f:
         base = load_typesystem(f.read())
 
     ts = TypeSystem()
@@ -682,7 +682,7 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
     ],
 )
 def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elementType, multipleReferencesAllowed):
-    with open(typesystem_merge_base_path(), "r") as f:
+    with open(typesystem_merge_base_path()) as f:
         base = load_typesystem(f.read())
 
     ts = TypeSystem()
@@ -697,7 +697,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=UserWarning)
-        with pytest.raises(ValueError, match=r".*\[{0}\].*".format(name)):
+        with pytest.raises(ValueError, match=fr".*\[{name}\].*"):
             merge_typesystems(base, ts)
 
 

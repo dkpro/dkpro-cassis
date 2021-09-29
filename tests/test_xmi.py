@@ -181,7 +181,7 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
 
     cas.to_xmi(path)
 
-    with open(path, "r") as actual:
+    with open(path) as actual:
         assert_xml_equal(actual.read(), xmi)
 
 

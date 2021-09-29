@@ -537,7 +537,7 @@ class Cas:
         """Sets the sofa URI to `value`.
 
         Args:
-            value: The new sofa MIME type.
+            value: The new sofa URI.
 
         """
         self.get_sofa().sofaURI = value

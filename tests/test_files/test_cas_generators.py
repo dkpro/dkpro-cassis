@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from random import Random
 
-from cassis import Cas, TypeSystem
+from cassis import Cas
 from cassis.typesystem import *
 
 

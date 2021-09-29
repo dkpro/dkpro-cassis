@@ -3,7 +3,7 @@ from collections import defaultdict
 from io import BytesIO
 from math import isinf, isnan
 from pathlib import Path
-from typing import IO, Dict, Iterable, List, Set, Union
+from typing import IO, Dict, List, Union
 
 import attr
 from lxml import etree

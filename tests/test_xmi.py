@@ -2,7 +2,6 @@ from pathlib import Path
 
 from lxml import etree
 
-from cassis import *
 from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import (

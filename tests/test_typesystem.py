@@ -1,9 +1,6 @@
 import warnings
 from pathlib import Path
 
-import pytest
-
-from cassis import TypeSystem, load_typesystem
 from cassis.typesystem import (
     _COLLECTION_TYPES,
     TOP_TYPE_NAME,
@@ -11,7 +8,6 @@ from cassis.typesystem import (
     TYPE_NAME_INTEGER,
     TYPE_NAME_STRING,
     TYPE_NAME_TOP,
-    Feature,
     TypeCheckError,
 )
 from tests.fixtures import *

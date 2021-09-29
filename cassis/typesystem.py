@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Union
 
 import attr
-import deprecation
 from deprecation import deprecated
 from lxml import etree
 from more_itertools import unique_everseen

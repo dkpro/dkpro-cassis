@@ -1,9 +1,7 @@
 import random
 
 import attr
-import pytest
 
-from cassis.cas import Cas
 from cassis.typesystem import (
     TYPE_NAME_ANNOTATION,
     TYPE_NAME_INTEGER,

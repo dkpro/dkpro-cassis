@@ -35,15 +35,15 @@ class OffsetConverter:
     """
 
     def __init__(self):
-        self._uima_to_cassis: Dict[int, int] = {0: 0}
-        self._cassis_to_uima: Dict[int, int] = {0: 0}
+        self._uima_to_cassis: Union[Dict[int, int], None] = None
+        self._cassis_to_uima: Union[Dict[int, int], None] = None
 
     def create_index(self, sofa_string: str):
-        self._uima_to_cassis.clear()
-        self._cassis_to_uima.clear()
-
         if sofa_string is None:
             return
+
+        self._uima_to_cassis = {0: 0}
+        self._cassis_to_uima = {0: 0}
 
         count_uima = 0
         count_cassis = 0
@@ -65,11 +65,19 @@ class OffsetConverter:
     def uima_to_cassis(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
+
+        if self._uima_to_cassis is None:
+            return idx
+
         return self._uima_to_cassis[idx]
 
     def cassis_to_uima(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
+
+        if self._cassis_to_uima is None:
+            return idx
+
         return self._cassis_to_uima[idx]
 
 

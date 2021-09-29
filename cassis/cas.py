@@ -196,7 +196,7 @@ class Cas:
 
         # Every CAS comes with a an initial view called `_InitialView`
         self._add_view("_InitialView")
-        self._current_view = self._views["_InitialView"]  # type: View
+        self._current_view: View = self._views["_InitialView"]
 
     @property
     def typesystem(self) -> TypeSystem:

@@ -362,13 +362,13 @@ class FeatureStructure:
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
-    name = attr.ib()  # type: str
-    domainType = attr.ib()  # type: "Type"
-    rangeType = attr.ib()  # type: "Type"
-    description = attr.ib(default=None)  # type: str
-    elementType = attr.ib(default=None)  # type: "Type"
-    multipleReferencesAllowed = attr.ib(default=None)  # type: bool
-    _has_reserved_name = attr.ib(default=False)  # type: bool
+    name: str = attr.ib()
+    domainType: "Type" = attr.ib()
+    rangeType: "Type" = attr.ib()
+    description: str = attr.ib(default=None)
+    elementType: "Type" = attr.ib(default=None)
+    multipleReferencesAllowed: bool = attr.ib(default=None)
+    _has_reserved_name: bool = attr.ib(default=False)
 
     def __eq__(self, other):
         if not isinstance(other, Feature):
@@ -410,15 +410,15 @@ class Type:
 
     """
 
-    name = attr.ib()  # type: str #: Type name of this type
-    supertype = attr.ib()  # type: Type # : The super type (parent) of this type
-    description = attr.ib(default=None)  # type: str #: Description of this type
-    typesystem = attr.ib(default=None)  # type: TypeSystem #: The typesystem this type belongs to
-    _children = attr.ib(factory=dict)  # type: Dict[str, Type]
-    _features = attr.ib(factory=dict)  # type: Dict[str, Feature]
-    _inherited_features = attr.ib(factory=dict)  # type: Dict[str, Feature]
+    name: str = attr.ib()  #: Type name of this type
+    supertype: "Type" = attr.ib()  # : The super type (parent) of this type
+    description: str = attr.ib(default=None)  #: Description of this type
+    typesystem: "TypeSystem" = attr.ib(default=None)  #: The typesystem this type belongs to
+    _children: Dict[str, "Type"] = attr.ib(factory=dict)
+    _features: Dict[str, Feature] = attr.ib(factory=dict)
+    _inherited_features: Dict[str, Feature] = attr.ib(factory=dict)
     _constructor_fn = attr.ib(init=False, eq=False, order=False, repr=False)
-    _constructor = attr.ib(default=None, eq=False, order=False, repr=False)  # type: Callable[[Dict], FeatureStructure]
+    _constructor: Callable[[Dict], FeatureStructure] = attr.ib(default=None, eq=False, order=False, repr=False)
     _cached_all_features = attr.ib(default=None, eq=False, order=False, repr=False)
 
     def __attrs_post_init__(self):

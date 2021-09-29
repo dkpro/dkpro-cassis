@@ -48,8 +48,8 @@ NEGATIVE_INFINITE_VALUE = "-Infinity"
 class ProtoView:
     """A view element from XMI."""
 
-    sofa = attr.ib(validator=attr.validators.instance_of(int))  # type: int
-    members = attr.ib(factory=list)  # type: List[int]
+    sofa: int = attr.ib(validator=attr.validators.instance_of(int))
+    members: List[int] = attr.ib(factory=list)
 
 
 def load_cas_from_xmi(

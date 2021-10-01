@@ -102,7 +102,8 @@ def _render_feature_value(feature_value: any, fs_id_to_anchor: Dict[int, str]) -
     elif isinstance(feature_value, list):
         return [_render_feature_value(e, fs_id_to_anchor) for e in feature_value]
     elif _is_array_fs(feature_value):
-        return [_render_feature_value(e, fs_id_to_anchor) for e in feature_value.elements]
+        if feature_value.elements is not None:
+            return [_render_feature_value(e, fs_id_to_anchor) for e in feature_value.elements]
     elif _is_primitive_value(feature_value):
         return feature_value
     else:
@@ -227,8 +228,9 @@ def _feature_structure_hash(type_: Type, fs: FeatureStructure):
         feature_value = getattr(fs, feature.name)
 
         if _is_array_fs(feature_value):
-            for element in feature_value.elements:
-                hash_ = _feature_value_hash(feature_value, hash_)
+            if feature_value.elements is not None:
+                for element in feature_value.elements:
+                    hash_ = _feature_value_hash(feature_value, hash_)
         else:
             hash_ = _feature_value_hash(feature_value, hash_)
     return hash_

@@ -400,9 +400,6 @@ class Feature:
     def __lt__(self, other):
         return self.name < other.name
 
-    def __str__(self):
-        return f"Feature(name={self.name})"
-    
 
 @attr.s(slots=True, hash=False, eq=True)
 class Type:

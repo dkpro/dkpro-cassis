@@ -589,6 +589,9 @@ class Type:
     def __eq__(self, other):
         return self.name == other.name
 
+    def __str__(self):
+        return f"Type(name={self.name})"
+
 
 class TypeSystem:
     def __init__(self, add_document_annotation_type: bool = True):

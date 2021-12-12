@@ -1,6 +1,5 @@
 import sys
 from collections import defaultdict
-from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -10,9 +9,11 @@ from attr import validators
 from sortedcontainers import SortedKeyList
 
 from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem, TYPE_NAME_FS_LIST, \
-    TYPE_NAME_FS_ARRAY, FEATURE_BASE_NAME_HEAD
+    TYPE_NAME_FS_ARRAY, FEATURE_BASE_NAME_HEAD, TypeSystemMode
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
+
+NAME_DEFAULT_SOFA = "_InitialView"
 
 
 class IdGenerator:
@@ -106,6 +107,9 @@ class Sofa:
 
     #: str: The sofa URI, it references remote sofa data
     sofaURI = attr.ib(default=None, validator=_validator_optional_string)
+
+    #: str: The sofa data byte array
+    sofaArray = attr.ib(default=None)
 
     #: OffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
     _offset_converter = attr.ib(factory=OffsetConverter, eq=False, hash=False)
@@ -543,6 +547,25 @@ class Cas:
         """
         self.get_sofa().sofaURI = value
 
+    @property
+    def sofa_array(self) -> str:
+        """The sofa byte array references a uima.cas.ByteArray feature structure
+
+        Returns: The sofa data byte array.
+
+        """
+        return self.get_sofa().sofaArray
+
+    @sofa_array.setter
+    def sofa_array(self, value):
+        """Sets the sofa byte array to the given uima.cas.ByteArray feature structure.
+
+        Args:
+            value: The new sofa byte array feature structure.
+
+        """
+        self.get_sofa().sofaArray = value
+
     def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a XMI representation of this CAS.
 
@@ -557,19 +580,57 @@ class Cas:
         """
         from cassis.xmi import CasXmiSerializer
 
-        serializer = CasXmiSerializer()
+        return self._serialize(CasXmiSerializer(), path, pretty_print=pretty_print)
 
+    def to_json(
+        self,
+        path: Union[str, Path, None] = None,
+        pretty_print: bool = False,
+        ensure_ascii=False,
+        type_system_mode: TypeSystemMode = TypeSystemMode.FULL,
+    ) -> Optional[str]:
+        """Creates a JSON representation of this CAS.
+
+        Args:
+            path: File path, if `None` is provided the result is returned as a string
+            pretty_print: `True` if the resulting JSON should be pretty-printed, else `False`
+            ensure_ascii: Whether to escape non-ASCII Unicode characters or not
+            type_system_mode: Whether to serialize the full type system (`FUL`), only the types used (`MINIMAL`), or no
+                              type system information at all (`NONE`)
+
+        Returns:
+            If `path` is None, then the JSON representation of this CAS is returned as a string
+        """
+        from cassis.json import CasJsonSerializer
+
+        return self._serialize(
+            CasJsonSerializer(),
+            path,
+            pretty_print=pretty_print,
+            ensure_ascii=ensure_ascii,
+            type_system_mode=type_system_mode,
+        )
+
+    def _serialize(self, serializer, path: Union[str, Path, None] = None, **kwargs):
+        """Runs this CAS through the given serializer.
+
+        Args:
+            path: File path, if `None` is provided the result is returned as a string
+
+
+        Returns:
+            If `path` is None, then the data representation of this CAS is returned as a string
+
+        """
         # If `path` is None, then serialize to a string and return it
         if path is None:
-            sink = BytesIO()
-            serializer.serialize(sink, self, pretty_print=pretty_print)
-            return sink.getvalue().decode("utf-8")
+            return serializer.serialize(None, self, **kwargs)
         elif isinstance(path, str):
             with open(path, "wb") as f:
-                serializer.serialize(f, self, pretty_print=pretty_print)
+                serializer.serialize(f, self, **kwargs)
         elif isinstance(path, Path):
             with path.open("wb") as f:
-                serializer.serialize(f, self, pretty_print=pretty_print)
+                serializer.serialize(f, self, **kwargs)
         else:
             raise TypeError(f"`path` needs to be one of [str, None, Path], but was <{type(path)}>")
 

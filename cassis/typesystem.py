@@ -1,6 +1,7 @@
 import re
 import warnings
 from collections import defaultdict
+from enum import Enum, auto
 from io import BytesIO
 from itertools import chain, filterfalse
 from pathlib import Path
@@ -187,6 +188,14 @@ _INHERITANCE_FINAL_TYPES = _PRIMITIVE_ARRAY_TYPES
 _ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {TYPE_NAME_FS_ARRAY}
 
 _LIST_TYPES = _PRIMITIVE_LIST_TYPES | {TYPE_NAME_FS_LIST}
+
+class TypeSystemMode(Enum):
+    """How much type system information to include."""
+
+    FULL = auto()
+    MINIMAL = auto()
+    NONE = auto()
+
 
 def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)

@@ -1,7 +1,7 @@
 PYTHON_FILES = cassis tests
 
 test:
-	python -m pytest tests/
+	python -m pytest -m "not performance" tests/
 
 format:
 	black -l 120 cassis/

@@ -1,4 +1,5 @@
 import difflib
+import json
 from typing import IO, Union
 
 import lxml_asserts
@@ -33,6 +34,45 @@ def assert_xml_equal(actual: Union[IO, str], expected: Union[IO, str]):
 
         with open("difference.diff", "w") as f:
             diff = difflib.unified_diff(s1.splitlines(), s2.splitlines(), fromfile="Actual", tofile="Expected")
+            diff_string = "\n".join(diff)
+            f.write(diff_string)
+
+        raise e
+
+
+def assert_json_equal(actual: str, expected: Union[IO, str], sort_keys: bool = False):
+    """Checks whether the JSON trees behind `actual` and `expected` are equal.
+
+    Args:
+        actual: The actual JSON
+        expected: The expected JSON
+
+    Throws:
+        AssertionError when json(actual) != json(expected)
+    """
+    if isinstance(actual, str):
+        actual = json.loads(actual)
+
+    if isinstance(expected, str):
+        expected = json.loads(expected)
+
+    actual_json = json.dumps(actual, sort_keys=sort_keys, indent=2)
+    expected_json = json.dumps(expected, sort_keys=sort_keys, indent=2)
+
+    try:
+        assert actual_json == expected_json
+    except AssertionError as e:
+        # For debugging purposes, the trees are saved to later inspect their contents
+        with open("actual.json", "w") as f:
+            f.write(actual_json)
+
+        with open("expected.json", "w") as f:
+            f.write(expected_json)
+
+        with open("difference.diff", "w") as f:
+            diff = difflib.unified_diff(
+                actual_json.splitlines(), expected_json.splitlines(), fromfile="Actual", tofile="Expected"
+            )
             diff_string = "\n".join(diff)
             f.write(diff_string)
 

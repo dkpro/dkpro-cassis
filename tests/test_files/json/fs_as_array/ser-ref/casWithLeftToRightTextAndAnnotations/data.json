@@ -1,0 +1,36 @@
+{
+  "%TYPES" : { },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 1,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView",
+    "mimeType" : "text",
+    "sofaString" : "هذا اختبار"
+  }, {
+    "%ID" : 2,
+    "%TYPE" : "uima.tcas.Annotation",
+    "@sofa" : 1,
+    "begin" : 0,
+    "end" : 3
+  }, {
+    "%ID" : 3,
+    "%TYPE" : "uima.tcas.Annotation",
+    "@sofa" : 1,
+    "begin" : 4,
+    "end" : 10
+  }, {
+    "%ID" : 4,
+    "%TYPE" : "uima.tcas.DocumentAnnotation",
+    "@sofa" : 1,
+    "begin" : 0,
+    "end" : 10,
+    "language" : "x-unspecified"
+  } ],
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 1,
+      "%MEMBERS" : [ 2, 3, 4 ]
+    }
+  }
+}

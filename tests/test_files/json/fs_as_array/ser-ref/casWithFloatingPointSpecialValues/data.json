@@ -1,0 +1,102 @@
+{
+  "%FEATURE_STRUCTURES": [
+    {
+      "%ID": 1,
+      "%TYPE": "uima.cas.Sofa",
+      "sofaID": "_InitialView",
+      "sofaNum": 1
+    },
+    {
+      "#doubleNan": "NaN",
+      "#doubleNegInfinity": "-Infinity",
+      "#doublePosInfinity": "Infinity",
+      "#floatNan": "NaN",
+      "#floatNegInfinity": "-Infinity",
+      "#floatPosInfinity": "Infinity",
+      "%ID": 1,
+      "%TYPE": "SpecialValuesType",
+      "doubleOne": 1.0,
+      "doubleZero": 0.0,
+      "floatOne": 1.0,
+      "floatZero": 0.0
+    },
+    {
+      "%ELEMENTS": [
+        0.0,
+        1.0,
+        "-Infinity",
+        "Infinity",
+        "NaN"
+      ],
+      "%ID": 2,
+      "%TYPE": "uima.cas.DoubleArray"
+    },
+    {
+      "%ELEMENTS": [
+        0.0,
+        1.0,
+        "-Infinity",
+        "Infinity",
+        "NaN"
+      ],
+      "%ID": 3,
+      "%TYPE": "uima.cas.FloatArray"
+    }
+  ],
+  "%TYPES": {
+    "SpecialValuesType": {
+      "%NAME": "SpecialValuesType",
+      "%SUPER_TYPE": "uima.cas.TOP",
+      "doubleNan": {
+        "%NAME": "doubleNan",
+        "%RANGE": "uima.cas.Double"
+      },
+      "doubleNegInfinity": {
+        "%NAME": "doubleNegInfinity",
+        "%RANGE": "uima.cas.Double"
+      },
+      "doubleOne": {
+        "%NAME": "doubleOne",
+        "%RANGE": "uima.cas.Double"
+      },
+      "doublePosInfinity": {
+        "%NAME": "doublePosInfinity",
+        "%RANGE": "uima.cas.Double"
+      },
+      "doubleZero": {
+        "%NAME": "doubleZero",
+        "%RANGE": "uima.cas.Double"
+      },
+      "floatNan": {
+        "%NAME": "floatNan",
+        "%RANGE": "uima.cas.Float"
+      },
+      "floatNegInfinity": {
+        "%NAME": "floatNegInfinity",
+        "%RANGE": "uima.cas.Float"
+      },
+      "floatOne": {
+        "%NAME": "floatOne",
+        "%RANGE": "uima.cas.Float"
+      },
+      "floatPosInfinity": {
+        "%NAME": "floatPosInfinity",
+        "%RANGE": "uima.cas.Float"
+      },
+      "floatZero": {
+        "%NAME": "floatZero",
+        "%RANGE": "uima.cas.Float"
+      }
+    }
+  },
+  "%VIEWS": {
+    "_InitialView": {
+      "%MEMBERS": [
+        1,
+        2,
+        3
+      ],
+      "%SOFA": 1
+    }
+  }
+}

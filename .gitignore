@@ -221,3 +221,5 @@ expected.xml
 difference.diff
 
 xml_issue.py
+actual.json
+expected.json

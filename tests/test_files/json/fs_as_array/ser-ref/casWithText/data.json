@@ -1,0 +1,24 @@
+{
+  "%TYPES" : { },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 1,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView",
+    "mimeType" : "text",
+    "sofaString" : "This is a test."
+  }, {
+    "%ID" : 2,
+    "%TYPE" : "uima.tcas.DocumentAnnotation",
+    "@sofa" : 1,
+    "begin" : 0,
+    "end" : 15,
+    "language" : "x-unspecified"
+  } ],
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 1,
+      "%MEMBERS" : [ 2 ]
+    }
+  }
+}

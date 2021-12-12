@@ -59,6 +59,7 @@ Some features are still under development, e.g.
 
 - Proper type checking
 - XML/XMI schema validation
+- UIMA JSON CAS support (the format is not yet finalized)
 
 Installation
 ------------

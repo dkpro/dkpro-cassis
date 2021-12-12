@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><xmi:XMI xmlns:noNamespace="http:///uima/noNamespace.ecore" xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+    <cas:NULL xmi:id="0"/>
+    <cas:NonEmptyFSList xmi:id="6" tail="5" head="3"/>
+    <noNamespace:FsListHolder xmi:id="7" fsList="3 2"/>
+    <noNamespace:FsListHolderMR xmi:id="10" fsList="12"/>
+    <noNamespace:IntListHolder xmi:id="13" intList="2 1"/>
+    <noNamespace:IntListHolderMR xmi:id="17" intList="19"/>
+    <noNamespace:FloatListHolder xmi:id="20" floatList="3.4028235E38 1.4E-45 Infinity -Infinity NaN 1.0 0.0 -1.0"/>
+    <noNamespace:FloatListHolderMR xmi:id="30" floatList="38"/>
+    <noNamespace:StringListHolder xmi:id="39">
+        <stringList>blub</stringList>
+        <stringList>blah</stringList>
+    </noNamespace:StringListHolder>
+    <noNamespace:StringListHolderMR xmi:id="43" stringList="45"/>
+    <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView"/>
+    <cas:NonEmptyFSList xmi:id="5" tail="4" head="2"/>
+    <cas:EmptyFSList xmi:id="4"/>
+    <tcas:Annotation xmi:id="2" sofa="1" begin="0" end="1"/>
+    <tcas:Annotation xmi:id="3" sofa="1" begin="1" end="2"/>
+    <cas:NonEmptyFSList xmi:id="12" tail="11" head="3"/>
+    <cas:NonEmptyFSList xmi:id="11" tail="4" head="2"/>
+    <cas:NonEmptyIntegerList xmi:id="19" tail="18" head="2"/>
+    <cas:NonEmptyIntegerList xmi:id="18" tail="14" head="1"/>
+    <cas:EmptyIntegerList xmi:id="14"/>
+    <cas:NonEmptyFloatList xmi:id="38" tail="37" head="3.4028235E38"/>
+    <cas:NonEmptyFloatList xmi:id="37" tail="36" head="1.4E-45"/>
+    <cas:NonEmptyFloatList xmi:id="36" tail="35" head="Infinity"/>
+    <cas:NonEmptyFloatList xmi:id="35" tail="34" head="-Infinity"/>
+    <cas:NonEmptyFloatList xmi:id="34" tail="33" head="NaN"/>
+    <cas:NonEmptyFloatList xmi:id="33" tail="32" head="1.0"/>
+    <cas:NonEmptyFloatList xmi:id="32" tail="31" head="0.0"/>
+    <cas:NonEmptyFloatList xmi:id="31" tail="21" head="-1.0"/>
+    <cas:EmptyFloatList xmi:id="21"/>
+    <cas:NonEmptyStringList xmi:id="45" tail="44" head="blub"/>
+    <cas:NonEmptyStringList xmi:id="44" tail="40" head="blah"/>
+    <cas:EmptyStringList xmi:id="40"/>
+    <cas:View sofa="1" members="6 7 10 13 17 20 30 39 43"/>
+</xmi:XMI>

@@ -8,7 +8,8 @@ import deprecation
 from attr import validators
 from sortedcontainers import SortedKeyList
 
-from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem, TypeSystemMode
+from cassis.typesystem import TYPE_NAME_SOFA, FeatureStructure, TypeCheckError, TypeSystem, TYPE_NAME_FS_LIST, \
+    TYPE_NAME_FS_ARRAY, FEATURE_BASE_NAME_HEAD, TypeSystemMode
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -651,7 +652,7 @@ class Cas:
     def _find_all_fs(
         self,
         generate_missing_ids: bool = True,
-        include_inlinable_arrays: bool = False,
+        include_inlinable_arrays_and_lists: bool = False,
         seeds: Iterable = None,
     ) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
@@ -717,21 +718,29 @@ class Cas:
                     continue
 
                 if (
-                    not include_inlinable_arrays
+                    not include_inlinable_arrays_and_lists
                     and not feature.multipleReferencesAllowed
-                    and ts.is_array(feature.rangeType)
+                    and (ts.is_array(feature.rangeType) or ts.is_list(feature.rangeType))
                 ):
-                    # For inlined FSArrays, we still need to scan their members
-                    if feature.rangeType.name == "uima.cas.FSArray" and feature_value.elements:
+                    # For inlined FSArrays / FSList, we still need to scan their members
+                    if feature.rangeType.name == TYPE_NAME_FS_ARRAY and feature_value.elements:
                         for ref in feature_value.elements:
                             if not ref or ref.xmiID in all_fs:
                                 continue
                             openlist.append(ref)
+                    elif feature.rangeType.name == TYPE_NAME_FS_LIST and hasattr(feature_value, FEATURE_BASE_NAME_HEAD):
+                        v = feature_value
+                        while hasattr(v, FEATURE_BASE_NAME_HEAD):
+                            if not v.head or v.head.xmiID in all_fs:
+                                continue
+                            openlist.append(v.head)
+                            v = v.tail
+                    # For primitive arrays / lists, we do not need to handle the elements
                     continue
 
                 if not hasattr(feature_value, "xmiID"):
                     raise AttributeError(
-                        f"Feature [{feature_name}] should point to a [{feature.rangeType.name}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
+                        f"Feature [{feature.domainType.name}:{feature_name}] should point to a [{feature.rangeType.name}] but the feature value is a [{type(feature_value)}] with the value [{feature_value}]"
                     )
 
                 if feature_value.xmiID in all_fs:

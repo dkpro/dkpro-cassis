@@ -30,9 +30,21 @@ TYPE_NAME_LONG = UIMA_CAS_PREFIX + "Long"
 TYPE_NAME_DOUBLE = UIMA_CAS_PREFIX + "Double"
 TYPE_NAME_ARRAY_BASE = UIMA_CAS_PREFIX + "ArrayBase"
 TYPE_NAME_FS_ARRAY = UIMA_CAS_PREFIX + "FSArray"
+TYPE_NAME_FS_LIST = UIMA_CAS_PREFIX + "FSList"
+TYPE_NAME_EMPTY_FS_LIST = UIMA_CAS_PREFIX + "EmptyFSList"
+TYPE_NAME_NON_EMPTY_FS_LIST = UIMA_CAS_PREFIX + "NonEmptyFSList"
 TYPE_NAME_INTEGER_ARRAY = UIMA_CAS_PREFIX + "IntegerArray"
+TYPE_NAME_INTEGER_LIST = UIMA_CAS_PREFIX + "IntegerList"
+TYPE_NAME_EMPTY_INTEGER_LIST = UIMA_CAS_PREFIX + "EmptyIntegerList"
+TYPE_NAME_NON_EMPTY_INTEGER_LIST = UIMA_CAS_PREFIX + "NonEmptyIntegerList"
 TYPE_NAME_FLOAT_ARRAY = UIMA_CAS_PREFIX + "FloatArray"
+TYPE_NAME_FLOAT_LIST = UIMA_CAS_PREFIX + "FloatList"
+TYPE_NAME_EMPTY_FLOAT_LIST = UIMA_CAS_PREFIX + "EmptyFloatList"
+TYPE_NAME_NON_EMPTY_FLOAT_LIST = UIMA_CAS_PREFIX + "NonEmptyFloatList"
 TYPE_NAME_STRING_ARRAY = UIMA_CAS_PREFIX + "StringArray"
+TYPE_NAME_STRING_LIST = UIMA_CAS_PREFIX + "StringList"
+TYPE_NAME_EMPTY_STRING_LIST = UIMA_CAS_PREFIX + "EmptyStringList"
+TYPE_NAME_NON_EMPTY_STRING_LIST = UIMA_CAS_PREFIX + "NonEmptyStringList"
 TYPE_NAME_BOOLEAN_ARRAY = UIMA_CAS_PREFIX + "BooleanArray"
 TYPE_NAME_BYTE_ARRAY = UIMA_CAS_PREFIX + "ByteArray"
 TYPE_NAME_SHORT_ARRAY = UIMA_CAS_PREFIX + "ShortArray"
@@ -57,6 +69,8 @@ FEATURE_BASE_NAME_SOFA = "sofa"
 FEATURE_BASE_NAME_BEGIN = "begin"
 FEATURE_BASE_NAME_END = "end"
 FEATURE_BASE_NAME_LANGUAGE = "language"
+FEATURE_BASE_NAME_HEAD = "head"
+FEATURE_BASE_NAME_TAIL = "tail"
 
 _DOCUMENT_ANNOTATION_TYPE = "uima.tcas.DocumentAnnotation"
 
@@ -167,10 +181,13 @@ _PRIMITIVE_ARRAY_TYPES = {
     "uima.cas.StringArray",
 }
 
+_PRIMITIVE_LIST_TYPES = {TYPE_NAME_INTEGER_LIST, TYPE_NAME_FLOAT_LIST, TYPE_NAME_STRING_LIST}
+
 _INHERITANCE_FINAL_TYPES = _PRIMITIVE_ARRAY_TYPES
 
-_ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {"uima.cas.FSArray"}
+_ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {TYPE_NAME_FS_ARRAY}
 
+_LIST_TYPES = _PRIMITIVE_LIST_TYPES | {TYPE_NAME_FS_LIST}
 
 class TypeSystemMode(Enum):
     """How much type system information to include."""
@@ -254,6 +271,23 @@ def is_primitive_array(type_: Union[str, "Type"]) -> bool:
     return type_name in _PRIMITIVE_ARRAY_TYPES
 
 
+def is_primitive_list(type_: Union[str, "Type"]) -> bool:
+    """Checks if the type identified by `type` is a primitive list, e.g. list of primitives.
+
+    Args:
+        type_: Type to query for (`Type` or name as string)
+    Returns:
+        Returns `True` if the type identified by `type` is a primitive array type, else `False`
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+
+    # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
+    return type_name in _PRIMITIVE_LIST_TYPES
+
+
 def is_array(type_: Union[str, "Type"]) -> bool:
     """Checks if the type identified by `type` is an array.
 
@@ -269,6 +303,23 @@ def is_array(type_: Union[str, "Type"]) -> bool:
 
     # Arrays are inheritance-final, so we do not need to check the inheritance hierarchy
     return type_name in _ARRAY_TYPES
+
+
+def is_list(type_: Union[str, "Type"]) -> bool:
+    """Checks if the type identified by `type` is a list.
+
+    Args:
+        type_: Type to query for (`Type` or name as string)
+    Returns:
+        Returns `True` if the type identified by `type` is a list type, else `False`
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+
+    if type_name == TOP_TYPE_NAME:
+        return False
+
+    # Lists are inheritance-final, so we do not need to check the inheritance hierarchy
+    return type_name in _LIST_TYPES
 
 
 @attr.s
@@ -598,6 +649,9 @@ class Type:
     def __eq__(self, other):
         return self.name == other.name
 
+    def __str__(self):
+        return f"Type(name={self.name})"
+
 
 class TypeSystem:
     def __init__(self, add_document_annotation_type: bool = True):
@@ -817,6 +871,16 @@ class TypeSystem:
         """
         return is_primitive_array(type_)
 
+    def is_primitive_list(self, type_: Union[str, Type]) -> bool:
+        """Checks if the type identified by `type` is a primitive list, e.g. list of primitives.
+
+        Args:
+            type_: Type to query for (`Type` or name as string)
+        Returns:
+            Returns `True` if the type identified by `type` is a primitive array type, else `False`
+        """
+        return is_primitive_list(type_)
+
     def is_array(self, type_: Union[str, Type]) -> bool:
         """Checks if the type identified by `type` is an array.
 
@@ -826,6 +890,16 @@ class TypeSystem:
             Returns `True` if the type identified by `type` is an array type, else `False`
         """
         return is_array(type_)
+
+    def is_list(self, type_: Union[str, Type]) -> bool:
+        """Checks if the type identified by `type` is a list.
+
+        Args:
+            type_: Type to query for (`Type` or name as string)
+        Returns:
+            Returns `True` if the type identified by `type` is a list type, else `False`
+        """
+        return is_list(type_)
 
     def subsumes(self, parent: Union[str, Type], child: Union[str, Type]) -> bool:
         """Determines if the type `child` is a child of `parent`.

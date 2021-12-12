@@ -293,7 +293,7 @@ class CasJsonSerializer:
 
         # Find all fs, even the ones that are not directly added to a sofa
         used_types = set()
-        for fs in sorted(cas._find_all_fs(include_inlinable_arrays=True), key=lambda a: a.xmiID):
+        for fs in sorted(cas._find_all_fs(include_inlinable_arrays_and_lists=True), key=lambda a: a.xmiID):
             used_types.add(fs.type)
             json_fs = self._serialize_feature_structure(fs)
             feature_structures.append(json_fs)

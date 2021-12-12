@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Klie"
+  given-names: "Jan-Christoph "
+  orcid: "https://orcid.org/0000-0003-0181-6450"
+- family-names: "Eckart de Castilho"
+  given-names: "Richard"
+  orcid: "https://orcid.org/0000-0003-0991-7045"
+title: "dkpro-cassis"
+version: 0.6.1
+doi: 10.5281/zenodo.5537447
+date-released: 2021-11-23
+url: "https://github.com/dkpro/dkpro-cassis"

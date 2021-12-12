@@ -62,6 +62,20 @@ def cas_with_collections_xmi(cas_with_collections_path):
         return f.read()
 
 
+# CAS with all kinds of list features
+
+
+@pytest.fixture
+def cas_with_list_features_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_list_features.xmi")
+
+
+@pytest.fixture
+def cas_with_list_features_xmi(cas_with_list_features_path):
+    with open(cas_with_list_features_path, "r") as f:
+        return f.read()
+
+
 # CAS with references
 
 
@@ -376,6 +390,20 @@ def typesystem_with_floating_points_xml(typesystem_with_floating_points_path):
 
 def typesystem_merge_base_path():
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_merge_base.xml")
+
+
+# Type system with all kinds of list features
+
+
+@pytest.fixture
+def typesystem_with_list_features_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_list_features.xml")
+
+
+@pytest.fixture
+def typesystem_with_list_features_xml(typesystem_with_list_features_path):
+    with open(typesystem_with_list_features_path, "r") as f:
+        return f.read()
 
 
 # Annotations

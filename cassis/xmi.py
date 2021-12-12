@@ -23,16 +23,22 @@ from cassis.typesystem import (
     TYPE_NAME_BYTE_ARRAY,
     TYPE_NAME_DOUBLE,
     TYPE_NAME_DOUBLE_ARRAY,
+    TYPE_NAME_EMPTY_FLOAT_LIST,
     TYPE_NAME_EMPTY_FS_LIST,
+    TYPE_NAME_EMPTY_INTEGER_LIST,
     TYPE_NAME_FLOAT,
     TYPE_NAME_FLOAT_ARRAY,
+    TYPE_NAME_FLOAT_LIST,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
     TYPE_NAME_INTEGER,
     TYPE_NAME_INTEGER_ARRAY,
+    TYPE_NAME_INTEGER_LIST,
     TYPE_NAME_LONG,
     TYPE_NAME_LONG_ARRAY,
+    TYPE_NAME_NON_EMPTY_FLOAT_LIST,
     TYPE_NAME_NON_EMPTY_FS_LIST,
+    TYPE_NAME_NON_EMPTY_INTEGER_LIST,
     TYPE_NAME_SHORT,
     TYPE_NAME_SHORT_ARRAY,
     TYPE_NAME_SOFA,
@@ -41,7 +47,8 @@ from cassis.typesystem import (
     FeatureStructure,
     Type,
     TypeNotFoundError,
-    TypeSystem,
+    TypeSystem, TYPE_NAME_STRING_LIST, TYPE_NAME_EMPTY_STRING_LIST, TYPE_NAME_NON_EMPTY_STRING_LIST,
+    _PRIMITIVE_LIST_TYPES, _LIST_TYPES,
 )
 
 NAN_VALUE = "NaN"
@@ -195,8 +202,6 @@ class CasXmiDeserializer:
                 self._clear_elem(elem)
 
         # Post-process feature values
-        StringArray = typesystem.get_type("uima.cas.StringArray")
-        referenced_fs = set()
         for xmi_id, fs in feature_structures.items():
             t = typesystem.get_type(fs.type.name)
 
@@ -226,6 +231,13 @@ class CasXmiDeserializer:
                     if isinstance(value, str):
                         FSType = feature.rangeType
                         fs[feature_name] = FSType(elements=self._parse_primitive_array(feature.rangeType, value))
+                elif typesystem.is_primitive_list(feature.rangeType) and not feature.multipleReferencesAllowed:
+                    # Array feature rendered inline (multipleReferencesAllowed = False|None)
+                    # We also end up here for array features that were rendered as child elements. No need to parse
+                    # them again, so we check if the value is still a string (i.e. attribute value) and only then
+                    # process it
+                    if isinstance(value, str):
+                        fs[feature_name] = self._parse_primitive_list(feature.rangeType, value)
                 else:
                     # Resolve references here
                     if value is None:
@@ -240,16 +252,23 @@ class CasXmiDeserializer:
                             target_id = int(ref)
                             target = feature_structures[target_id]
                             targets.append(target)
-                            referenced_fs.add(target_id)
+
                         if feature.rangeType.name == TYPE_NAME_FS_ARRAY:
                             # Wrap inline array into the appropriate array object
                             ArrayType = typesystem.get_type(TYPE_NAME_FS_ARRAY)
                             targets = ArrayType(elements=targets)
+
                         fs[feature_name] = targets
+                    elif feature.rangeType.name == TYPE_NAME_FS_LIST and not feature.multipleReferencesAllowed:
+                        # Array feature rendered inline (multipleReferencesAllowed = False|None)
+                        # We also end up here for array features that were rendered as child elements. No need to parse
+                        # them again, so we check if the value is still a string (i.e. attribute value) and only then
+                        # process it
+                        if isinstance(value, list) or isinstance(value, str):
+                            fs[feature_name] = self._parse_fs_list(feature_structures, feature.rangeType, value)
                     else:
                         target_id = int(value)
                         fs[feature_name] = feature_structures[target_id]
-                        referenced_fs.add(target_id)
 
         cas = Cas(typesystem=typesystem, lenient=lenient)
         for sofa in sofas.values():
@@ -340,25 +359,73 @@ class CasXmiDeserializer:
             attributes["type_"] = attributes.pop("type")
 
         # Arrays which were represented as nested elements in the XMI have so far have only been parsed into a Python
-        # arrays. Now we convert them to proper UIMA arrays
+        # arrays. Now we convert them to proper UIMA arrays/lists
         if not typesystem.is_primitive_array(type_name):
             for feature_name, feature_value in children.items():
                 feature = AnnotationType.get_feature(feature_name)
                 if typesystem.is_primitive_array(feature.rangeType):
                     ArrayType = feature.rangeType
                     attributes[feature_name] = ArrayType(elements=attributes[feature_name])
+                if typesystem.is_primitive_list(feature.rangeType):
+                    attributes[feature_name] = self._parse_primitive_list(feature.rangeType, attributes[feature_name])
 
         self._max_xmi_id = max(attributes["xmiID"], self._max_xmi_id)
         return AnnotationType(**attributes)
 
-    def _parse_primitive_array(self, type_: Type, value: str) -> List:
+    def _parse_primitive_list(self, type_: Type, value: Union[str, List[str]]):
+        if value is None:
+            return None
+
+        # Convert the inline array into the linked NonEmptyList/EmptyList instances
+        if type_.name == TYPE_NAME_INTEGER_LIST:
+            EmptyList = type_.typesystem.get_type(TYPE_NAME_EMPTY_INTEGER_LIST)
+            NonEmptyList = type_.typesystem.get_type(TYPE_NAME_NON_EMPTY_INTEGER_LIST)
+            conv = int
+        elif type_.name == TYPE_NAME_FLOAT_LIST:
+            EmptyList = type_.typesystem.get_type(TYPE_NAME_EMPTY_FLOAT_LIST)
+            NonEmptyList = type_.typesystem.get_type(TYPE_NAME_NON_EMPTY_FLOAT_LIST)
+            conv = float
+        elif type_.name == TYPE_NAME_STRING_LIST:
+            EmptyList = type_.typesystem.get_type(TYPE_NAME_EMPTY_STRING_LIST)
+            NonEmptyList = type_.typesystem.get_type(TYPE_NAME_NON_EMPTY_STRING_LIST)
+            conv = str
+        else:
+            raise ValueError(f"Unexpected primitive list type: {type_.name}")
+
+        elements = value.split() if isinstance(value, str) else value
+
+        head = EmptyList()
+        for e in reversed(elements):
+            tail = head
+            head = NonEmptyList()
+            head.set(FEATURE_BASE_NAME_HEAD, conv(e))
+            head.set(FEATURE_BASE_NAME_TAIL, tail)
+        return head
+
+    def _parse_fs_list(self, feature_structures, type_: Type, value: str):
+        # Convert the inline array into the linked NonEmptyFSList/EmptyFSList instances
+        NonEmptyFSList = type_.typesystem.get_type(TYPE_NAME_NON_EMPTY_FS_LIST)
+        EmptyFSList = type_.typesystem.get_type(TYPE_NAME_EMPTY_FS_LIST)
+
+        elements = value.split() if isinstance(value, str) else value
+
+        head = EmptyFSList()
+        for e in reversed(elements):
+            tail = head
+            head = NonEmptyFSList()
+            head.set(FEATURE_BASE_NAME_HEAD, feature_structures[int(e)])
+            head.set(FEATURE_BASE_NAME_TAIL, tail)
+        return head
+
+    def _parse_primitive_array(self, type_: Type, value: Union[str, List[str]]) -> List:
         """Primitive collections are serialized as white space separated primitive values"""
 
         if value is None:
             return None
 
         # TODO: Use type name global variable here instead of hardcoded string literal
-        elements = value.split(" ")
+        elements = value.split() if isinstance(value, str) else value
+
         type_name = type_.name
         if type_name in [TYPE_NAME_FLOAT_ARRAY, TYPE_NAME_DOUBLE_ARRAY]:
             return [float(e) for e in elements] if value else []
@@ -535,12 +602,23 @@ class CasXmiSerializer:
                     for e in value.elements:
                         child = etree.SubElement(elem, feature_name)
                         child.text = e
+            elif ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_LIST) and not feature.multipleReferencesAllowed:
+                if value is not None:  # Compare to none to not skip if elements is empty!
+                    for e in self._collect_list_elements(feature.rangeType.name, value):
+                        child = etree.SubElement(elem, feature_name)
+                        child.text = e
             elif ts.is_primitive_array(feature.rangeType) and not feature.multipleReferencesAllowed:
                 if value.elements is not None:  # Compare to none to not skip if elements is empty!
                     elem.attrib[feature_name] = self._serialize_primitive_array(feature.rangeType.name, value.elements)
+            elif ts.is_primitive_list(feature.rangeType) and not feature.multipleReferencesAllowed:
+                if value is not None:  # Compare to none to not skip if elements is empty!
+                    elem.attrib[feature_name] = self._serialize_primitive_list(feature.rangeType.name, value)
             elif feature.rangeType.name == TYPE_NAME_FS_ARRAY and not feature.multipleReferencesAllowed:
                 if value.elements is not None:  # Compare to none to not skip if elements is empty!
                     elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
+            elif feature.rangeType.name == TYPE_NAME_FS_LIST and not feature.multipleReferencesAllowed:
+                if value is not None:  # Compare to none to not skip if elements is empty!
+                    elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in self._collect_list_elements(feature.rangeType.name, value))
             elif feature_name == FEATURE_BASE_NAME_SOFA:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif feature.rangeType.name == TYPE_NAME_BOOLEAN:
@@ -560,8 +638,10 @@ class CasXmiSerializer:
         elem.attrib["{http://www.omg.org/XMI}id"] = str(sofa.xmiID)
         elem.attrib["sofaNum"] = str(sofa.sofaNum)
         elem.attrib["sofaID"] = str(sofa.sofaID)
-        elem.attrib["mimeType"] = str(sofa.mimeType)
-        elem.attrib["sofaString"] = str(sofa.sofaString)
+        if sofa.mimeType is not None:
+            elem.attrib["mimeType"] = str(sofa.mimeType)
+        if sofa.sofaString is not None:
+            elem.attrib["sofaString"] = str(sofa.sofaString)
 
     def _serialize_view(self, root: etree.Element, view: View):
         name = etree.QName(self._nsmap["cas"], "View")
@@ -569,6 +649,26 @@ class CasXmiSerializer:
 
         elem.attrib["sofa"] = str(view.sofa.xmiID)
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
+
+    def _collect_list_elements(self, type_name: str,  value) -> List[str]:
+        if type_name not in _LIST_TYPES:
+            raise ValueError(f"Not a primitive list: {type_name}")
+
+        elements = []
+        current = value
+        while hasattr(current, "head"):
+            elements.append(current.head)
+            current = current.tail
+        return elements
+
+    def _serialize_primitive_list(self, type_name: str, value) -> str:
+        elements = []
+        for e in self._collect_list_elements(type_name, value):
+            if isinstance(e, float):
+                elements.append(self._serialize_float_value(e))
+            else:
+                elements.append(str(e))
+        return " ".join(elements)
 
     def _serialize_primitive_array(self, type_name: str, values: List) -> str:
         """Primitive collections are serialized as white space seperated primitive values"""
@@ -594,4 +694,6 @@ class CasXmiSerializer:
                 return POSITIVE_INFINITE_VALUE
             else:
                 return NEGATIVE_INFINITE_VALUE
-        return str(value)
+
+        # Formatting in the same way that Java does it, with a capital 'E' and without a '+' if the exponent is positive
+        return str(value).upper().replace("E+", "E")

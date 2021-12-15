@@ -76,6 +76,20 @@ def cas_with_list_features_xmi(cas_with_list_features_path):
         return f.read()
 
 
+# CAS with all kinds of array features
+
+
+@pytest.fixture
+def cas_with_array_features_path():
+    return os.path.join(FIXTURE_DIR, "xmi", "cas_with_array_features.xmi")
+
+
+@pytest.fixture
+def cas_with_array_features_xmi(cas_with_array_features_path):
+    with open(cas_with_array_features_path, "r") as f:
+        return f.read()
+
+
 # CAS with references
 
 
@@ -403,6 +417,20 @@ def typesystem_with_list_features_path():
 @pytest.fixture
 def typesystem_with_list_features_xml(typesystem_with_list_features_path):
     with open(typesystem_with_list_features_path, "r") as f:
+        return f.read()
+
+
+# Type system with all kinds of array features
+
+
+@pytest.fixture
+def typesystem_with_array_features_path():
+    return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_array_features.xml")
+
+
+@pytest.fixture
+def typesystem_with_array_features_xml(typesystem_with_array_features_path):
+    with open(typesystem_with_array_features_path, "r") as f:
         return f.read()
 
 

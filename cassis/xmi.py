@@ -10,7 +10,9 @@ from lxml import etree
 
 from cassis.cas import Cas, IdGenerator, Sofa, View
 from cassis.typesystem import (
+    _LIST_TYPES,
     _PRIMITIVE_ARRAY_TYPES,
+    _PRIMITIVE_LIST_TYPES,
     FEATURE_BASE_NAME_BEGIN,
     FEATURE_BASE_NAME_END,
     FEATURE_BASE_NAME_HEAD,
@@ -26,6 +28,7 @@ from cassis.typesystem import (
     TYPE_NAME_EMPTY_FLOAT_LIST,
     TYPE_NAME_EMPTY_FS_LIST,
     TYPE_NAME_EMPTY_INTEGER_LIST,
+    TYPE_NAME_EMPTY_STRING_LIST,
     TYPE_NAME_FLOAT,
     TYPE_NAME_FLOAT_ARRAY,
     TYPE_NAME_FLOAT_LIST,
@@ -39,16 +42,17 @@ from cassis.typesystem import (
     TYPE_NAME_NON_EMPTY_FLOAT_LIST,
     TYPE_NAME_NON_EMPTY_FS_LIST,
     TYPE_NAME_NON_EMPTY_INTEGER_LIST,
+    TYPE_NAME_NON_EMPTY_STRING_LIST,
     TYPE_NAME_SHORT,
     TYPE_NAME_SHORT_ARRAY,
     TYPE_NAME_SOFA,
     TYPE_NAME_STRING,
     TYPE_NAME_STRING_ARRAY,
+    TYPE_NAME_STRING_LIST,
     FeatureStructure,
     Type,
     TypeNotFoundError,
-    TypeSystem, TYPE_NAME_STRING_LIST, TYPE_NAME_EMPTY_STRING_LIST, TYPE_NAME_NON_EMPTY_STRING_LIST,
-    _PRIMITIVE_LIST_TYPES, _LIST_TYPES,
+    TypeSystem,
 )
 
 NAN_VALUE = "NaN"
@@ -244,7 +248,9 @@ class CasXmiDeserializer:
                         continue
 
                     # Resolve references
-                    if fs.type.name == TYPE_NAME_FS_ARRAY or feature.rangeType.name == TYPE_NAME_FS_ARRAY:
+                    if fs.type.name == TYPE_NAME_FS_ARRAY or (
+                        feature.rangeType.name == TYPE_NAME_FS_ARRAY and not feature.multipleReferencesAllowed
+                    ):
                         # An array of references is a list of integers separated
                         # by single spaces, e.g. <foo:bar elements="1 2 3 42" />
                         targets = []
@@ -627,7 +633,9 @@ class CasXmiSerializer:
                     elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in value.elements)
             elif feature.rangeType.name == TYPE_NAME_FS_LIST and not feature.multipleReferencesAllowed:
                 if value is not None:  # Compare to none to not skip if elements is empty!
-                    elem.attrib[feature_name] = " ".join(str(e.xmiID) for e in self._collect_list_elements(feature.rangeType.name, value))
+                    elem.attrib[feature_name] = " ".join(
+                        str(e.xmiID) for e in self._collect_list_elements(feature.rangeType.name, value)
+                    )
             elif feature_name == FEATURE_BASE_NAME_SOFA:
                 elem.attrib[feature_name] = str(value.xmiID)
             elif feature.rangeType.name == TYPE_NAME_BOOLEAN:
@@ -659,7 +667,7 @@ class CasXmiSerializer:
         elem.attrib["sofa"] = str(view.sofa.xmiID)
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
 
-    def _collect_list_elements(self, type_name: str,  value) -> List[str]:
+    def _collect_list_elements(self, type_name: str, value) -> List[str]:
         if type_name not in _LIST_TYPES:
             raise ValueError(f"Not a primitive list: {type_name}")
 

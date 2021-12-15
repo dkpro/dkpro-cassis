@@ -39,6 +39,10 @@ FIXTURES = [
         pytest.lazy_fixture("cas_with_list_features_xmi"),
         pytest.lazy_fixture("typesystem_with_list_features_xml"),
     ),
+    (
+        pytest.lazy_fixture("cas_with_array_features_xmi"),
+        pytest.lazy_fixture("typesystem_with_array_features_xml"),
+    ),
 ]
 
 

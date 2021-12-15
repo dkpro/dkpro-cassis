@@ -189,6 +189,7 @@ _ARRAY_TYPES = _PRIMITIVE_ARRAY_TYPES | {TYPE_NAME_FS_ARRAY}
 
 _LIST_TYPES = _PRIMITIVE_LIST_TYPES | {TYPE_NAME_FS_LIST}
 
+
 class TypeSystemMode(Enum):
     """How much type system information to include."""
 

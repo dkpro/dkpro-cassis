@@ -20,13 +20,13 @@ AUTHOR = "The DKPro cassis team"
 REQUIRES_PYTHON = ">=3.6.0"
 
 install_requires = [
-    "lxml==4.6.*",
+    "lxml==4.7.*",
     "attrs==21.2.*",
     "sortedcontainers==2.4.*",
-    "toposort==1.6",
-    "more-itertools==8.8.*",
+    "toposort==1.7",
+    "more-itertools==8.12.*",
     "deprecation==2.1.*",
-    "importlib_resources==5.2.*"
+    "importlib_resources==5.4.*"
 ]
 
 test_dependencies = [
@@ -35,13 +35,13 @@ test_dependencies = [
     "lxml-asserts==0.1.*",
     "pytest-lazy-fixture==0.6.*",
     "codecov==2.1.*",
-    "pytest-cov==2.12.*",
+    "pytest-cov==3.0.*",
     "rstcheck==3.3.*"
 ]
 
 dev_dependencies = [
-    "black==21.7b0",
-    "isort==5.9.*"
+    "black==21.12b0",
+    "isort==5.10.*"
 ]
 
 doc_dependencies = [

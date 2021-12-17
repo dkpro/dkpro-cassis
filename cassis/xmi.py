@@ -305,8 +305,8 @@ class CasXmiDeserializer:
 
                 # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
                 if typesystem.is_instance_of(fs.type.name, "uima.tcas.Annotation"):
-                    fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
-                    fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
+                    fs.begin = sofa._offset_converter.external_to_python(fs.begin)
+                    fs.end = sofa._offset_converter.external_to_python(fs.end)
 
                 view.add(fs, keep_id=True)
 
@@ -610,7 +610,7 @@ class CasXmiSerializer:
                 or feature_name == FEATURE_BASE_NAME_END
             ):
                 sofa: Sofa = fs.sofa
-                value = sofa._offset_converter.cassis_to_uima(value)
+                value = sofa._offset_converter.python_to_external(value)
 
             if ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_ARRAY) and not feature.multipleReferencesAllowed:
                 if value.elements is not None:  # Compare to none to not skip if elements is empty!

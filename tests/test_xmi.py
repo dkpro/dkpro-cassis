@@ -2,7 +2,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError
+from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError, TYPE_NAME_ANNOTATION
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import (
     MultiFeatureRandomCasGenerator,
@@ -287,27 +287,69 @@ def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, d
     typesystem = load_typesystem(dkpro_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
 
-    size_uima_to_cassis_before = len(cas.get_sofa()._offset_converter._uima_to_cassis)
-    size_cassis_to_uima_before = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+    size_uima_to_cassis_before = len(cas.get_sofa()._offset_converter._external_to_python)
+    size_cassis_to_uima_before = len(cas.get_sofa()._offset_converter._python_to_external)
 
     cas.sofa_string = "Hello 😊, my name is Jan."
 
-    size_uima_to_cassis_after = len(cas.get_sofa()._offset_converter._uima_to_cassis)
-    size_cassis_to_uima_after = len(cas.get_sofa()._offset_converter._cassis_to_uima)
+    size_uima_to_cassis_after = len(cas.get_sofa()._offset_converter._external_to_python)
+    size_cassis_to_uima_after = len(cas.get_sofa()._offset_converter._python_to_external)
 
     assert size_uima_to_cassis_before != size_uima_to_cassis_after
     assert size_cassis_to_uima_before != size_cassis_to_uima_after
 
 
 def test_offsets_work_for_empty_sofastring():
-    xmi = """<?xml version="1.0" encoding="UTF-8"?> <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" 
-    xmlns:tcas="http:///uima/tcas.ecore" xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> <cas:NULL xmi:id="0" 
-    /> <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="0" language="en" /> <cas:Sofa xmi:id="1" 
-    sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="" /> <cas:View sofa="1" members="2" /> </xmi:XMI> """
+    xmi = """<?xml version="1.0" encoding="UTF-8"?>
+        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore" 
+            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> 
+            <cas:NULL xmi:id="0" /> 
+            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="0" language="en" /> 
+            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="" /> 
+            <cas:View sofa="1" members="2" />
+        </xmi:XMI>"""
 
     # assert no exception
     load_cas_from_xmi(xmi)
 
+
+def test_that_invalid_offsets_remain_unmapped_on_import(caplog):
+    xmi = """<?xml version="1.0" encoding="UTF-8"?>
+        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore" 
+            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> 
+            <cas:NULL xmi:id="0" /> 
+            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="4" language="en" /> 
+            <tcas:Annotation xmi:id="3" sofa="1" begin="100" end="200" /> 
+            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="Test" /> 
+            <cas:View sofa="1" members="2 3" />
+        </xmi:XMI>"""
+
+    # assert no exception
+    cas = load_cas_from_xmi(xmi)
+
+    for rec in caplog.records:
+        assert rec.message.startswith('Not mapping external')
+
+    annotations = list(filter(lambda a: a.type.name == TYPE_NAME_ANNOTATION, cas.select(TYPE_NAME_ANNOTATION)))
+    assert len(annotations) == 1
+    assert annotations[0].begin == 100
+    assert annotations[0].end == 200
+
+def test_that_invalid_offsets_remain_unmapped_on_export(caplog):
+    cas = Cas()
+    cas.sofa_string = "Test"
+    Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
+    cas.add(Annotation(begin=100, end=200))
+
+    xmi = cas.to_xmi()
+
+    assert len(caplog.records) > 0
+
+    for rec in caplog.records:
+        assert rec.message.startswith('Not mapping internal')
+
+    assert 'begin="100"' in xmi
+    assert 'end="200"' in xmi
 
 # Leniency
 

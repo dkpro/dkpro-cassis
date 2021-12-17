@@ -1,5 +1,6 @@
 import sys
 from collections import defaultdict
+from logging import warning
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -34,7 +35,7 @@ class IdGenerator:
         return result
 
 
-class OffsetConverter:
+class Utf16CodepointOffsetConverter:
     """The Java platform and therefore UIMA internally uses a UTF-16 representation for text. For this reason,
     the offsets used in UIMA XMI represent offsets of the 16bit units in UTF-16 strings. We convert them internally
     to Unicode codepoints that are used by Python strings when creating a CAS. When serializing to XMI, we convert back.
@@ -45,15 +46,15 @@ class OffsetConverter:
     """
 
     def __init__(self):
-        self._uima_to_cassis: Union[Dict[int, int], None] = None
-        self._cassis_to_uima: Union[Dict[int, int], None] = None
+        self._external_to_python: Union[Dict[int, int], None] = None
+        self._python_to_external: Union[Dict[int, int], None] = None
 
-    def create_index(self, sofa_string: str):
+    def create_offset_mapping(self, sofa_string: str):
         if sofa_string is None:
             return
 
-        self._uima_to_cassis = {0: 0}
-        self._cassis_to_uima = {0: 0}
+        self._external_to_python = {0: 0}
+        self._python_to_external = {0: 0}
 
         count_uima = 0
         count_cassis = 0
@@ -61,34 +62,42 @@ class OffsetConverter:
         for c in sofa_string:
             size_in_utf16_bytes = len(c.encode("utf-16-le")) // 2
 
-            self._uima_to_cassis[count_uima] = count_cassis
-            self._cassis_to_uima[count_cassis] = count_uima
+            self._external_to_python[count_uima] = count_cassis
+            self._python_to_external[count_cassis] = count_uima
 
             count_uima += size_in_utf16_bytes
             count_cassis += 1
 
         # End offsets in UIMA are exclusive, we need to therefore add
         # the offset after the last char also to this index
-        self._uima_to_cassis[count_uima] = count_cassis
-        self._cassis_to_uima[count_cassis] = count_uima
+        self._external_to_python[count_uima] = count_cassis
+        self._python_to_external[count_cassis] = count_uima
 
-    def uima_to_cassis(self, idx: Optional[int]) -> Optional[int]:
+    def external_to_python(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
 
-        if self._uima_to_cassis is None:
+        if self._external_to_python is None:
             return idx
 
-        return self._uima_to_cassis[idx]
+        try:
+            return self._external_to_python[idx]
+        except KeyError:
+            warning(f"Not mapping external offset [{idx}] which is not valid within the internal range [0-{list(self._external_to_python)[-1]}]")
+            return idx
 
-    def cassis_to_uima(self, idx: Optional[int]) -> Optional[int]:
+    def python_to_external(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:
             return None
 
-        if self._cassis_to_uima is None:
+        if self._python_to_external is None:
             return idx
 
-        return self._cassis_to_uima[idx]
+        try:
+            return self._python_to_external[idx]
+        except KeyError:
+            warning(f"Not mapping internal offset [{idx}] which is not valid within the external range [0-{list(self._python_to_external)[-1]}]")
+            return idx
 
 
 @attr.s(slots=True)
@@ -119,8 +128,8 @@ class Sofa:
     #: str: The sofa data byte array
     sofaArray = attr.ib(default=None)
 
-    #: OffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
-    _offset_converter = attr.ib(factory=OffsetConverter, eq=False, hash=False)
+    #: Utf16CodepointOffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
+    _offset_converter = attr.ib(factory=Utf16CodepointOffsetConverter, eq=False, hash=False)
 
     @property
     def sofaString(self) -> str:
@@ -129,11 +138,11 @@ class Sofa:
     @sofaString.setter
     def sofaString(self, value: str):
         self._sofaString = value
-        self._offset_converter.create_index(value)
+        self._offset_converter.create_offset_mapping(value)
 
     def __attrs_post_init__(self):
         if self._sofaString:
-            self._offset_converter.create_index(self._sofaString)
+            self._offset_converter.create_offset_mapping(self._sofaString)
 
 
 class View:
@@ -455,6 +464,7 @@ class Cas:
         result = []
         for name in types:
             result.extend(self._current_view.type_index[name])
+
         return result
 
     def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> List[FeatureStructure]:

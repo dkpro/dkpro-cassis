@@ -214,8 +214,8 @@ class CasJsonDeserializer:
         # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
         if typesystem.is_instance_of(fs.type, TYPE_NAME_ANNOTATION):
             sofa = fs.sofa
-            fs.begin = sofa._offset_converter.uima_to_cassis(fs.begin)
-            fs.end = sofa._offset_converter.uima_to_cassis(fs.end)
+            fs.begin = sofa._offset_converter.external_to_python(fs.begin)
+            fs.end = sofa._offset_converter.external_to_python(fs.end)
 
         return fs
 
@@ -427,7 +427,7 @@ class CasJsonSerializer:
             # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
             if feature.domainType.name == TYPE_NAME_ANNOTATION and feature_name == "begin" or feature_name == "end":
                 sofa: Sofa = getattr(fs, "sofa")
-                value = sofa._offset_converter.cassis_to_uima(value)
+                value = sofa._offset_converter.python_to_external(value)
 
             if feature.rangeType.name in {TYPE_NAME_DOUBLE, TYPE_NAME_FLOAT}:
                 float_value = self._serialize_float_value(value)

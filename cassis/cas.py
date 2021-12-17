@@ -1,6 +1,6 @@
 import sys
+import warnings
 from collections import defaultdict
-from logging import warning
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -83,7 +83,9 @@ class Utf16CodepointOffsetConverter:
         try:
             return self._external_to_python[idx]
         except KeyError:
-            warning(f"Not mapping external offset [{idx}] which is not valid within the internal range [0-{list(self._external_to_python)[-1]}]")
+            warnings.warn(
+                f"Not mapping external offset [{idx}] which is not valid within the internal range [0-{list(self._external_to_python)[-1]}]"
+            )
             return idx
 
     def python_to_external(self, idx: Optional[int]) -> Optional[int]:
@@ -96,7 +98,9 @@ class Utf16CodepointOffsetConverter:
         try:
             return self._python_to_external[idx]
         except KeyError:
-            warning(f"Not mapping internal offset [{idx}] which is not valid within the external range [0-{list(self._python_to_external)[-1]}]")
+            warnings.warn(
+                f"Not mapping internal offset [{idx}] which is not valid within the external range [0-{list(self._python_to_external)[-1]}]"
+            )
             return idx
 
 

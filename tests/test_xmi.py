@@ -1,8 +1,9 @@
+import warnings
 from pathlib import Path
 
 from lxml import etree
 
-from cassis.typesystem import TYPE_NAME_SOFA, TypeNotFoundError, TYPE_NAME_ANNOTATION
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import (
     MultiFeatureRandomCasGenerator,
@@ -313,7 +314,7 @@ def test_offsets_work_for_empty_sofastring():
     load_cas_from_xmi(xmi)
 
 
-def test_that_invalid_offsets_remain_unmapped_on_import(caplog):
+def test_that_invalid_offsets_remain_unmapped_on_import():
     xmi = """<?xml version="1.0" encoding="UTF-8"?>
         <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore" 
             xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> 
@@ -325,31 +326,33 @@ def test_that_invalid_offsets_remain_unmapped_on_import(caplog):
         </xmi:XMI>"""
 
     # assert no exception
-    cas = load_cas_from_xmi(xmi)
+    with warnings.catch_warnings(record=True) as ws:
+        cas = load_cas_from_xmi(xmi)
 
-    for rec in caplog.records:
-        assert rec.message.startswith('Not mapping external')
+    for w in ws:
+        assert str(w.message).startswith("Not mapping external")
 
     annotations = list(filter(lambda a: a.type.name == TYPE_NAME_ANNOTATION, cas.select(TYPE_NAME_ANNOTATION)))
     assert len(annotations) == 1
     assert annotations[0].begin == 100
     assert annotations[0].end == 200
 
-def test_that_invalid_offsets_remain_unmapped_on_export(caplog):
+
+def test_that_invalid_offsets_remain_unmapped_on_export():
     cas = Cas()
     cas.sofa_string = "Test"
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
     cas.add(Annotation(begin=100, end=200))
 
-    xmi = cas.to_xmi()
+    with warnings.catch_warnings(record=True) as ws:
+        xmi = cas.to_xmi()
 
-    assert len(caplog.records) > 0
-
-    for rec in caplog.records:
-        assert rec.message.startswith('Not mapping internal')
+    for w in ws:
+        assert str(w.message).startswith("Not mapping internal")
 
     assert 'begin="100"' in xmi
     assert 'end="200"' in xmi
+
 
 # Leniency
 

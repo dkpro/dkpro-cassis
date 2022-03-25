@@ -561,12 +561,13 @@ class Type:
         else:
             return None
 
-    def _add_feature(self, feature: Feature, inherited: bool = False):
+    def _add_feature(self, feature: Feature, inherited: bool = False, warn: bool = True):
         """Add the given feature to his type.
 
         Args:
             feature: The feature
             inherited: Indicates whether this feature is inherited from a parent or not
+            warn: Emit a user warning when exactly redefining features
 
         """
         # Clear the feature cache when adding a new feature. Note that this method is also called by supertypes when
@@ -578,26 +579,26 @@ class Type:
         if feature.name in target:
             redefined_feature = target[feature.name]
 
-            if redefined_feature == feature:
-                msg = f"Feature with name [{feature.name}] already exists in [{self.name}]!"
-                warnings.warn(msg)
-            else:
+            if redefined_feature != feature:
                 msg = "Feature with name [{}] already exists in [{}] but is redefined differently!".format(
                     feature.name, self.name
                 )
                 raise ValueError(msg)
+            elif warn:
+                msg = f"Feature with name [{feature.name}] already exists in [{self.name}]!"
+                warnings.warn(msg)
             return
 
         # Check that feature is not redefined on parent type
         if feature.name in self._inherited_features:
             redefined_feature = self._inherited_features[feature.name]
 
-            if redefined_feature == feature:
-                msg = f"Feature with name [{feature.name}] already exists in parent!"
-                warnings.warn(msg)
-            else:
+            if redefined_feature != feature:
                 msg = f"Feature with name [{feature.name}] already exists in parent but is redefined!"
                 raise ValueError(msg)
+            elif warn:
+                msg = f"Feature with name [{feature.name}] already exists in parent!"
+                warnings.warn(msg)
             return
 
         target[feature.name] = feature
@@ -1423,7 +1424,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                 )
 
                 for feature in t.features:
-                    created_type._add_feature(feature)
+                    created_type._add_feature(feature, warn=False)
             else:
                 # Type is already defined
                 existing_type = merged_ts.get_type(t.name)
@@ -1447,7 +1448,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
 
                 # If the type is already defined, merge features
                 for feature in t.features:
-                    existing_type._add_feature(feature)
+                    existing_type._add_feature(feature, warn=False)
 
             merged_types.add(t.name)
             updated_type_list.remove(t)

@@ -1315,6 +1315,8 @@ class TypeSystemSerializer:
     def serialize(self, sink: Union[IO, str], typesystem: TypeSystem):
         nsmap = {None: "http://uima.apache.org/resourceSpecifier"}
         with etree.xmlfile(sink, encoding="utf-8") as xf:
+            xf.write_declaration()
+
             with xf.element("typeSystemDescription", nsmap=nsmap):
                 with xf.element("types"):
                     # In order to export the same types that we imported, we

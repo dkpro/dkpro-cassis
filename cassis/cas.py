@@ -109,7 +109,7 @@ class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
 
     #: "Type": The type
-    type = attr.ib()
+    type = attr.ib(repr=False)
 
     #: int: The sofaNum
     sofaNum = attr.ib(validator=validators.instance_of(int))
@@ -133,7 +133,7 @@ class Sofa:
     sofaArray = attr.ib(default=None)
 
     #: Utf16CodepointOffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
-    _offset_converter = attr.ib(factory=Utf16CodepointOffsetConverter, eq=False, hash=False)
+    _offset_converter = attr.ib(factory=Utf16CodepointOffsetConverter, eq=False, hash=False, repr=False)
 
     @property
     def sofaString(self) -> str:

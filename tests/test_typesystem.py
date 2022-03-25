@@ -697,7 +697,7 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=UserWarning)
-        with pytest.raises(ValueError, match=fr".*\[{name}\].*"):
+        with pytest.raises(ValueError, match=rf".*\[{name}\].*"):
             merge_typesystems(base, ts)
 
 

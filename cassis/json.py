@@ -155,7 +155,7 @@ class CasJsonDeserializer:
         view = self._get_or_create_view(cas, view_name)
         for member_id in json_view[VIEW_MEMBERS_FIELD]:
             fs = feature_structures[member_id]
-            view.add_annotation(fs, keep_id=True)
+            view.add(fs, keep_id=True)
 
     def _parse_sofa(self, cas: Cas, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]) -> Sofa:
         view = self._get_or_create_view(

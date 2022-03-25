@@ -339,7 +339,7 @@ class AnnotationHasNoSofa(Exception):
     message: str = attr.ib()  # Description of the error
 
 
-@attr.s(slots=True, hash=False, eq=True, order=True)
+@attr.s(slots=True, hash=False, eq=True, order=True, repr=False)
 class FeatureStructure:
     """The base class for all feature structure instances"""
 
@@ -418,8 +418,34 @@ class FeatureStructure:
     def __eq__(self, other):
         return self.__slots__ == other.__slots__
 
+    def __str__(self):
+        def _abbreviate_type_name(type_name: str):
+            """Turns long type names like `de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token` to
+            something shorter like `d.t.u.d.c.a.s.t.Token`.
+            """
+            parts = type_name.split(".")
+            result = []
+            for part in parts[:-1]:
+                result.append(part[0])
+            result.append(parts[-1])
+            return ".".join(result)
 
-@attr.s(slots=True, eq=False, order=False)
+        values = {}
+        for feature in self.type.all_features:
+            name = feature.name
+            value = getattr(self, name)
+
+            if value is not None and name not in {"sofa", "parent", "type"}:
+                values[name] = value
+
+        s = ", ".join(f"{n}={v}" for n, v in sorted(values.items()))
+        return f"{_abbreviate_type_name(self.type.name)}({s})"
+
+    def __repr__(self):
+        return str(self)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
@@ -461,8 +487,14 @@ class Feature:
     def __lt__(self, other):
         return self.name < other.name
 
+    def __str__(self):
+        return f"Feature(name={self.name})"
 
-@attr.s(slots=True, hash=False, eq=True)
+    def __repr__(self):
+        return str(self)
+
+
+@attr.s(slots=True, hash=False, eq=True, repr=False)
 class Type:
     """Describes types in a type system.
 
@@ -652,6 +684,9 @@ class Type:
 
     def __str__(self):
         return f"Type(name={self.name})"
+
+    def __repr__(self):
+        return str(self)
 
 
 class TypeSystem:

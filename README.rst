@@ -86,7 +86,7 @@ string using :code:`load_cas_from_xmi`.
     with open('typesystem.xml', 'rb') as f:
         typesystem = load_typesystem(f)
         
-    with open('cas.xml', 'rb') as f:
+    with open('cas.xmi', 'rb') as f:
        cas = load_cas_from_xmi(f, typesystem=typesystem)
 
 Saving a CAS as XMI
@@ -99,7 +99,7 @@ returned as a string using :code:`cas.to_xmi()`.
 
     from cassis import *
 
-    with open('cas.xml', 'rb') as f:
+    with open('cas.xmi', 'rb') as f:
        cas = load_cas_from_xmi(f)
 
     # Returned as a string
@@ -121,7 +121,7 @@ Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
     with open('typesystem.xml', 'rb') as f:
         typesystem = load_typesystem(f)
         
-    with open('cas.xml', 'rb') as f:
+    with open('cas.xmi', 'rb') as f:
         cas = load_cas_from_xmi(f, typesystem=typesystem)
        
     Token = typesystem.get_type('cassis.Token')
@@ -148,7 +148,7 @@ Selecting annotations
     with open('typesystem.xml', 'rb') as f:
         typesystem = load_typesystem(f)
         
-    with open('cas.xml', 'rb') as f:
+    with open('cas.xmi', 'rb') as f:
         cas = load_cas_from_xmi(f, typesystem=typesystem)
 
     for sentence in cas.select('cassis.Sentence'):

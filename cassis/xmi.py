@@ -437,6 +437,8 @@ class CasXmiDeserializer:
             return [float(e) for e in elements] if value else []
         elif type_name in [TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_SHORT_ARRAY, TYPE_NAME_LONG_ARRAY]:
             return [int(e) for e in elements] if value else []
+        elif type_name == TYPE_NAME_STRING_ARRAY:
+            return [str(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_BOOLEAN_ARRAY:
             return [self._parse_bool(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_BYTE_ARRAY:

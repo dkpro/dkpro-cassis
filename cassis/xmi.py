@@ -438,7 +438,9 @@ class CasXmiDeserializer:
         elif type_name in [TYPE_NAME_INTEGER_ARRAY, TYPE_NAME_SHORT_ARRAY, TYPE_NAME_LONG_ARRAY]:
             return [int(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_STRING_ARRAY:
-            return [str(e) for e in elements] if value else []
+            if elements:
+                raise ValueError(f"String array values must be provided as nested elements: {elements}")
+            return []
         elif type_name == TYPE_NAME_BOOLEAN_ARRAY:
             return [self._parse_bool(e) for e in elements] if value else []
         elif type_name == TYPE_NAME_BYTE_ARRAY:
@@ -615,10 +617,13 @@ class CasXmiSerializer:
                 value = sofa._offset_converter.python_to_external(value)
 
             if ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_ARRAY) and not feature.multipleReferencesAllowed:
-                if value.elements is not None:  # Compare to none to not skip if elements is empty!
-                    for e in value.elements:
-                        child = etree.SubElement(elem, feature_name)
-                        child.text = e
+                if value.elements is not None:  # Compare to none as not to skip if elements is empty!
+                    if not value.elements:
+                        elem.attrib[feature_name] = ""
+                    else:
+                        for e in value.elements:
+                            child = etree.SubElement(elem, feature_name)
+                            child.text = e
             elif ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_LIST) and not feature.multipleReferencesAllowed:
                 if value is not None:  # Compare to none to not skip if elements is empty!
                     for e in self._collect_list_elements(feature.rangeType.name, value):

@@ -254,6 +254,32 @@ properties of the Sofa can be read and written:
     print(cas.sofa_string)
     print(cas.sofa_mime)
 
+Array support
+~~~~~~~~~~~~~
+
+Array feature values are not simply Python arrays, but they are wrapped in a feature structure of
+a UIMA array type such as :code:`uima.cas.FSArray`.
+
+.. code:: python
+
+    from cassis import *
+    from cassis.typesystem import TYPE_NAME_FS_ARRAY, TYPE_NAME_ANNOTATION
+
+    typesystem = TypeSystem()
+
+    ArrayHolder = typesystem.create_type(name='example.ArrayHolder')
+    typesystem.create_feature(domainType=ArrayHolder, name='array', rangeType=TYPE_NAME_FS_ARRAY)
+
+    cas = Cas(typesystem=typesystem)
+
+    Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
+    FSArray = cas.typesystem.get_type(TYPE_NAME_FS_ARRAY)
+
+    ann = Annotation(begin=0, end=1)
+    cas.add(ann1)
+    holder = ArrayHolder(array=FSArray(elements=[ann, ann, ann]))
+    cas.add(holder)
+
 Managing views
 ~~~~~~~~~~~~~~
 

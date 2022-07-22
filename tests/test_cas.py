@@ -6,6 +6,7 @@ from cassis.typesystem import (
     TYPE_NAME_ANNOTATION,
     TYPE_NAME_INTEGER,
     TYPE_NAME_INTEGER_ARRAY,
+    TYPE_NAME_STRING,
     TYPE_NAME_TOP,
     AnnotationHasNoSofa,
 )
@@ -448,6 +449,28 @@ def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sente
 
     with pytest.raises(ValueError):
         view.remove(tokens[0])
+
+
+def test_removing_many_annotations():
+    typesystem = TypeSystem()
+    NamedEntity = typesystem.create_type(name="NamedEntity", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(domainType=NamedEntity, name="source", rangeType=TYPE_NAME_STRING)
+
+    count_to_generate = 100
+
+    cas = Cas(typesystem)
+    for i in range(count_to_generate):
+        cas.add(NamedEntity(source=("A" if (i % 2) else "B")))
+
+    assert len(cas.select(NamedEntity.name)) == count_to_generate
+    assert sum(1 for e in cas.select(NamedEntity.name) if e.source == "A") == count_to_generate / 2
+    assert sum(1 for e in cas.select(NamedEntity.name) if e.source == "B") == count_to_generate / 2
+
+    for e in cas.select(NamedEntity.name):
+        if e.source == "A":
+            cas.remove(e)
+    assert sum(1 for e in cas.select(NamedEntity.name) if e.source == "B") == count_to_generate / 2
+    assert sum(1 for e in cas.select(NamedEntity.name) if e.source == "A") == 0
 
 
 def test_fail_on_duplicate_fs_id(small_typesystem_xml):

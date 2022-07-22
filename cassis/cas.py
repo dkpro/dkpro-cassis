@@ -788,9 +788,9 @@ class Cas:
         return result
 
 
-def _sort_func(a: FeatureStructure) -> Tuple[int, int]:
+def _sort_func(a: FeatureStructure) -> Tuple[int, int, int]:
     d = a.__slots__
     if "begin" in d and "end" in d:
-        return (a.begin, a.end)
+        return a.begin, a.end, id(a)
     else:
-        return (sys.maxsize, sys.maxsize)
+        return sys.maxsize, sys.maxsize, id(a)

@@ -456,7 +456,7 @@ def test_removing_many_annotations():
     NamedEntity = typesystem.create_type(name="NamedEntity", supertypeName=TYPE_NAME_ANNOTATION)
     typesystem.create_feature(domainType=NamedEntity, name="source", rangeType=TYPE_NAME_STRING)
 
-    count_to_generate = 4
+    count_to_generate = 100
 
     cas = Cas(typesystem)
     for i in range(count_to_generate):

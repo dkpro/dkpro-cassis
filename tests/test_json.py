@@ -1,6 +1,6 @@
 import json
 
-from cassis.typesystem import TYPE_NAME_ANNOTATION
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TypeSystemMode
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal
@@ -152,3 +152,22 @@ def test_unicode(json_path, annotations):
             expected_utf8_bytes = expected[4]
             actual_utf8_bytes = bytes(actual_covered_text, "UTF-8")
             assert actual_utf8_bytes == expected_utf8_bytes
+
+def test_recursive_type_system():
+    typesystem = TypeSystem()
+    type_a = typesystem.create_type(name='example.TypeA')
+    type_b = typesystem.create_type(name='example.TypeB')
+    typesystem.create_feature(domainType=type_a, name='typeB', rangeType=type_b)
+    typesystem.create_feature(domainType=type_b, name='typeA', rangeType=type_a)
+
+    source_cas = Cas(typesystem=typesystem)
+    target_cas = load_cas_from_json(source_cas.to_json(type_system_mode=TypeSystemMode.FULL))
+
+    target_type_a = target_cas.typesystem.get_type('example.TypeA')
+    target_type_b = target_cas.typesystem.get_type('example.TypeB')
+
+    # We have to compare types by name below due to https://github.com/dkpro/dkpro-cassis/issues/270
+    assert target_type_a is not None
+    assert target_type_a.get_feature('typeB').rangeType.name == target_type_b.name
+    assert target_type_b is not None
+    assert target_type_b.get_feature('typeA').rangeType.name == target_type_a.name

@@ -76,8 +76,12 @@ class CasJsonDeserializer:
 
         embedded_typesystem = TypeSystem()
         json_typesystem = data.get(TYPES_FIELD)
+        # First load all the types but no features since features of a type X might be of a later loaded type Y
         for type_name, json_type in json_typesystem.items():
             self._parse_type(embedded_typesystem, type_name, json_type)
+        # Now we are sure we know all the types, we can create the features
+        for type_name, json_type in json_typesystem.items():
+            self._parse_features(embedded_typesystem, type_name, json_type)
 
         typesystem = merge_typesystems(typesystem, embedded_typesystem)
 
@@ -123,8 +127,10 @@ class CasJsonDeserializer:
     def _parse_type(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, any]):
         super_type_name = json_type[SUPER_TYPE_FIELD]
         description = json_type.get(DESCRIPTION_FIELD)
-        new_type = typesystem.create_type(type_name, super_type_name, description=description)
+        typesystem.create_type(type_name, super_type_name, description=description)
 
+    def _parse_features(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, any]):
+        new_type = typesystem.get_type(type_name)
         for key, json_feature in json_type.items():
             if key.startswith(RESERVED_FIELD_PREFIX):
                 continue

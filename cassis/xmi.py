@@ -205,6 +205,10 @@ class CasXmiDeserializer:
             if event == "end":
                 self._clear_elem(elem)
 
+        # See https://github.com/dkpro/dkpro-cassis/issues/266
+        # The checking for each feature if it is a StringArray is rather slow, hence, we cache the results
+        is_instance_of_string_array_map = {}
+
         # Post-process feature values
         for xmi_id, fs in feature_structures.items():
             t = typesystem.get_type(fs.type.name)
@@ -217,7 +221,11 @@ class CasXmiDeserializer:
                     fs[feature_name] = sofas[value]
                     continue
 
-                if typesystem.is_instance_of(fs.type.name, TYPE_NAME_STRING_ARRAY):
+                if fs.type.name not in is_instance_of_string_array_map:
+                    is_instance_of_string_array_map[fs.type.name] = typesystem.is_instance_of(fs.type.name,
+                                                                                               TYPE_NAME_STRING_ARRAY)
+
+                if is_instance_of_string_array_map[fs.type.name]:
                     # We already parsed string arrays to a Python list of string
                     # before, so we do not need to work more on this
                     continue

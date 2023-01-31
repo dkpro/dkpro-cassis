@@ -222,8 +222,9 @@ class CasXmiDeserializer:
                     continue
 
                 if fs.type.name not in is_instance_of_string_array_map:
-                    is_instance_of_string_array_map[fs.type.name] = typesystem.is_instance_of(fs.type.name,
-                                                                                               TYPE_NAME_STRING_ARRAY)
+                    is_instance_of_string_array_map[fs.type.name] = typesystem.is_instance_of(
+                        fs.type.name, TYPE_NAME_STRING_ARRAY
+                    )
 
                 if is_instance_of_string_array_map[fs.type.name]:
                     # We already parsed string arrays to a Python list of string

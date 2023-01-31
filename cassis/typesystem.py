@@ -1,6 +1,7 @@
 import re
 import warnings
 from collections import defaultdict
+from copy import copy
 from enum import Enum, auto
 from io import BytesIO
 from itertools import chain, filterfalse
@@ -1424,7 +1425,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                 )
 
                 for feature in t.features:
-                    created_type._add_feature(feature, warn=False)
+                    created_type._add_feature(copy(feature), warn=False)
             else:
                 # Type is already defined
                 existing_type = merged_ts.get_type(t.name)
@@ -1448,7 +1449,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
 
                 # If the type is already defined, merge features
                 for feature in t.features:
-                    existing_type._add_feature(feature, warn=False)
+                    existing_type._add_feature(copy(feature), warn=False)
 
             merged_types.add(t.name)
             updated_type_list.remove(t)
@@ -1461,6 +1462,18 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
         if len(updated_type_list) == 0:
             break
 
+    # Fix up type references to ensure that only type instances of the merged type system are referenced, not any
+    # types from the source type systems
+    for t in merged_ts.get_types():
+        if t.supertype:
+            t.supertype = merged_ts.get_type(t.supertype.name)
+        for f in t.features:
+            if f.domainType:
+                f.domainType = merged_ts.get_type(f.domainType.name)
+            if f.rangeType:
+                f.rangeType = merged_ts.get_type(f.rangeType.name)
+            if f.elementType:
+                f.elementType = merged_ts.get_type(f.elementType.name)
     return merged_ts
 
 

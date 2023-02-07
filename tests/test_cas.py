@@ -117,14 +117,14 @@ def test_sofa_uri_can_be_set_and_read():
 
 
 def test_select(small_typesystem_xml, tokens, sentences):
-    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    ts = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
 
-    actual_tokens = list(cas.select("cassis.Token"))
-    actual_sentences = list(cas.select("cassis.Sentence"))
-
-    assert actual_tokens == tokens
-    assert actual_sentences == sentences
+    assert list(cas.select("cassis.Token")) == tokens
+    assert list(cas.select("cassis.Sentence")) == sentences
+    assert list(cas.select(ts.get_type("cassis.Token"))) == tokens
+    assert list(cas.select(ts.get_type("cassis.Sentence"))) == sentences
 
 
 def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
@@ -138,21 +138,22 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
 
 
 def test_select_covered(small_typesystem_xml, tokens, sentences):
-    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    ts = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
     first_sentence, second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
     tokens_in_second_sentence = tokens[6:]
 
-    actual_tokens_in_first_sentence = list(cas.select_covered("cassis.Token", first_sentence))
-    actual_tokens_in_second_sentence = list(cas.select_covered("cassis.Token", second_sentence))
-
-    assert actual_tokens_in_first_sentence == tokens_in_first_sentence
-    assert actual_tokens_in_second_sentence == tokens_in_second_sentence
+    assert list(cas.select_covered("cassis.Token", first_sentence)) == tokens_in_first_sentence
+    assert list(cas.select_covered("cassis.Token", second_sentence)) == tokens_in_second_sentence
+    assert list(cas.select_covered(ts.get_type("cassis.Token"), first_sentence)) == tokens_in_first_sentence
+    assert list(cas.select_covered(ts.get_type("cassis.Token"), second_sentence)) == tokens_in_second_sentence
 
 
 def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
-    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    ts = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=ts)
 
     AnnotationType = cas.typesystem.create_type("test.Annotation")
     SentenceType = cas.typesystem.get_type("cassis.Sentence")
@@ -162,9 +163,8 @@ def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
     cas.add(sentence)
     cas.add_all(annotations)
 
-    actual_annotations = list(cas.select_covered("test.Annotation", sentence))
-
-    assert actual_annotations == annotations
+    assert list(cas.select_covered("test.Annotation", sentence)) == annotations
+    assert list(cas.select_covered(ts.get_type("test.Annotation"), sentence)) == annotations
 
 
 def test_select_covered_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
@@ -192,7 +192,8 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
 
 
 def test_select_covering(small_typesystem_xml, tokens, sentences):
-    cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
+    ts = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
     actual_first_sentence, actual_second_sentence = sentences
     tokens_in_first_sentence = tokens[:6]
@@ -206,7 +207,7 @@ def test_select_covering(small_typesystem_xml, tokens, sentences):
         assert actual_first_sentence == first_sentence
 
     for token in tokens_in_second_sentence:
-        result = list(cas.select_covering("cassis.Sentence", token))
+        result = list(cas.select_covering(ts.get_type("cassis.Sentence"), token))
         second_sentence = result[0]
 
         assert len(result) == 1

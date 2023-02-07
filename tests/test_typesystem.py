@@ -733,36 +733,38 @@ def test_that_merging_types_with_different_incompatible_supertypes_throws():
     with pytest.raises(ValueError, match=r".*incompatible super types.*"):
         merge_typesystems(ts1, ts2)
 
+
 def test_that_merging_types_creates_self_contained_type_system():
     ts1 = TypeSystem()
-    type_a = ts1.create_type(name='example.TypeA')
-    type_b = ts1.create_type(name='example.TypeB')
-    type_c = ts1.create_type(name='example.TypeC', supertypeName='example.TypeA')
-    ts1.create_feature(domainType=type_a, name='typeB', rangeType=type_b)
-    ts1.create_feature(domainType=type_b, name='typeA', rangeType=type_a)
+    type_a = ts1.create_type(name="example.TypeA")
+    type_b = ts1.create_type(name="example.TypeB")
+    type_c = ts1.create_type(name="example.TypeC", supertypeName="example.TypeA")
+    ts1.create_feature(domainType=type_a, name="typeB", rangeType=type_b)
+    ts1.create_feature(domainType=type_b, name="typeA", rangeType=type_a)
 
     ts2 = TypeSystem()
 
     ts_merged = merge_typesystems(ts1, ts2)
 
-    merged_type_a = ts_merged.get_type('example.TypeA')
-    merged_type_b = ts_merged.get_type('example.TypeB')
-    merged_type_c = ts_merged.get_type('example.TypeC')
+    merged_type_a = ts_merged.get_type("example.TypeA")
+    merged_type_b = ts_merged.get_type("example.TypeB")
+    merged_type_c = ts_merged.get_type("example.TypeC")
 
     assert merged_type_a is not None
-    assert merged_type_a.get_feature('typeB') is not type_a.get_feature('typeB')
-    assert merged_type_a.get_feature('typeB').rangeType is merged_type_b
-    assert merged_type_a.get_feature('typeB').rangeType is not type_b
+    assert merged_type_a.get_feature("typeB") is not type_a.get_feature("typeB")
+    assert merged_type_a.get_feature("typeB").rangeType is merged_type_b
+    assert merged_type_a.get_feature("typeB").rangeType is not type_b
     assert merged_type_b is not None
-    assert merged_type_b.get_feature('typeA') is not type_b.get_feature('typeA')
-    assert merged_type_b.get_feature('typeA').rangeType is merged_type_a
-    assert merged_type_b.get_feature('typeA').rangeType is not type_a
+    assert merged_type_b.get_feature("typeA") is not type_b.get_feature("typeA")
+    assert merged_type_b.get_feature("typeA").rangeType is merged_type_a
+    assert merged_type_b.get_feature("typeA").rangeType is not type_a
     assert merged_type_c is not None
     assert merged_type_c.supertype is merged_type_a
     assert merged_type_c.supertype is not type_c
 
 
 # DKPro Core Support
+
 
 def test_that_dkpro_core_typeystem_can_be_loaded():
     ts = load_dkpro_core_typesystem()

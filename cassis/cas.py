@@ -15,6 +15,7 @@ from cassis.typesystem import (
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
     FeatureStructure,
+    Type,
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
@@ -387,19 +388,20 @@ class Cas:
         sofa = self.get_sofa()
         return sofa.sofaString[annotation.begin : annotation.end]
 
-    def select(self, type_name: str) -> List[FeatureStructure]:
+    def select(self, type_: Union[Type, str]) -> List[FeatureStructure]:
         """Finds all annotations of type `type_name`.
 
         Args:
-            type_name: The name of the type whose annotation instances are to be found
+            type_: The type or name of the type name whose annotation instances are to be found
 
         Returns:
             A list of all feature structures of type `type_name`
 
         """
-        return self._get_feature_structures(type_name)
+        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        return self._get_feature_structures(t)
 
-    def select_covered(self, type_name: str, covering_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covered(self, type_: Union[Type, str], covering_annotation: FeatureStructure) -> List[FeatureStructure]:
         """Returns a list of covered annotations.
 
         Return all annotations that are covered
@@ -408,23 +410,24 @@ class Cas:
         are ignored.
 
         Args:
-            type_name: The type name of the annotations to be returned
+            type_: The type or name of the type name whose annotation instances are to be found
             covering_annotation: The name of the annotation which covers
 
         Returns:
             A list of covered annotations
 
         """
+        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
         result = []
-        for annotation in self._get_feature_structures_in_range(type_name, c_begin, c_end):
+        for annotation in self._get_feature_structures_in_range(t, c_begin, c_end):
             if annotation.begin >= c_begin and annotation.end <= c_end:
                 result.append(annotation)
         return result
 
-    def select_covering(self, type_name: str, covered_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covering(self, type_: Union[Type, str], covered_annotation: FeatureStructure) -> List[FeatureStructure]:
         """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -433,19 +436,20 @@ class Cas:
         are ignored.
 
         Args:
-            type_name: The type name of the annotations to be returned
+            type_: The type or name of the type name whose annotation instances are to be found
             covered_annotation: The name of the annotation which is covered
 
         Returns:
             A list of covering annotations
 
         """
+        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
         c_begin = covered_annotation.begin
         c_end = covered_annotation.end
 
         # We iterate over all annotations and check whether the provided annotation
         # is covered in the current annotation
-        for annotation in self._get_feature_structures(type_name):
+        for annotation in self._get_feature_structures(t):
             if c_begin >= annotation.begin and c_end <= annotation.end:
                 yield annotation
 
@@ -460,10 +464,9 @@ class Cas:
 
     # FS handling
 
-    def _get_feature_structures(self, type_name) -> List[FeatureStructure]:
+    def _get_feature_structures(self, type_: Type) -> List[FeatureStructure]:
         """Returns a list of all feature structures of type `type_name` and child types."""
-        t = self._typesystem.get_type(type_name)
-        types = {c.name for c in t.descendants}
+        types = {c.name for c in type_.descendants}
 
         result = []
         for name in types:
@@ -471,13 +474,12 @@ class Cas:
 
         return result
 
-    def _get_feature_structures_in_range(self, type_name: str, begin: int, end: int) -> List[FeatureStructure]:
+    def _get_feature_structures_in_range(self, type_: Type, begin: int, end: int) -> List[FeatureStructure]:
         """Returns a list of all feature structures of type `type_name` and child types.
         Only features are returned that are in [begin, end] or close to it. If you use this function,
         you should always check bound in the calling method.
         """
-        t = self._typesystem.get_type(type_name)
-        types = {c.name for c in t.descendants}
+        types = {c.name for c in type_.descendants}
 
         result = []
         for name in types:

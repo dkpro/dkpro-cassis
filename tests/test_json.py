@@ -5,15 +5,16 @@ from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "json", "fs_as_array", "ser-ref")
+FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "json")
+SER_REF_DIR = os.path.join(FIXTURE_DIR, "fs_as_array", "ser-ref")
 
 FIXTURES = [
-    (os.path.join(FIXTURE_DIR, "casWithSofaDataArray"), []),
-    (os.path.join(FIXTURE_DIR, "casWithSofaDataURI"), []),
-    (os.path.join(FIXTURE_DIR, "casWithFloatingPointSpecialValues"), []),
-    (os.path.join(FIXTURE_DIR, "casWithText"), [["uima.tcas.DocumentAnnotation", 0, 15, "This is a test."]]),
+    (os.path.join(SER_REF_DIR, "casWithSofaDataArray"), []),
+    (os.path.join(SER_REF_DIR, "casWithSofaDataURI"), []),
+    (os.path.join(SER_REF_DIR, "casWithFloatingPointSpecialValues"), []),
+    (os.path.join(SER_REF_DIR, "casWithText"), [["uima.tcas.DocumentAnnotation", 0, 15, "This is a test."]]),
     (
-        os.path.join(FIXTURE_DIR, "casWithoutTextButWithAnnotations"),
+        os.path.join(SER_REF_DIR, "casWithoutTextButWithAnnotations"),
         [
             ["uima.tcas.Annotation", 0, 4, None],
             ["uima.tcas.Annotation", 5, 7, None],
@@ -22,7 +23,7 @@ FIXTURES = [
         ],
     ),
     (
-        os.path.join(FIXTURE_DIR, "casWithTextAndAnnotations"),
+        os.path.join(SER_REF_DIR, "casWithTextAndAnnotations"),
         [
             ["uima.tcas.Annotation", 0, 4, "This"],
             ["uima.tcas.Annotation", 5, 7, "is"],
@@ -32,7 +33,7 @@ FIXTURES = [
         ],
     ),
     (
-        os.path.join(FIXTURE_DIR, "casWithEmojiUnicodeTextAndAnnotations"),
+        os.path.join(SER_REF_DIR, "casWithEmojiUnicodeTextAndAnnotations"),
         [
             ["uima.tcas.Annotation", 0, 1, "🥳", b"\xf0\x9f\xa5\xb3"],
             ["uima.tcas.Annotation", 2, 6, "This"],
@@ -59,7 +60,7 @@ FIXTURES = [
         ],
     ),
     (
-        os.path.join(FIXTURE_DIR, "casWithLeftToRightTextAndAnnotations"),
+        os.path.join(SER_REF_DIR, "casWithLeftToRightTextAndAnnotations"),
         [
             ["uima.tcas.Annotation", 0, 3, "هذا"],
             ["uima.tcas.Annotation", 4, 10, "اختبار"],
@@ -67,7 +68,7 @@ FIXTURES = [
         ],
     ),
     (
-        os.path.join(FIXTURE_DIR, "casWithTraditionalChineseTextAndAnnotations"),
+        os.path.join(SER_REF_DIR, "casWithTraditionalChineseTextAndAnnotations"),
         [
             ["uima.tcas.Annotation", 0, 1, "這"],
             ["uima.tcas.Annotation", 1, 2, "是"],
@@ -172,3 +173,8 @@ def test_recursive_type_system():
     assert target_type_a.get_feature("typeB").rangeType.name == target_type_b.name
     assert target_type_b is not None
     assert target_type_b.get_feature("typeA").rangeType.name == target_type_a.name
+
+
+def test_deserializing_type_system_if_child_type_is_defined_before_supertype():
+    with open(os.path.join(FIXTURE_DIR, "child_type_before_parent.json"), "rb") as f:
+        load_cas_from_json(f)

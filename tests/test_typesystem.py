@@ -16,6 +16,7 @@ from cassis.typesystem import (
     TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_TOP,
     TypeCheckError,
+    is_predefined,
 )
 from tests.fixtures import *
 from tests.util import assert_xml_equal
@@ -266,6 +267,55 @@ def test_type_inherits_from_annotation():
 
 
 # Type checking
+
+
+@pytest.mark.parametrize(
+    "type_name, expected",
+    [
+        ("uima.cas.TOP", True),
+        ("uima.cas.NULL", True),
+        ("uima.cas.Boolean", True),
+        ("uima.cas.Byte", True),
+        ("uima.cas.Short", True),
+        ("uima.cas.Integer", True),
+        ("uima.cas.Long", True),
+        ("uima.cas.Float", True),
+        ("uima.cas.Double", True),
+        ("uima.cas.String", True),
+        ("uima.cas.ArrayBase", True),
+        ("uima.cas.FSArray", True),
+        ("uima.cas.FloatArray", True),
+        ("uima.cas.IntegerArray", True),
+        ("uima.cas.StringArray", True),
+        ("uima.cas.ListBase", True),
+        ("uima.cas.FSList", True),
+        ("uima.cas.EmptyFSList", True),
+        ("uima.cas.NonEmptyFSList", True),
+        ("uima.cas.FloatList", True),
+        ("uima.cas.EmptyFloatList", True),
+        ("uima.cas.NonEmptyFloatList", True),
+        ("uima.cas.IntegerList", True),
+        ("uima.cas.EmptyIntegerList", True),
+        ("uima.cas.NonEmptyIntegerList", True),
+        ("uima.cas.StringList", True),
+        ("uima.cas.EmptyStringList", True),
+        ("uima.cas.NonEmptyStringList", True),
+        ("uima.cas.BooleanArray", True),
+        ("uima.cas.ByteArray", True),
+        ("uima.cas.ShortArray", True),
+        ("uima.cas.LongArray", True),
+        ("uima.cas.DoubleArray", True),
+        ("uima.cas.Sofa", True),
+        ("uima.cas.AnnotationBase", True),
+        ("uima.tcas.Annotation", True),
+        ("example.TypeA", False),
+        ("example.TypeB", False),
+        ("example.TypeC", False),
+    ],
+)
+def test_is_predefined(type_name: str, expected: bool):
+
+    assert is_predefined(type_name) == expected
 
 
 @pytest.mark.parametrize(

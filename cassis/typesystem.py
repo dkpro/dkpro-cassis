@@ -203,6 +203,18 @@ def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 
 
+def is_predefined(type_: Union[str, "Type"]) -> bool:
+    """Checks if the given type  is predefined by UIMA and by default in a new type system.
+
+    Args:
+        type_: The type to check
+    Returns:
+        Returns True if the given type is predefined, else False
+    """
+    type_name = type_ if isinstance(type_, str) else type_.name
+    return type_name in _PREDEFINED_TYPES
+
+
 def is_collection(type_: Union[str, "Type"], feature: "Feature") -> bool:
     """Checks if the given feature for the type identified by `type` is a collection, e.g. list or array.
 
@@ -809,7 +821,7 @@ class TypeSystem:
         if supertypeName in _INHERITANCE_FINAL_TYPES:
             raise ValueError(f"[{name}] cannot inherit from [{supertypeName}] because the latter is inheritance final")
 
-        if self.contains_type(name) and name not in _PREDEFINED_TYPES:
+        if self.contains_type(name) and not is_predefined(name):
             raise ValueError(f"Type with name [{name}] already exists!")
 
         supertype = self.get_type(supertypeName)
@@ -1414,10 +1426,10 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
         updated_type_list = type_list[:]
         for t in type_list:
             # Check whether the type is ready to be added
-            if t.supertype.name not in _PREDEFINED_TYPES and t.supertype.name not in merged_types:
+            if not is_predefined(t.supertype) and t.supertype.name not in merged_types:
                 continue
 
-            # The supertype is defined so we can add the current type to the new type system
+            # The supertype is defined, so we can add the current type to the new type system
             if not merged_ts.contains_type(t.name):
                 # Create the type and add its features as it does not exist yet in the merged type system
                 created_type = merged_ts.create_type(

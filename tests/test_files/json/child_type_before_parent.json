@@ -1,0 +1,43 @@
+{
+    "%TYPES": {
+        "example.ChildType": {
+            "%NAME": "example.ChildType",
+            "%SUPER_TYPE": "example.ParentType",
+            "childFeature": {
+                "%NAME": "childFeature",
+                "%RANGE": "uima.cas.Integer"
+            }
+        },
+        "example.ParentType": {
+            "%NAME": "example.ParentType",
+            "%SUPER_TYPE": "uima.tcas.Annotation",
+            "parentFeature": {
+                "%NAME": "parentFeature",
+                "%RANGE": "uima.cas.String"
+            }
+        }
+    },
+    "%FEATURE_STRUCTURES": [
+        {
+            "%ID": 1,
+            "%TYPE": "uima.cas.Sofa",
+            "sofaNum": 1,
+            "sofaID": "_InitialView"
+        },
+        {
+            "%ID": 2,
+            "%TYPE": "example.ChildType",
+            "childFeature": "child",
+            "parentFeature": "parent",
+            "@sofa": 1
+        }
+    ],
+    "%VIEWS": {
+        "_InitialView": {
+            "%SOFA": 1,
+            "%MEMBERS": [
+                2
+            ]
+        }
+    }
+}

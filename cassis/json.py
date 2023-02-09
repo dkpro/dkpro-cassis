@@ -76,9 +76,19 @@ class CasJsonDeserializer:
 
         embedded_typesystem = TypeSystem()
         json_typesystem = data.get(TYPES_FIELD)
-        # First load all the types but no features since features of a type X might be of a later loaded type Y
+
+        # First, build a dependency graph to support cases where a child type is defined before its super type
+        type_dependencies = defaultdict(set)
         for type_name, json_type in json_typesystem.items():
-            self._parse_type(embedded_typesystem, type_name, json_type)
+            type_dependencies[type_name].add(json_type[SUPER_TYPE_FIELD])
+
+        # Second, load all the types but no features since features of a type X might be of a later loaded type Y
+        for type_name in toposort_flatten(type_dependencies):
+            if is_predefined(type_name):
+                continue
+
+            self._parse_type(embedded_typesystem, type_name, json_typesystem[type_name])
+
         # Now we are sure we know all the types, we can create the features
         for type_name, json_type in json_typesystem.items():
             self._parse_features(embedded_typesystem, type_name, json_type)

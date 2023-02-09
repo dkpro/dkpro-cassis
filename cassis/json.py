@@ -313,8 +313,10 @@ class CasJsonSerializer:
                 types_to_include = cas.typesystem.transitive_closure(used_types)
             elif type_system_mode is TypeSystemMode.FULL:
                 types_to_include = cas.typesystem.get_types()
+            else:
+                raise Exception(f"Invalid type system mode: [{type_system_mode}]")
 
-            for type_ in types_to_include:
+            for type_ in sorted(types_to_include, key=lambda x: x.name):
                 if type_.name == TYPE_NAME_DOCUMENT_ANNOTATION:
                     continue
                 json_type = self._serialize_type(type_)

@@ -7,8 +7,9 @@ from tests.util import assert_json_equal
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files", "json")
 SER_REF_DIR = os.path.join(FIXTURE_DIR, "fs_as_array", "ser-ref")
+ONE_WAY_DIR = os.path.join(FIXTURE_DIR, "fs_as_array", "one-way")
 
-FIXTURES = [
+ROUND_TRIP_FIXTURES = [
     (os.path.join(SER_REF_DIR, "casWithSofaDataArray"), []),
     (os.path.join(SER_REF_DIR, "casWithSofaDataURI"), []),
     (os.path.join(SER_REF_DIR, "casWithFloatingPointSpecialValues"), []),
@@ -80,16 +81,35 @@ FIXTURES = [
     (
         os.path.join(SER_REF_DIR, "casExtendingDocumentAnnotation"),
         [["de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData", 0, 16, "This is a test ."]],
-    ),
+    )
 ]
 
+ONE_WAY_FIXTURES = [
+    (
+        os.path.join(ONE_WAY_DIR, "casWithBadSofaFsOrder"),
+        [["de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData", 0, 16, "This is a test ."]],
+    )
+]
 
-@pytest.mark.parametrize("json_path, annotations", FIXTURES)
+@pytest.mark.parametrize("json_path, annotations", ROUND_TRIP_FIXTURES)
 def test_deserialization_serialization(json_path, annotations):
     with open(os.path.join(json_path, "data.json"), "rb") as f:
         cas = load_cas_from_json(f)
 
     with open(os.path.join(json_path, "data.json"), "rb") as f:
+        expected_json = json.load(f)
+
+    actual_json = cas.to_json(pretty_print=True)
+
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
+
+
+@pytest.mark.parametrize("json_path, annotations", ONE_WAY_FIXTURES)
+def test_deserialization_serialization_one_way(json_path, annotations):
+    with open(os.path.join(json_path, "data.json"), "rb") as f:
+        cas = load_cas_from_json(f)
+
+    with open(os.path.join(json_path, "data-ref.json"), "rb") as f:
         expected_json = json.load(f)
 
     actual_json = cas.to_json(pretty_print=True)
@@ -128,7 +148,7 @@ def test_multi_feature_random_serialization_deserialization():
         assert_json_equal(actual_json, expected_json)
 
 
-@pytest.mark.parametrize("json_path, annotations", FIXTURES)
+@pytest.mark.parametrize("json_path, annotations", ROUND_TRIP_FIXTURES)
 def test_unicode(json_path, annotations):
     with open(os.path.join(json_path, "data.json"), "rb") as f:
         cas = load_cas_from_json(f)

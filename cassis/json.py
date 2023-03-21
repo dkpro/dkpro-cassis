@@ -102,24 +102,34 @@ class CasJsonDeserializer:
         feature_structures = {}
         json_feature_structures = data.get(FEATURE_STRUCTURES_FIELD)
         if isinstance(json_feature_structures, list):
+            # According to the JSON CAS 0.4.0 spec, we should be able to do this in a single loop as SofaFSes
+            # should normally appear before any FSes referring to them. However, the Java implementation currently
+            # does not do this, so we do two passes to be able to read its data.
             for json_fs in json_feature_structures:
                 if json_fs.get(TYPE_FIELD) == TYPE_NAME_SOFA:
                     fs_id = json_fs.get(ID_FIELD)
                     fs = self._parse_sofa(cas, fs_id, json_fs, feature_structures)
-                else:
+                    feature_structures[fs.xmiID] = fs
+            for json_fs in json_feature_structures:
+                if json_fs.get(TYPE_FIELD) != TYPE_NAME_SOFA:
                     fs_id = json_fs.get(ID_FIELD)
                     fs = self._parse_feature_structure(typesystem, fs_id, json_fs, feature_structures)
-                feature_structures[fs.xmiID] = fs
+                    feature_structures[fs.xmiID] = fs
 
         if isinstance(json_feature_structures, dict):
+            # According to the JSON CAS 0.4.0 spec, we should be able to do this in a single loop as SofaFSes
+            # should normally appear before any FSes referring to them. However, the Java implementation currently
+            # does not do this, so we do two passes to be able to read its data.
             for fs_id, json_fs in json_feature_structures.items():
                 if json_fs.get(TYPE_FIELD) == TYPE_NAME_SOFA:
                     fs_id = int(fs_id)
                     fs = self._parse_sofa(cas, fs_id, json_fs, feature_structures)
-                else:
+                    feature_structures[fs.xmiID] = fs
+            for fs_id, json_fs in json_feature_structures.items():
+                if json_fs.get(TYPE_FIELD) != TYPE_NAME_SOFA:
                     fs_id = int(fs_id)
                     fs = self._parse_feature_structure(typesystem, fs_id, json_fs, feature_structures)
-                feature_structures[fs.xmiID] = fs
+                    feature_structures[fs.xmiID] = fs
 
         for post_processor in self._post_processors:
             post_processor()

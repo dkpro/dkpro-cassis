@@ -1,0 +1,180 @@
+{
+  "%TYPES" : {
+    "de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData" : {
+      "%NAME" : "de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData",
+      "%SUPER_TYPE" : "uima.tcas.DocumentAnnotation",
+      "documentTitle" : {
+        "%NAME" : "documentTitle",
+        "%RANGE" : "uima.cas.String"
+      },
+      "documentId" : {
+        "%NAME" : "documentId",
+        "%RANGE" : "uima.cas.String"
+      },
+      "documentUri" : {
+        "%NAME" : "documentUri",
+        "%RANGE" : "uima.cas.String"
+      },
+      "collectionId" : {
+        "%NAME" : "collectionId",
+        "%RANGE" : "uima.cas.String"
+      },
+      "documentBaseUri" : {
+        "%NAME" : "documentBaseUri",
+        "%RANGE" : "uima.cas.String"
+      },
+      "isLastSegment" : {
+        "%NAME" : "isLastSegment",
+        "%RANGE" : "uima.cas.Boolean"
+      }
+    },
+    "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence" : {
+      "%NAME" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
+      "%SUPER_TYPE" : "uima.tcas.Annotation",
+      "id" : {
+        "%NAME" : "id",
+        "%RANGE" : "uima.cas.String"
+      }
+    },
+    "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token" : {
+      "%NAME" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+      "%SUPER_TYPE" : "uima.tcas.Annotation",
+      "parent" : {
+        "%NAME" : "parent",
+        "%RANGE" : "uima.tcas.Annotation"
+      },
+      "id" : {
+        "%NAME" : "id",
+        "%RANGE" : "uima.cas.String"
+      },
+      "syntacticFunction" : {
+        "%NAME" : "syntacticFunction",
+        "%RANGE" : "uima.cas.String"
+      },
+      "order" : {
+        "%NAME" : "order",
+        "%RANGE" : "uima.cas.Integer"
+      }
+    },
+    "webanno.custom.LinkType" : {
+      "%NAME" : "webanno.custom.LinkType",
+      "%SUPER_TYPE" : "uima.cas.TOP",
+      "role" : {
+        "%NAME" : "role",
+        "%RANGE" : "uima.cas.String"
+      },
+      "target" : {
+        "%NAME" : "target",
+        "%RANGE" : "webanno.custom.SimpleSpan"
+      }
+    },
+    "webanno.custom.SimpleLinkHost" : {
+      "%NAME" : "webanno.custom.SimpleLinkHost",
+      "%SUPER_TYPE" : "uima.tcas.Annotation",
+      "links" : {
+        "%NAME" : "links",
+        "%RANGE" : "webanno.custom.LinkType[]"
+      }
+    },
+    "webanno.custom.SimpleSpan" : {
+      "%NAME" : "webanno.custom.SimpleSpan",
+      "%SUPER_TYPE" : "uima.tcas.Annotation"
+    }
+  },
+  "%FEATURE_STRUCTURES" : [ {
+    "%ID" : 2,
+    "%TYPE" : "uima.cas.Sofa",
+    "sofaNum" : 1,
+    "sofaID" : "_InitialView",
+    "mimeType" : "text",
+    "sofaString" : "This is a test ."
+  }, {
+    "%ID" : 1,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData",
+    "@sofa" : 2,
+    "begin" : 0,
+    "end" : 16,
+    "documentId" : "doc",
+    "isLastSegment" : false
+  }, {
+    "%ID" : 3,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
+    "@sofa" : 2,
+    "begin" : 0,
+    "end" : 16
+  }, {
+    "%ID" : 4,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+    "@sofa" : 2,
+    "begin" : 0,
+    "end" : 4,
+    "order" : 0
+  }, {
+    "%ID" : 5,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+    "@sofa" : 2,
+    "begin" : 5,
+    "end" : 7,
+    "order" : 0
+  }, {
+    "%ID" : 6,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+    "@sofa" : 2,
+    "begin" : 8,
+    "end" : 9,
+    "order" : 0
+  }, {
+    "%ID" : 7,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+    "@sofa" : 2,
+    "begin" : 10,
+    "end" : 14,
+    "order" : 0
+  }, {
+    "%ID" : 8,
+    "%TYPE" : "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+    "@sofa" : 2,
+    "begin" : 15,
+    "end" : 16,
+    "order" : 0
+  }, {
+    "%ID" : 9,
+    "%TYPE" : "webanno.custom.LinkType",
+    "role" : "p2",
+    "@target" : 10
+  }, {
+    "%ID" : 11,
+    "%TYPE" : "webanno.custom.LinkType",
+    "role" : "p1",
+    "@target" : 12
+  }, {
+    "%ID" : 13,
+    "%TYPE" : "webanno.custom.LinkType[]",
+    "%ELEMENTS" : [ 11, 9 ]
+  }, {
+    "%ID" : 14,
+    "%TYPE" : "webanno.custom.SimpleLinkHost",
+    "@sofa" : 2,
+    "begin" : 0,
+    "end" : 4,
+    "@links" : 13
+  }, {
+    "%ID" : 12,
+    "%TYPE" : "webanno.custom.SimpleSpan",
+    "@sofa" : 2,
+    "begin" : 5,
+    "end" : 7
+  }, {
+    "%ID" : 10,
+    "%TYPE" : "webanno.custom.SimpleSpan",
+    "@sofa" : 2,
+    "begin" : 8,
+    "end" : 9
+  } ],
+  "%VIEWS" : {
+    "_InitialView" : {
+      "%SOFA" : 2,
+      "%MEMBERS" : [ 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14 ]
+    }
+  }
+}

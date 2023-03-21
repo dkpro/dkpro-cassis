@@ -198,7 +198,46 @@ class TypeSystemMode(Enum):
     MINIMAL = auto()
     NONE = auto()
 
+def array_type_name_for_type(type_: Union[str, "Type"]) -> str:
+    type_name = type_ if isinstance(type_, str) else type_.name
+    if type_name == TYPE_NAME_BYTE:
+        return TYPE_NAME_BYTE_ARRAY
+    if type_name == TYPE_NAME_FLOAT:
+        return TYPE_NAME_FLOAT_ARRAY
+    if type_name == TYPE_NAME_DOUBLE:
+        return TYPE_NAME_DOUBLE_ARRAY
+    if type_name == TYPE_NAME_BOOLEAN:
+        return TYPE_NAME_BOOLEAN_ARRAY
+    if type_name == TYPE_NAME_INTEGER:
+        return TYPE_NAME_INTEGER_ARRAY
+    if type_name == TYPE_NAME_SHORT:
+        return TYPE_NAME_SHORT_ARRAY
+    if type_name == TYPE_NAME_LONG:
+        return TYPE_NAME_LONG_ARRAY
+    if type_name == TYPE_NAME_STRING:
+        return TYPE_NAME_STRING_ARRAY
+    return TYPE_NAME_FS_ARRAY
 
+
+def element_type_name_for_array_type(type_: Union[str, "Type"]) -> str:
+    type_name = type_ if isinstance(type_, str) else type_.name
+    if type_name == TYPE_NAME_BYTE_ARRAY:
+        return TYPE_NAME_BYTE
+    if type_name == TYPE_NAME_FLOAT_ARRAY:
+        return TYPE_NAME_FLOAT
+    if type_name == TYPE_NAME_DOUBLE_ARRAY:
+        return TYPE_NAME_DOUBLE
+    if type_name == TYPE_NAME_BOOLEAN_ARRAY:
+        return TYPE_NAME_BOOLEAN
+    if type_name == TYPE_NAME_INTEGER_ARRAY:
+        return TYPE_NAME_INTEGER
+    if type_name == TYPE_NAME_SHORT_ARRAY:
+        return TYPE_NAME_SHORT
+    if type_name == TYPE_NAME_LONG_ARRAY:
+        return TYPE_NAME_LONG
+    if type_name == TYPE_NAME_STRING_ARRAY:
+        return TYPE_NAME_STRING
+    return TYPE_NAME_TOP
 def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 

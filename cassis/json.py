@@ -170,12 +170,18 @@ class CasJsonDeserializer:
         for key, json_feature in json_type.items():
             if key.startswith(RESERVED_FIELD_PREFIX):
                 continue
+
+            range_type = json_feature[RANGE_FIELD]
+            element_type = json_feature.get(ELEMENT_TYPE_FIELD)
+            if range_type.endswith('[]'):
+                element_type = range_type[:-2]
+                range_type = array_type_name_for_type(element_type)
             typesystem.create_feature(
                 new_type,
                 name=key,
-                rangeType=json_feature[RANGE_FIELD],
+                rangeType=range_type,
+                elementType=element_type,
                 description=json_feature.get(DESCRIPTION_FIELD),
-                elementType=json_feature.get(ELEMENT_TYPE_FIELD),
                 multipleReferencesAllowed=json_feature.get(MULTIPLE_REFERENCES_ALLOWED_FIELD),
             )
 
@@ -214,7 +220,10 @@ class CasJsonDeserializer:
     def _parse_feature_structure(
         self, typesystem: TypeSystem, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]
     ):
-        AnnotationType = typesystem.get_type(json_fs.get(TYPE_FIELD))
+        type_name = json_fs.get(TYPE_FIELD)
+        if type_name.endswith('[]'):
+            type_name = array_type_name_for_type(type_name)
+        AnnotationType = typesystem.get_type(type_name)
 
         attributes = dict(json_fs)
 
@@ -413,9 +422,20 @@ class CasJsonSerializer:
         if feature._has_reserved_name:
             feature_name = feature_name[:-1]
 
+        range_type_name = self._to_external_type_name(feature.rangeType.name)
+        skip_element_type = False
+        if is_array(feature.rangeType):
+            skip_element_type = True
+            if is_primitive_array(feature.rangeType):
+                range_type_name = element_type_name_for_array_type(feature.rangeType) + "[]"
+            elif feature.elementType:
+                range_type_name = self._to_external_type_name(feature.elementType.name) + "[]"
+            else:
+                range_type_name = TYPE_NAME_TOP + "[]"
+
         json_feature = {
             NAME_FIELD: feature_name,
-            RANGE_FIELD: self._to_external_type_name(feature.rangeType.name),
+            RANGE_FIELD: range_type_name,
         }
 
         if feature.description:
@@ -424,7 +444,7 @@ class CasJsonSerializer:
         if feature.multipleReferencesAllowed is not None:
             json_feature[MULTIPLE_REFERENCES_ALLOWED_FIELD] = feature.multipleReferencesAllowed
 
-        if feature.elementType is not None:
+        if not skip_element_type and feature.elementType is not None:
             json_feature[ELEMENT_TYPE_FIELD] = self._to_external_type_name(feature.elementType.name)
 
         return json_feature

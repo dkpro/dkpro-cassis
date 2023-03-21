@@ -81,13 +81,17 @@ ROUND_TRIP_FIXTURES = [
     (
         os.path.join(SER_REF_DIR, "casExtendingDocumentAnnotation"),
         [["de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData", 0, 16, "This is a test ."]],
-    )
+    ),
 ]
 
 ONE_WAY_FIXTURES = [
     (
         os.path.join(ONE_WAY_DIR, "casWithBadSofaFsOrder"),
         [["de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData", 0, 16, "This is a test ."]],
+    ),
+    (
+        os.path.join(ONE_WAY_DIR, "tsv3-testSimpleSlotFeature"),
+        [],
     )
 ]
 

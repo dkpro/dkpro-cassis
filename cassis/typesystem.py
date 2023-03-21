@@ -1102,8 +1102,8 @@ class TypeSystem:
         self._predefined_types.add(type_name)
 
     def _add_document_annotation_type(self):
-        t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName="uima.tcas.Annotation")
-        self.create_feature(t, name="language", rangeType="uima.cas.String")
+        t = self.create_type(name=_DOCUMENT_ANNOTATION_TYPE, supertypeName=TYPE_NAME_ANNOTATION)
+        self.create_feature(t, name="language", rangeType=TYPE_NAME_STRING)
 
     def transitive_closure(self, seed_types: Set[Type], built_in: bool = False) -> Set[Type]:
         # Build transitive closure of used types by following parents, features, etc.

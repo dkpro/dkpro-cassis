@@ -77,6 +77,10 @@ FIXTURES = [
             ["uima.tcas.DocumentAnnotation", 0, 6, "這是一個測試"],
         ],
     ),
+    (
+        os.path.join(SER_REF_DIR, "casExtendingDocumentAnnotation"),
+        [["de.tudarmstadt.ukp.dkpro.core.api.metadata.type.DocumentMetaData", 0, 16, "This is a test ."]],
+    ),
 ]
 
 

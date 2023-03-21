@@ -1,0 +1,37 @@
+{
+  "%FEATURE_STRUCTURES": [
+    {
+      "%ID": 2,
+      "%TYPE": "uima.cas.Sofa",
+      "mimeType": "text",
+      "sofaID": "_InitialView",
+      "sofaNum": 1,
+      "sofaString": "This is a test ."
+    },
+    {
+      "%ID": 1,
+      "%TYPE": "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+      "@sofa": 2,
+      "begin": 0,
+      "end": 4
+    }
+  ],
+  "%TYPES": {
+    "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token": {
+      "%NAME": "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token",
+      "%SUPER_TYPE": "uima.tcas.Annotation",
+      "parent": {
+        "%NAME": "parent",
+        "%RANGE": "uima.tcas.Annotation"
+      }
+    }
+  },
+  "%VIEWS": {
+    "_InitialView": {
+      "%MEMBERS": [
+        1
+      ],
+      "%SOFA": 2
+    }
+  }
+}

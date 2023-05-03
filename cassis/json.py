@@ -37,7 +37,7 @@ NEGATIVE_INFINITE_VALUE = "-Infinity"
 NEGATIVE_INFINITE_VALUE_ABBR = "-Inf"
 
 
-def load_cas_from_json(source: Union[IO, str], typesystem: TypeSystem = None) -> Cas:
+def load_cas_from_json(source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False) -> Cas:
     """Loads a CAS from a JSON source.
 
     Args:
@@ -55,7 +55,7 @@ def load_cas_from_json(source: Union[IO, str], typesystem: TypeSystem = None) ->
         typesystem = TypeSystem()
 
     deserializer = CasJsonDeserializer()
-    return deserializer.deserialize(source, typesystem=typesystem)
+    return deserializer.deserialize(source, typesystem=typesystem, lenient=lenient)
 
 
 class CasJsonDeserializer:
@@ -64,7 +64,7 @@ class CasJsonDeserializer:
         self._max_sofa_num = 0
         self._post_processors = []
 
-    def deserialize(self, source: Union[IO, str], typesystem: Optional[TypeSystem] = None) -> Cas:
+    def deserialize(self, source: Union[IO, str], typesystem: Optional[TypeSystem] = None, lenient: bool = False) -> Cas:
         if isinstance(source, str):
             data = json.loads(source)
         else:
@@ -97,7 +97,7 @@ class CasJsonDeserializer:
 
         typesystem = merge_typesystems(typesystem, embedded_typesystem)
 
-        cas = Cas(typesystem=typesystem)
+        cas = Cas(typesystem=typesystem, lenient=lenient)
 
         feature_structures = {}
         json_feature_structures = data.get(FEATURE_STRUCTURES_FIELD)

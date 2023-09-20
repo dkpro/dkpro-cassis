@@ -295,7 +295,9 @@ class CasXmiDeserializer:
             else:
                 view = cas.create_view(sofa.sofaID, xmiID=sofa.xmiID, sofaNum=sofa.sofaNum)
 
-            view.sofa_string = sofa.sofaString
+            # Directly set the sofaString and offsetConverter for the sofa to avoid recomputing the offset convertion (slow!) when using the setter
+            view.get_sofa()._sofaString = sofa.sofaString
+            view.get_sofa()._offset_converter = sofa._offset_converter
             view.sofa_mime = sofa.mimeType
 
             # If a sofa has no members, then UIMA might omit the view. In that case,

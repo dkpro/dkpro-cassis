@@ -30,9 +30,9 @@ DKPro **cassis** (pronunciation: [ka.sis]) provides a pure-Python implementation
 as defined by the `UIMA <https://uima.apache.org>`_ framework. The CAS is a data structure representing an object to
 be enriched with annotations (the co-called *Subject of Analysis*, short *SofA*).
 
-This library enables the creation and manipulation of CAS objects and their associated type systems as well as loading
-and saving CAS objects in the `CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
-in Python programs. This can ease in particular the integration of Python-based Natural Language Processing (e.g.
+This library enables the creation and manipulation of annotated documents (CAS objects) and their associated type systems as well as loading
+and saving them in the `CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
+or the `CAS JSON representation <https://github.com/apache/uima-uimaj-io-jsoncas#readme>`_ in Python programs. This can ease in particular the integration of Python-based Natural Language Processing (e.g.
 `spacy <https://spacy.io>`_ or `NLTK <https://www.nltk.org>`_) and Machine Learning librarys (e.g.
 `scikit-learn <https://scikit-learn.org/stable/>`_ or `Keras <https://keras.io>`_) in UIMA-based text analysis workflows.
 
@@ -47,9 +47,9 @@ Currently supported features are:
 
 - Text SofAs
 - Deserializing/serializing UIMA CAS from/to XMI
+- Deserializing/serializing UIMA CAS from/to JSON
 - Deserializing/serializing type systems from/to XML
-- Selecting annotations, selecting covered annotations, adding
-  annotations
+- Selecting annotations, selecting covered annotations, adding annotations
 - Type inheritance
 - Multiple SofA support
 - Type system can be changed after loading
@@ -59,7 +59,6 @@ Some features are still under development, e.g.
 
 - Proper type checking
 - XML/XMI schema validation
-- `UIMA JSON CAS support <https://github.com/apache/uima-uimaj-io-jsoncas#readme>`_ (the format is not yet finalized)
 
 Installation
 ------------
@@ -76,8 +75,8 @@ Example CAS XMI and types system files can be found under :code:`tests\test_file
 Loading a CAS
 ~~~~~~~~~~~~~
 
-A CAS can be deserialized from XMI either by reading from a file or
-string using :code:`load_cas_from_xmi`.
+**From XMI:** A CAS can be deserialized from the UIMA CAS XMI (XML 1.0) format either
+by reading from a file or string using :code:`load_cas_from_xmi`.
 
 .. code:: python
 
@@ -89,18 +88,25 @@ string using :code:`load_cas_from_xmi`.
     with open('cas.xmi', 'rb') as f:
        cas = load_cas_from_xmi(f, typesystem=typesystem)
 
-Saving a CAS as XMI
-~~~~~~~~~~~~~~~~~~~
-
-A CAS can be serialized to XMI either by writing to a file or be
-returned as a string using :code:`cas.to_xmi()`.
+**From JSON:** The UIMA JSON CAS format is also supported and can be loaded using :code:`load_cas_from_json`.
+Most UIMA JSON CAS files come with an embedded typesystem, so it is not necessary to specify one.
 
 .. code:: python
 
     from cassis import *
 
-    with open('cas.xmi', 'rb') as f:
-       cas = load_cas_from_xmi(f)
+    with open('cas.json', 'rb') as f:
+       cas = load_cas_from_json(f)
+
+Writing a CAS
+~~~~~~~~~~~~~
+
+**To XMI:** A CAS can be serialized to XMI either by writing to a file or be
+returned as a string using :code:`cas.to_xmi()`.
+
+.. code:: python
+
+    from cassis import *
 
     # Returned as a string
     xmi = cas.to_xmi()
@@ -108,8 +114,24 @@ returned as a string using :code:`cas.to_xmi()`.
     # Written to file
     cas.to_xmi("my_cas.xmi")
 
+**To JSON:** A CAS can also be written to JSON using :code:`cas.to_json()`.
+
+.. code:: python
+
+    from cassis import *
+
+    # Returned as a string
+    xmi = cas.to_json()
+
+    # Written to file
+    cas.to_json("my_cas.json")
+
 Adding annotations
 ~~~~~~~~~~~~~~~~~~
+
+**Note:** type names used below are examples only. The actual CAS files you will be
+dealing with will use other names! You can get a list of the types using
+:code:`cas.typesystem.get_types()`.
 
 Given a type system with a type :code:`cassis.Token` that has an :code:`id` and
 :code:`pos` feature, annotations can be added in the following:

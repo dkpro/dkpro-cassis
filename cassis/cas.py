@@ -1,6 +1,8 @@
+import itertools
 import sys
 import warnings
 from collections import defaultdict
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -26,6 +28,10 @@ _validator_optional_string = validators.optional(validators.instance_of(str))
 NAME_DEFAULT_SOFA = "_InitialView"
 
 
+@lru_cache(maxsize=5000)
+def _get_size_in_utf16_bytes(c: str) -> int:
+    return len(c.encode("utf-16-le")) // 2
+
 class IdGenerator:
     def __init__(self, initial_id: int = 1):
         self._next_id = initial_id
@@ -50,29 +56,16 @@ class Utf16CodepointOffsetConverter:
         self._external_to_python: Union[Dict[int, int], None] = None
         self._python_to_external: Union[Dict[int, int], None] = None
 
-    def create_offset_mapping(self, sofa_string: str):
+
+    def create_offset_mapping(self, sofa_string: str) -> None:
         if sofa_string is None:
             return
 
-        self._external_to_python = {0: 0}
-        self._python_to_external = {0: 0}
+        sizes_in_utf16_bytes = map(_get_size_in_utf16_bytes, sofa_string)
+        accumulated_sizes = [0] + list(itertools.accumulate(sizes_in_utf16_bytes))
 
-        count_uima = 0
-        count_cassis = 0
-
-        for c in sofa_string:
-            size_in_utf16_bytes = len(c.encode("utf-16-le")) // 2
-
-            self._external_to_python[count_uima] = count_cassis
-            self._python_to_external[count_cassis] = count_uima
-
-            count_uima += size_in_utf16_bytes
-            count_cassis += 1
-
-        # End offsets in UIMA are exclusive, we need to therefore add
-        # the offset after the last char also to this index
-        self._external_to_python[count_uima] = count_cassis
-        self._python_to_external[count_cassis] = count_uima
+        self._python_to_external = dict(zip(range(len(accumulated_sizes)), accumulated_sizes))
+        self._external_to_python = dict(zip(accumulated_sizes, range(len(accumulated_sizes))))
 
     def external_to_python(self, idx: Optional[int]) -> Optional[int]:
         if idx is None:

@@ -21,7 +21,7 @@ REQUIRES_PYTHON = ">=3.7.0"
 
 install_requires = [
     "lxml~=4.9.1",
-    "attrs==21.2.*",
+    "attrs>=21.2,<24",
     "sortedcontainers==2.4.*",
     "toposort==1.7",
     "more-itertools==8.12.*",

@@ -646,10 +646,10 @@ class Type:
             redefined_feature = self._inherited_features[feature.name]
 
             if redefined_feature != feature:
-                msg = f"Feature with name [{feature.name}] already exists in parent but is redefined!"
+                msg = f"For type [{self.name}] feature with name [{feature.name}] already exists in parent [{self.supertype.name}] but is redefined!"
                 raise ValueError(msg)
             elif warn:
-                msg = f"Feature with name [{feature.name}] already exists in parent!"
+                msg = f"For type [{self.name}] feature with name [{feature.name}] already exists in parent [{self.supertype.name}]!"
                 warnings.warn(msg)
             return
 

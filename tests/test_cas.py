@@ -268,9 +268,6 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
 
 
 def test_get_covered_text_tokens(tokens):
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train . The train was late ."
-
     actual_text = [token.get_covered_text() for token in tokens]
 
     expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
@@ -278,9 +275,6 @@ def test_get_covered_text_tokens(tokens):
 
 
 def test_FeatureStructure_get_covered_text_tokens(tokens):
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train . The train was late ."
-
     actual_text = [token.get_covered_text() for token in tokens]
 
     expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
@@ -288,9 +282,6 @@ def test_FeatureStructure_get_covered_text_tokens(tokens):
 
 
 def test_get_covered_text_sentences(sentences):
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train . The train was late ."
-
     actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]
@@ -298,9 +289,6 @@ def test_get_covered_text_sentences(sentences):
 
 
 def test_FeatureStructure_get_covered_text_sentences(sentences):
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train . The train was late ."
-
     actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]

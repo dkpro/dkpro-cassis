@@ -127,6 +127,14 @@ def test_sofa_string_and_mime_type_can_be_set_using_constructor():
     assert cas.sofa_mime == "text/html"
 
 
+def test_document_language_can_be_set_using_constructor():
+    cas = Cas(sofa_string="Ich bin ein test!", document_language="de")
+
+    assert cas.sofa_string == "Ich bin ein test!"
+    assert cas.sofa_mime == "text/plain"
+    assert cas.document_language == "de"
+
+
 # Select
 
 

@@ -125,6 +125,7 @@ def test_select(small_typesystem_xml, tokens, sentences):
     assert list(cas.select("cassis.Sentence")) == sentences
     assert list(cas.select(ts.get_type("cassis.Token"))) == tokens
     assert list(cas.select(ts.get_type("cassis.Sentence"))) == sentences
+    assert set(cas.select(ts.get_type(TYPE_NAME_TOP))) == set(tokens) | set(sentences)
 
 
 def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):

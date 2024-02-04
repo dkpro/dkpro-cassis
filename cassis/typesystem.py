@@ -866,7 +866,7 @@ class TypeSystem:
         supertype = self.get_type(supertypeName)
         new_type = Type(name=name, supertype=supertype, description=description, typesystem=self)
 
-        if supertypeName != TOP_TYPE_NAME:
+        if name != TOP_TYPE_NAME:
             supertype._children[name] = new_type
 
             for feature in supertype.all_features:

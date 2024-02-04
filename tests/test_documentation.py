@@ -10,5 +10,7 @@ def test_readme_is_proper_rst():
     with path_to_readme.open() as f:
         rst = f.read()
 
-    errors = list(rstcheck.check(rst))
-    assert len(errors) == 0, "; ".join(str(e) for e in errors)
+    errors = [str(e) for e in list(rstcheck.check(rst))]
+    # https://github.com/rstcheck/rstcheck-core/issues/4
+    errors = [s for s in errors if not ("Hyperlink target" in s and "is not referenced." in s)]
+    assert len(errors) == 0, "; ".join(errors)

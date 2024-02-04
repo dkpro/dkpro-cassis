@@ -72,8 +72,10 @@ Usage
 
 Example CAS XMI and types system files can be found under :code:`tests\test_files`.
 
-Loading a CAS
-~~~~~~~~~~~~~
+.. _reading_a_cas_file:
+
+Reading a CAS file
+~~~~~~~~~~~~~~~~~~
 
 **From XMI:** A CAS can be deserialized from the UIMA CAS XMI (XML 1.0) format either
 by reading from a file or string using :code:`load_cas_from_xmi`.
@@ -98,8 +100,10 @@ Most UIMA JSON CAS files come with an embedded typesystem, so it is not necessar
     with open('cas.json', 'rb') as f:
        cas = load_cas_from_json(f)
 
-Writing a CAS
-~~~~~~~~~~~~~
+.. _writing_a_cas_file:
+
+Writing a CAS file
+~~~~~~~~~~~~~~~~~~
 
 **To XMI:** A CAS can be serialized to XMI either by writing to a file or be
 returned as a string using :code:`cas.to_xmi()`.
@@ -125,6 +129,30 @@ returned as a string using :code:`cas.to_xmi()`.
 
     # Written to file
     cas.to_json("my_cas.json")
+
+.. _creating_a_cas:
+
+Creating a CAS
+~~~~~~~~~~~~~~
+
+A CAS (Common Analysis System) object typically represents a (text) document. When using cassis,
+you will likely most often :ref:`reading <reading_a_cas_file>` existing CAS files, modify them and then
+:ref:`writing <writing_a_cas_file>` them out again. But you can also create CAS objects from scratch,
+e.g. if you want to convert some data into a CAS object in order to create a pre-annotated text.
+If you do not have a pre-defined typesystem to work with, you will have to :ref:`define one <creating_a_typesystem>`.
+
+.. code:: python
+
+    typesystem = TypeSystem()
+
+    cas = Cas(
+        sofa_string = "Joe waited for the train . The train was late .",
+        document_language = "en",
+        typesystem = typesystem)
+
+    print(cas.sofa_string)
+    print(cas.sofa_mime)
+    print(cas.document_language)
 
 Adding annotations
 ~~~~~~~~~~~~~~~~~~
@@ -237,6 +265,8 @@ The same goes for setting:
     assert lst["tail.tail.head"] == "newer_baz"
 
 
+.. _creating_a_typesystem:
+
 Creating types and adding features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -269,12 +299,13 @@ properties of the Sofa can be read and written:
 
 .. code:: python
 
-    cas = Cas()
-    cas.sofa_string = "Joe waited for the train . The train was late ."
-    cas.sofa_mime = "text/plain"
+    cas = Cas(
+        sofa_string = "Joe waited for the train . The train was late .",
+        document_language = "en")
 
     print(cas.sofa_string)
     print(cas.sofa_mime)
+    print(cas.document_language)
 
 Array support
 ~~~~~~~~~~~~~

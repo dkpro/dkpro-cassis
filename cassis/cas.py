@@ -210,6 +210,7 @@ class Cas:
         lenient: bool = False,
         sofa_string: str = None,
         sofa_mime: str = None,
+        document_language: str = None,
     ):
         """Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
@@ -240,6 +241,9 @@ class Cas:
                 self.sofa_mime = sofa_mime
             else:
                 self.sofa_mime = "text/plain"
+
+        if document_language is not None:
+            self.document_language = document_language
 
     @property
     def typesystem(self) -> TypeSystem:
@@ -512,6 +516,19 @@ class Cas:
         """
         return self._current_view.sofa
 
+    def get_document_annotation(self) -> FeatureStructure:
+        """Get the DocumentAnnotation feature structure associated with this CAS view. If none exists, one is created.
+
+        Returns:
+            The DocumentAnnotation associated with this CAS view.
+        """
+        try:
+            return self.select(TYPE_NAME_DOCUMENT_ANNOTATION)[0]
+        except IndexError:
+            document_annotation = self.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)()
+            self.add(document_annotation)
+            return document_annotation
+
     @property
     def sofas(self) -> List[Sofa]:
         """Finds all sofas that this CAS manages
@@ -597,6 +614,24 @@ class Cas:
 
         """
         self.get_sofa().sofaArray = value
+
+    @property
+    def document_language(self) -> str:
+        """The document language contains the language code for the document.
+
+        Returns: The document language.
+
+        """
+        return self.get_document_annotation().get(FEATURE_BASE_NAME_LANGUAGE)
+
+    @document_language.setter
+    def document_language(self, value) -> str:
+        """Sets document language.
+
+        Args:
+            value: The document language
+        """
+        self.get_document_annotation().set(FEATURE_BASE_NAME_LANGUAGE, value)
 
     def to_xmi(self, path: Union[str, Path, None] = None, pretty_print: bool = False) -> Optional[str]:
         """Creates a XMI representation of this CAS.

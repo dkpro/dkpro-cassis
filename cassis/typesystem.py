@@ -198,6 +198,7 @@ class TypeSystemMode(Enum):
     MINIMAL = auto()
     NONE = auto()
 
+
 def array_type_name_for_type(type_: Union[str, "Type"]) -> str:
     type_name = type_ if isinstance(type_, str) else type_.name
     if type_name == TYPE_NAME_BYTE:
@@ -238,6 +239,8 @@ def element_type_name_for_array_type(type_: Union[str, "Type"]) -> str:
     if type_name == TYPE_NAME_STRING_ARRAY:
         return TYPE_NAME_STRING
     return TYPE_NAME_TOP
+
+
 def _string_to_valid_classname(name: str):
     return re.sub("[^a-zA-Z0-9_]", "_", name)
 

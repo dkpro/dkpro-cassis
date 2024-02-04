@@ -21,6 +21,8 @@ from cassis.typesystem import (
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
+    FEATURE_BASE_NAME_LANGUAGE,
 )
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
@@ -31,6 +33,7 @@ NAME_DEFAULT_SOFA = "_InitialView"
 @lru_cache(maxsize=5000)
 def _get_size_in_utf16_bytes(c: str) -> int:
     return len(c.encode("utf-16-le")) // 2
+
 
 class IdGenerator:
     def __init__(self, initial_id: int = 1):
@@ -55,7 +58,6 @@ class Utf16CodepointOffsetConverter:
     def __init__(self):
         self._external_to_python: Union[Dict[int, int], None] = None
         self._python_to_external: Union[Dict[int, int], None] = None
-
 
     def create_offset_mapping(self, sofa_string: str) -> None:
         if sofa_string is None:
@@ -202,7 +204,13 @@ class Index:
 class Cas:
     """A CAS object is a container for text (sofa) and annotations"""
 
-    def __init__(self, typesystem: TypeSystem = None, lenient: bool = False):
+    def __init__(
+        self,
+        typesystem: TypeSystem = None,
+        lenient: bool = False,
+        sofa_string: str = None,
+        sofa_mime: str = None,
+    ):
         """Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
 
@@ -225,6 +233,13 @@ class Cas:
         # Every CAS comes with a an initial view called `_InitialView`
         self._add_view("_InitialView")
         self._current_view: View = self._views["_InitialView"]
+
+        if sofa_string is not None:
+            self.sofa_string = sofa_string
+            if sofa_mime is not None:
+                self.sofa_mime = sofa_mime
+            else:
+                self.sofa_mime = "text/plain"
 
     @property
     def typesystem(self) -> TypeSystem:

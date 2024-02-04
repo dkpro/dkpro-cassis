@@ -113,6 +113,20 @@ def test_sofa_uri_can_be_set_and_read():
     assert cas.sofa_uri == "https://raw.githubusercontent.com/dkpro/dkpro-cassis/master/README.rst"
 
 
+def test_sofa_string_can_be_set_using_constructor():
+    cas = Cas(sofa_string="I am a test sofa string!")
+
+    assert cas.sofa_string == "I am a test sofa string!"
+    assert cas.sofa_mime == "text/plain"
+
+
+def test_sofa_string_and_mime_type_can_be_set_using_constructor():
+    cas = Cas(sofa_string="I am a <b>test sofa string!</b>", sofa_mime="text/html")
+
+    assert cas.sofa_string == "I am a <b>test sofa string!</b>"
+    assert cas.sofa_mime == "text/html"
+
+
 # Select
 
 

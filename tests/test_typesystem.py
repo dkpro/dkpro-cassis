@@ -16,7 +16,8 @@ from cassis.typesystem import (
     TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_TOP,
     TypeCheckError,
-    is_predefined, TYPE_NAME_DOCUMENT_ANNOTATION,
+    is_predefined,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
 )
 from tests.fixtures import *
 from tests.util import assert_xml_equal

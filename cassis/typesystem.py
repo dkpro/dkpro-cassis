@@ -111,7 +111,7 @@ _PREDEFINED_TYPES = {
     "uima.cas.DoubleArray",
     "uima.cas.Sofa",
     "uima.cas.AnnotationBase",
-    "uima.tcas.Annotation",
+    TYPE_NAME_ANNOTATION,
 }
 
 _PRIMITIVE_TYPES = {
@@ -828,7 +828,7 @@ class TypeSystem:
         self.create_feature(t, name="sofa", rangeType="uima.cas.Sofa")
 
         # Annotation
-        t = self.create_type(name="uima.tcas.Annotation", supertypeName="uima.cas.AnnotationBase")
+        t = self.create_type(name=TYPE_NAME_ANNOTATION, supertypeName="uima.cas.AnnotationBase")
         self.create_feature(t, name="begin", rangeType="uima.cas.Integer")
         self.create_feature(t, name="end", rangeType="uima.cas.Integer")
 
@@ -846,7 +846,7 @@ class TypeSystem:
         """
         return typename in self._types
 
-    def create_type(self, name: str, supertypeName: str = "uima.tcas.Annotation", description: str = None) -> Type:
+    def create_type(self, name: str, supertypeName: str = TYPE_NAME_ANNOTATION, description: str = None) -> Type:
         """Creates a new type and return it.
 
         Args:

@@ -315,7 +315,7 @@ class CasXmiDeserializer:
                 fs = feature_structures[member_id]
 
                 # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
-                if typesystem.is_instance_of(fs.type.name, "uima.tcas.Annotation"):
+                if typesystem.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION):
                     fs.begin = sofa._offset_converter.external_to_python(fs.begin)
                     fs.end = sofa._offset_converter.external_to_python(fs.end)
 

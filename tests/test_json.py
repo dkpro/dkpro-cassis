@@ -1,6 +1,6 @@
 import json
 
-from cassis.typesystem import TYPE_NAME_ANNOTATION, TypeSystemMode
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TypeSystemMode, TYPE_NAME_DOCUMENT_ANNOTATION
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal
@@ -13,69 +13,69 @@ ROUND_TRIP_FIXTURES = [
     (os.path.join(SER_REF_DIR, "casWithSofaDataArray"), []),
     (os.path.join(SER_REF_DIR, "casWithSofaDataURI"), []),
     (os.path.join(SER_REF_DIR, "casWithFloatingPointSpecialValues"), []),
-    (os.path.join(SER_REF_DIR, "casWithText"), [["uima.tcas.DocumentAnnotation", 0, 15, "This is a test."]]),
+    (os.path.join(SER_REF_DIR, "casWithText"), [[TYPE_NAME_DOCUMENT_ANNOTATION, 0, 15, "This is a test."]]),
     (
         os.path.join(SER_REF_DIR, "casWithoutTextButWithAnnotations"),
         [
-            ["uima.tcas.Annotation", 0, 4, None],
-            ["uima.tcas.Annotation", 5, 7, None],
-            ["uima.tcas.Annotation", 8, 9, None],
-            ["uima.tcas.Annotation", 10, 14, None],
+            [TYPE_NAME_ANNOTATION, 0, 4, None],
+            [TYPE_NAME_ANNOTATION, 5, 7, None],
+            [TYPE_NAME_ANNOTATION, 8, 9, None],
+            [TYPE_NAME_ANNOTATION, 10, 14, None],
         ],
     ),
     (
         os.path.join(SER_REF_DIR, "casWithTextAndAnnotations"),
         [
-            ["uima.tcas.Annotation", 0, 4, "This"],
-            ["uima.tcas.Annotation", 5, 7, "is"],
-            ["uima.tcas.Annotation", 8, 9, "a"],
-            ["uima.tcas.Annotation", 10, 14, "test"],
-            ["uima.tcas.DocumentAnnotation", 0, 14, "This is a test"],
+            [TYPE_NAME_ANNOTATION, 0, 4, "This"],
+            [TYPE_NAME_ANNOTATION, 5, 7, "is"],
+            [TYPE_NAME_ANNOTATION, 8, 9, "a"],
+            [TYPE_NAME_ANNOTATION, 10, 14, "test"],
+            [TYPE_NAME_DOCUMENT_ANNOTATION, 0, 14, "This is a test"],
         ],
     ),
     (
         os.path.join(SER_REF_DIR, "casWithEmojiUnicodeTextAndAnnotations"),
         [
-            ["uima.tcas.Annotation", 0, 1, "🥳", b"\xf0\x9f\xa5\xb3"],
-            ["uima.tcas.Annotation", 2, 6, "This"],
+            [TYPE_NAME_ANNOTATION, 0, 1, "🥳", b"\xf0\x9f\xa5\xb3"],
+            [TYPE_NAME_ANNOTATION, 2, 6, "This"],
             [
-                "uima.tcas.Annotation",
+                TYPE_NAME_ANNOTATION,
                 7,
                 12,
                 "👳🏻\u200d♀️",
                 b"\xf0\x9f\x91\xb3\xf0\x9f\x8f\xbb\xe2\x80\x8d\xe2\x99\x80\xef\xb8\x8f",
             ],
-            ["uima.tcas.Annotation", 13, 15, "is"],
-            ["uima.tcas.Annotation", 16, 17, "✆", b"\xe2\x9c\x86"],
-            ["uima.tcas.Annotation", 18, 19, "a"],
+            [TYPE_NAME_ANNOTATION, 13, 15, "is"],
+            [TYPE_NAME_ANNOTATION, 16, 17, "✆", b"\xe2\x9c\x86"],
+            [TYPE_NAME_ANNOTATION, 18, 19, "a"],
             [
-                "uima.tcas.Annotation",
+                TYPE_NAME_ANNOTATION,
                 20,
                 25,
                 "🧔🏾\u200d♂️",
                 b"\xf0\x9f\xa7\x94\xf0\x9f\x8f\xbe\xe2\x80\x8d\xe2\x99\x82\xef\xb8\x8f",
             ],
-            ["uima.tcas.Annotation", 26, 30, "test"],
-            ["uima.tcas.Annotation", 31, 32, "👻", b"\xf0\x9f\x91\xbb"],
-            ["uima.tcas.DocumentAnnotation", 0, 32, "🥳 This 👳🏻\u200d♀️ is ✆ a 🧔🏾\u200d♂️ test 👻"],
+            [TYPE_NAME_ANNOTATION, 26, 30, "test"],
+            [TYPE_NAME_ANNOTATION, 31, 32, "👻", b"\xf0\x9f\x91\xbb"],
+            [TYPE_NAME_DOCUMENT_ANNOTATION, 0, 32, "🥳 This 👳🏻\u200d♀️ is ✆ a 🧔🏾\u200d♂️ test 👻"],
         ],
     ),
     (
         os.path.join(SER_REF_DIR, "casWithLeftToRightTextAndAnnotations"),
         [
-            ["uima.tcas.Annotation", 0, 3, "هذا"],
-            ["uima.tcas.Annotation", 4, 10, "اختبار"],
-            ["uima.tcas.DocumentAnnotation", 0, 10, "هذا اختبار"],
+            [TYPE_NAME_ANNOTATION, 0, 3, "هذا"],
+            [TYPE_NAME_ANNOTATION, 4, 10, "اختبار"],
+            [TYPE_NAME_DOCUMENT_ANNOTATION, 0, 10, "هذا اختبار"],
         ],
     ),
     (
         os.path.join(SER_REF_DIR, "casWithTraditionalChineseTextAndAnnotations"),
         [
-            ["uima.tcas.Annotation", 0, 1, "這"],
-            ["uima.tcas.Annotation", 1, 2, "是"],
-            ["uima.tcas.Annotation", 2, 4, "一個"],
-            ["uima.tcas.Annotation", 4, 6, "測試"],
-            ["uima.tcas.DocumentAnnotation", 0, 6, "這是一個測試"],
+            [TYPE_NAME_ANNOTATION, 0, 1, "這"],
+            [TYPE_NAME_ANNOTATION, 1, 2, "是"],
+            [TYPE_NAME_ANNOTATION, 2, 4, "一個"],
+            [TYPE_NAME_ANNOTATION, 4, 6, "測試"],
+            [TYPE_NAME_DOCUMENT_ANNOTATION, 0, 6, "這是一個測試"],
         ],
     ),
     (

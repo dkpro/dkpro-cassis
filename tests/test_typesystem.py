@@ -16,7 +16,7 @@ from cassis.typesystem import (
     TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_TOP,
     TypeCheckError,
-    is_predefined,
+    is_predefined, TYPE_NAME_DOCUMENT_ANNOTATION,
 )
 from tests.fixtures import *
 from tests.util import assert_xml_equal
@@ -184,7 +184,7 @@ def test_type_can_be_created():
     test_type = typesystem.create_type(name="test.Type")
 
     assert test_type.name == "test.Type"
-    assert test_type.supertype.name == "uima.tcas.Annotation"
+    assert test_type.supertype.name == TYPE_NAME_ANNOTATION
 
 
 def test_type_can_create_instances():
@@ -307,7 +307,7 @@ def test_type_inherits_from_annotation():
         ("uima.cas.DoubleArray", True),
         ("uima.cas.Sofa", True),
         ("uima.cas.AnnotationBase", True),
-        ("uima.tcas.Annotation", True),
+        (TYPE_NAME_ANNOTATION, True),
         ("example.TypeA", False),
         ("example.TypeB", False),
         ("example.TypeC", False),
@@ -327,8 +327,8 @@ def test_is_predefined(type_name: str, expected: bool):
             True,
         ),
         ("de.tudarmstadt.ukp.dkpro.core.api.semantics.type.SemArgLink", "uima.cas.String", False),
-        ("de.tudarmstadt.ukp.dkpro.core.api.syntax.type.chunk.VC", "uima.tcas.Annotation", True),
-        ("de.tudarmstadt.ukp.dkpro.core.api.transform.type.SofaChangeAnnotation", "uima.tcas.Annotation", True),
+        ("de.tudarmstadt.ukp.dkpro.core.api.syntax.type.chunk.VC", TYPE_NAME_ANNOTATION, True),
+        ("de.tudarmstadt.ukp.dkpro.core.api.transform.type.SofaChangeAnnotation", TYPE_NAME_ANNOTATION, True),
         (
             "de.tudarmstadt.ukp.dkpro.core.api.anomaly.type.SpellingAnomaly",
             "de.tudarmstadt.ukp.dkpro.core.api.anomaly.type.GrammarAnomaly",
@@ -581,9 +581,9 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     assert len(list(typesystem.get_types())) == 3
 
     # Assert annotation type
-    annotation_type = typesystem.get_type("uima.tcas.DocumentAnnotation")
-    assert annotation_type.name == "uima.tcas.DocumentAnnotation"
-    assert annotation_type.supertype.name == "uima.tcas.Annotation"
+    annotation_type = typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)
+    assert annotation_type.name == TYPE_NAME_DOCUMENT_ANNOTATION
+    assert annotation_type.supertype.name == TYPE_NAME_ANNOTATION
 
     language_feature = annotation_type.get_feature("language")
     assert language_feature.name == "language"
@@ -592,7 +592,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert token type
     token_type = typesystem.get_type("cassis.Token")
     assert token_type.name == "cassis.Token"
-    assert token_type.supertype.name == "uima.tcas.Annotation"
+    assert token_type.supertype.name == TYPE_NAME_ANNOTATION
 
     token_id_feature = token_type.get_feature("id")
     assert token_id_feature.name == "id"
@@ -606,7 +606,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
     # Assert sentence type
     sentence_type = typesystem.get_type("cassis.Sentence")
     assert sentence_type.name == "cassis.Sentence"
-    assert sentence_type.supertype.name == "uima.tcas.Annotation"
+    assert sentence_type.supertype.name == TYPE_NAME_ANNOTATION
 
     sentence_type_id_feature = sentence_type.get_feature("id")
     assert sentence_type_id_feature.name == "id"
@@ -690,10 +690,10 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
 @pytest.mark.parametrize(
     "name, rangeTypeName, elementType, multipleReferencesAllowed",
     [
-        ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.tcas.Annotation", True),  # Same multiref
-        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Default multiref
-        ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Same elementType
-        ("listMultiRefsOk", "uima.cas.FSList", "uima.tcas.Annotation", None),  # Default elementType
+        ("arrayMultiRefsOk", "uima.cas.FSArray", TYPE_NAME_ANNOTATION, True),  # Same multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", TYPE_NAME_ANNOTATION, None),  # Default multiref
+        ("arrayNoMultiRefs", "uima.cas.FSArray", TYPE_NAME_ANNOTATION, None),  # Same elementType
+        ("listMultiRefsOk", "uima.cas.FSList", TYPE_NAME_ANNOTATION, None),  # Default elementType
         ("arrayTop", "uima.cas.FSArray", None, None),  # No elementType,
     ],
 )
@@ -723,9 +723,9 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
 @pytest.mark.parametrize(
     "name, rangeTypeName, elementType, multipleReferencesAllowed",
     [
-        ("arrayNoElementType", "uima.cas.FSArray", "uima.tcas.Annotation", None),  # Different elementTypes
+        ("arrayNoElementType", "uima.cas.FSArray", TYPE_NAME_ANNOTATION, None),  # Different elementTypes
         ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.AnnotationBase", True),  # Different elementTypes
-        ("arrayMultiRefsOk", "uima.cas.FSList", "uima.tcas.Annotation", True),  # Incompatible rangeTypes
+        ("arrayMultiRefsOk", "uima.cas.FSList", TYPE_NAME_ANNOTATION, True),  # Incompatible rangeTypes
         ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.TOP", False),  # Different multiref
         ("arrayNoMultiRefs", "uima.cas.FSArray", "uima.cas.TOP", True),  # Different multiref
         ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.TOP", None),  # Different multiref default
@@ -754,10 +754,10 @@ def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elemen
 @pytest.mark.filterwarnings("ignore:Feature with name")
 def test_that_merging_types_with_different_compatible_supertypes_works():
     ts1 = TypeSystem()
-    ts1.create_type("test.Sub", description="Example type.", supertypeName="uima.tcas.Annotation")
+    ts1.create_type("test.Sub", description="Example type.", supertypeName=TYPE_NAME_ANNOTATION)
 
     ts2 = TypeSystem()
-    ts2.create_type("test.Super", description="Example type.", supertypeName="uima.tcas.Annotation")
+    ts2.create_type("test.Super", description="Example type.", supertypeName=TYPE_NAME_ANNOTATION)
     ts2.create_type("test.Sub", description="Example type.", supertypeName="test.Super")
 
     result = merge_typesystems(ts1, ts2)

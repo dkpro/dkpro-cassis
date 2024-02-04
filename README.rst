@@ -72,8 +72,6 @@ Usage
 
 Example CAS XMI and types system files can be found under :code:`tests\test_files`.
 
-.. _reading_a_cas_file:
-
 Reading a CAS file
 ~~~~~~~~~~~~~~~~~~
 
@@ -99,8 +97,6 @@ Most UIMA JSON CAS files come with an embedded typesystem, so it is not necessar
 
     with open('cas.json', 'rb') as f:
        cas = load_cas_from_json(f)
-
-.. _writing_a_cas_file:
 
 Writing a CAS file
 ~~~~~~~~~~~~~~~~~~
@@ -130,16 +126,14 @@ returned as a string using :code:`cas.to_xmi()`.
     # Written to file
     cas.to_json("my_cas.json")
 
-.. _creating_a_cas:
-
 Creating a CAS
 ~~~~~~~~~~~~~~
 
 A CAS (Common Analysis System) object typically represents a (text) document. When using cassis,
-you will likely most often :ref:`reading <reading_a_cas_file>` existing CAS files, modify them and then
-:ref:`writing <writing_a_cas_file>` them out again. But you can also create CAS objects from scratch,
+you will likely most often reading existing CAS files, modify them and then
+writing them out again. But you can also create CAS objects from scratch,
 e.g. if you want to convert some data into a CAS object in order to create a pre-annotated text.
-If you do not have a pre-defined typesystem to work with, you will have to :ref:`define one <creating_a_typesystem>`.
+If you do not have a pre-defined typesystem to work with, you will have to define one.
 
 .. code:: python
 
@@ -264,8 +258,6 @@ The same goes for setting:
     assert lst["tail.head"] == "newer_bar"
     assert lst["tail.tail.head"] == "newer_baz"
 
-
-.. _creating_a_typesystem:
 
 Creating types and adding features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

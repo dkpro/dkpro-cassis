@@ -92,8 +92,9 @@ ONE_WAY_FIXTURES = [
     (
         os.path.join(ONE_WAY_DIR, "tsv3-testSimpleSlotFeature"),
         [],
-    )
+    ),
 ]
+
 
 @pytest.mark.parametrize("json_path, annotations", ROUND_TRIP_FIXTURES)
 def test_deserialization_serialization(json_path, annotations):

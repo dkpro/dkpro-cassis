@@ -37,7 +37,9 @@ NEGATIVE_INFINITE_VALUE = "-Infinity"
 NEGATIVE_INFINITE_VALUE_ABBR = "-Inf"
 
 
-def load_cas_from_json(source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False, merge_typesystem: bool =True) -> Cas:
+def load_cas_from_json(
+    source: Union[IO, str], typesystem: TypeSystem = None, lenient: bool = False, merge_typesystem: bool = True
+) -> Cas:
     """Loads a CAS from a JSON source.
 
     Args:
@@ -64,7 +66,13 @@ class CasJsonDeserializer:
         self._max_sofa_num = 0
         self._post_processors = []
 
-    def deserialize(self, source: Union[IO, str], typesystem: Optional[TypeSystem] = None, lenient: bool = False, merge_typesystem: bool =True) -> Cas:
+    def deserialize(
+        self,
+        source: Union[IO, str],
+        typesystem: Optional[TypeSystem] = None,
+        lenient: bool = False,
+        merge_typesystem: bool = True,
+    ) -> Cas:
         if isinstance(source, str):
             data = json.loads(source)
         else:
@@ -103,6 +111,7 @@ class CasJsonDeserializer:
         feature_structures = {}
         json_feature_structures = data.get(FEATURE_STRUCTURES_FIELD)
         if isinstance(json_feature_structures, list):
+
             def parse_and_add(json_fs_):
                 parsed = self._parse_feature_structure(typesystem, json_fs_.get(ID_FIELD), json_fs_, feature_structures)
                 feature_structures[parsed.xmiID] = parsed
@@ -126,6 +135,7 @@ class CasJsonDeserializer:
                     parse_and_add(json_fs)
 
         if isinstance(json_feature_structures, dict):
+
             def parse_and_add(fs_id_, json_fs_):
                 parsed = self._parse_feature_structure(typesystem, int(fs_id_), json_fs_, feature_structures)
                 feature_structures[parsed.xmiID] = parsed
@@ -174,7 +184,7 @@ class CasJsonDeserializer:
 
             range_type = json_feature[RANGE_FIELD]
             element_type = json_feature.get(ELEMENT_TYPE_FIELD)
-            if range_type.endswith('[]'):
+            if range_type.endswith("[]"):
                 element_type = range_type[:-2]
                 range_type = array_type_name_for_type(element_type)
             typesystem.create_feature(
@@ -222,7 +232,7 @@ class CasJsonDeserializer:
         self, typesystem: TypeSystem, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]
     ):
         type_name = json_fs.get(TYPE_FIELD)
-        if type_name.endswith('[]'):
+        if type_name.endswith("[]"):
             type_name = array_type_name_for_type(type_name)
         AnnotationType = typesystem.get_type(type_name)
 

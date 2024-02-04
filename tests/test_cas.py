@@ -133,7 +133,7 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_all(annotations)
 
-    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+    actual_annotations = list(cas.select(TYPE_NAME_ANNOTATION))
 
     assert set(actual_annotations) == set(annotations)
 
@@ -399,13 +399,13 @@ def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
     for token in tokens:
         cas.remove(token)
 
-    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+    actual_annotations = list(cas.select(TYPE_NAME_ANNOTATION))
     assert set(actual_annotations) == set(sentences)
 
     for sentence in sentences:
         cas.remove(sentence)
 
-    actual_annotations = list(cas.select("uima.tcas.Annotation"))
+    actual_annotations = list(cas.select(TYPE_NAME_ANNOTATION))
     assert set(actual_annotations) == set()
 
 
@@ -420,8 +420,8 @@ def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
     for annotation in annotations:
         cas.remove(annotation)
 
-    assert set(cas.select("uima.tcas.Annotation")) == set()
-    assert set(view.select("uima.tcas.Annotation")) == set(annotations)
+    assert set(cas.select(TYPE_NAME_ANNOTATION)) == set()
+    assert set(view.select(TYPE_NAME_ANNOTATION)) == set(annotations)
 
 
 def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences):

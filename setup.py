@@ -24,7 +24,7 @@ install_requires = [
     "attrs>=21.2,<24",
     "sortedcontainers==2.4.*",
     "toposort==1.7",
-    "more-itertools==8.12.*",
+    "more-itertools>=8.12,<9",
     "deprecation==2.1.*",
     "importlib_resources==5.4.*"
 ]

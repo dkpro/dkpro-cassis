@@ -40,3 +40,4 @@ jobs:
         file: ./coverage.xml
         env_vars: OS,PYTHON
         name: codecov-umbrella
+        token: ${{ secrets.CODECOV_TOKEN }}

@@ -31,7 +31,7 @@ as defined by the `UIMA <https://uima.apache.org>`_ framework. The CAS is a data
 be enriched with annotations (the co-called *Subject of Analysis*, short *SofA*).
 
 This library enables the creation and manipulation of annotated documents (CAS objects) and their associated type systems as well as loading
-and saving them in the `CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/references.html#ugr.ref.xmi>`_
+and saving them in the `CAS XMI XML representation <https://uima.apache.org/d/uimaj-current/ref.html#ugr.ref.xmi>`_
 or the `CAS JSON representation <https://github.com/apache/uima-uimaj-io-jsoncas#readme>`_ in Python programs. This can ease in particular the integration of Python-based Natural Language Processing (e.g.
 `spacy <https://spacy.io>`_ or `NLTK <https://www.nltk.org>`_) and Machine Learning librarys (e.g.
 `scikit-learn <https://scikit-learn.org/stable/>`_ or `Keras <https://keras.io>`_) in UIMA-based text analysis workflows.
@@ -372,7 +372,7 @@ Merging type systems
 
 Sometimes, it is desirable to merge two type systems. With **cassis**, this can be
 achieved via the :code:`merge_typesystems` function. The detailed rules of merging can be found
-`here <https://uima.apache.org/d/uimaj-2.10.4/references.html#ugr.ref.cas.typemerging>`_.
+`here <https://uima.apache.org/d/uimaj-current/ref.html#ugr.ref.cas.typemerging>`_.
 
 .. code:: python
 

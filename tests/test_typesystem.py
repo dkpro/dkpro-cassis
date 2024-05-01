@@ -511,6 +511,52 @@ def test_is_array():
         assert cas.typesystem.is_array(type.name) == type.name.endswith("Array")
 
 
+def test_get_types():
+    cas = Cas()
+
+    assert {type.name for type in cas.typesystem} == {"uima.tcas.DocumentAnnotation"}
+    assert {type.name for type in cas.typesystem.get_types(built_in=False)} == {"uima.tcas.DocumentAnnotation"}
+    assert {type.name for type in cas.typesystem.get_types(built_in=True)} == {
+        "uima.cas.TOP",
+        "uima.cas.NULL",
+        "uima.cas.Boolean",
+        "uima.cas.Byte",
+        "uima.cas.Short",
+        "uima.cas.Integer",
+        "uima.cas.Long",
+        "uima.cas.Float",
+        "uima.cas.Double",
+        "uima.cas.String",
+        "uima.cas.ArrayBase",
+        "uima.cas.FSArray",
+        "uima.cas.BooleanArray",
+        "uima.cas.ByteArray",
+        "uima.cas.ShortArray",
+        "uima.cas.LongArray",
+        "uima.cas.DoubleArray",
+        "uima.cas.FloatArray",
+        "uima.cas.IntegerArray",
+        "uima.cas.StringArray",
+        "uima.cas.ListBase",
+        "uima.cas.FSList",
+        "uima.cas.EmptyFSList",
+        "uima.cas.NonEmptyFSList",
+        "uima.cas.FloatList",
+        "uima.cas.EmptyFloatList",
+        "uima.cas.NonEmptyFloatList",
+        "uima.cas.IntegerList",
+        "uima.cas.EmptyIntegerList",
+        "uima.cas.NonEmptyIntegerList",
+        "uima.cas.StringList",
+        "uima.cas.EmptyStringList",
+        "uima.cas.NonEmptyStringList",
+        "uima.cas.Sofa",
+        "uima.cas.AnnotationBase",
+        "uima.tcas.Annotation",
+        "uima.tcas.DocumentAnnotation",
+    }
+
+
 @pytest.mark.parametrize(
     "parent_name, child_name, expected",
     [

@@ -838,6 +838,9 @@ class TypeSystem:
         if add_document_annotation_type:
             self._add_document_annotation_type()
 
+    def __iter__(self):
+        return self.get_types()
+
     def contains_type(self, typename: str):
         """Checks whether this type system contains a type with name `typename`.
 

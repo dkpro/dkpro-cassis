@@ -515,8 +515,17 @@ def test_type_name():
     cas = Cas()
 
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
+    assert cas.typesystem.contains_type(TYPE_NAME_ANNOTATION)
     assert Annotation.name == TYPE_NAME_ANNOTATION
     assert Annotation.short_name == "Annotation"
+
+
+def test_get_type_by_short_name():
+    cas = Cas()
+
+    Annotation = cas.typesystem.get_type("Annotation")
+    assert cas.typesystem.contains_type("Annotation")
+    assert Annotation.name == TYPE_NAME_ANNOTATION
 
 
 def test_get_types():

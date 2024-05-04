@@ -710,6 +710,11 @@ class Type:
             for child in self._children.values():
                 yield from child.descendants
 
+    @property
+    def short_name(self) -> str:
+        """The short name of the type (i.e. the part after the last dot)."""
+        return self.name.split(".")[-1]
+
     def subsumes(self, other_type: "Type") -> bool:
         """Determines if the type `other_type` is a child of `self`.
 
@@ -838,10 +843,10 @@ class TypeSystem:
         if add_document_annotation_type:
             self._add_document_annotation_type()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Type]:
         return self.get_types()
 
-    def contains_type(self, typename: str):
+    def contains_type(self, typename: str) -> bool:
         """Checks whether this type system contains a type with name `typename`.
 
         Args:

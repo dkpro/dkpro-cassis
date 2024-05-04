@@ -511,6 +511,14 @@ def test_is_array():
         assert cas.typesystem.is_array(type.name) == type.name.endswith("Array")
 
 
+def test_type_name():
+    cas = Cas()
+
+    Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
+    assert Annotation.name == TYPE_NAME_ANNOTATION
+    assert Annotation.short_name == "Annotation"
+
+
 def test_get_types():
     cas = Cas()
 

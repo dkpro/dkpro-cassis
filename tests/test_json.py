@@ -1,6 +1,6 @@
 import json
 
-from cassis.typesystem import TYPE_NAME_ANNOTATION, TypeSystemMode, TYPE_NAME_DOCUMENT_ANNOTATION
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_DOCUMENT_ANNOTATION, TypeSystemMode
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from tests.util import assert_json_equal

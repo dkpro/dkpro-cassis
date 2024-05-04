@@ -16,22 +16,17 @@ coverage:
 
 # Static analysis/linting
 format:
-	black cassis/
-	black tests/
-	isort --profile black $(PYTHON_FILES) --multi-line=3 --trailing-comma --force-grid-wrap=0 --use-parentheses --line-width=120
+	poetry run ruff format $(PYTHON_FILES)
 
 lint:
     # stop the build if there are Python syntax errors or undefined names
-	poetry run flake8 --select=E9,F63,F7,F82 --show-source $(PYTHON_FILES)
+	poetry run ruff check --select=E9,F63,F7,F82 --output-format=full $(PYTHON_FILES)
     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
     # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-	poetry run flake8 --exit-zero $(PYTHON_FILES)
+	poetry run ruff check --exit-zero $(PYTHON_FILES)
 
 # Docs
 docs:
-	poetry run mkdocs serve
-
-html:
 	cd docs && make html
 
 # Building and publishing

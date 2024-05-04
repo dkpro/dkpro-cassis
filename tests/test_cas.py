@@ -143,7 +143,9 @@ def test_select(small_typesystem_xml, tokens, sentences):
     cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
 
+    assert list(cas.select("Token")) == tokens
     assert list(cas.select("cassis.Token")) == tokens
+    assert list(cas.select("Sentence")) == sentences
     assert list(cas.select("cassis.Sentence")) == sentences
     assert list(cas.select(ts.get_type("cassis.Token"))) == tokens
     assert list(cas.select(ts.get_type("cassis.Sentence"))) == sentences

@@ -1,0 +1,4 @@
+sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme
+docutils~=0.20,!=0.21.*

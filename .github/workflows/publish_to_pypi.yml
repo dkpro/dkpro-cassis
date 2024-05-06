@@ -15,7 +15,6 @@ jobs:
         python-version: '3.11'
     - name: Install dependencies
       run: |
-        pip install poetry
         make dependencies
     - name: Run tests
       run: make unit-tests

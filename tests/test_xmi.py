@@ -65,7 +65,7 @@ def test_deserializing_from_string(small_typesystem_xml):
         <cas:Sofa xmi:id="1" sofaNum="1" sofaID="mySofa" mimeType="text/plain"
                   sofaString="Joe waited for the train . The train was late ."/>
         <cas:View sofa="1" members="8 79 84"/>
-    </xmi:XMI>    
+    </xmi:XMI>
     """
     load_cas_from_xmi(cas_xmi, typesystem=typesystem)
 
@@ -102,7 +102,7 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
         <cas:Sofa xmi:id="2" sofaNum="2" sofaID="sofa2" mimeType="text/plain"
                   sofaString="The train was late ."/>
         <cas:View sofa="2" members="84"/>
-    </xmi:XMI>    
+    </xmi:XMI>
     """
     cas = load_cas_from_xmi(cas_xmi, typesystem=typesystem)
 
@@ -302,11 +302,11 @@ def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, d
 
 def test_offsets_work_for_empty_sofastring():
     xmi = """<?xml version="1.0" encoding="UTF-8"?>
-        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore" 
-            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> 
-            <cas:NULL xmi:id="0" /> 
-            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="0" language="en" /> 
-            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="" /> 
+        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore"
+            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+            <cas:NULL xmi:id="0" />
+            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="0" language="en" />
+            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="" />
             <cas:View sofa="1" members="2" />
         </xmi:XMI>"""
 
@@ -316,14 +316,15 @@ def test_offsets_work_for_empty_sofastring():
 
 def test_that_invalid_offsets_remain_unmapped_on_import():
     xmi = """<?xml version="1.0" encoding="UTF-8"?>
-        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore" 
-            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0"> 
-            <cas:NULL xmi:id="0" /> 
-            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="4" language="en" /> 
-            <tcas:Annotation xmi:id="3" sofa="1" begin="100" end="200" /> 
-            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="Test" /> 
+        <xmi:XMI xmlns:xmi="http://www.omg.org/XMI" xmlns:tcas="http:///uima/tcas.ecore"
+            xmlns:cas="http:///uima/cas.ecore" xmi:version="2.0">
+            <cas:NULL xmi:id="0" />
+            <tcas:DocumentAnnotation xmi:id="2" sofa="1" begin="0" end="4" language="en" />
+            <tcas:Annotation xmi:id="3" sofa="1" begin="100" end="200" />
+            <cas:Sofa xmi:id="1" sofaNum="1" sofaID="_InitialView" mimeType="text" sofaString="Test" />
             <cas:View sofa="1" members="2 3" />
-        </xmi:XMI>"""
+        </xmi:XMI>
+        """
 
     # assert no exception
     with warnings.catch_warnings(record=True) as ws:
@@ -361,14 +362,14 @@ def test_leniency_type_not_in_typesystem_lenient(cas_with_leniency_xmi, small_ty
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.warns(UserWarning):
-        cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=True)
+        load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=True)
 
 
 def test_leniency_type_not_in_typesystem_not_lenient(cas_with_leniency_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.raises(TypeNotFoundError):
-        cas = load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=False)
+        load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=False)
 
 
 def test_multiple_references_allowed_true():

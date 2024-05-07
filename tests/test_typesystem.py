@@ -10,6 +10,7 @@ from cassis.typesystem import (
     TYPE_NAME_ANNOTATION_BASE,
     TYPE_NAME_ARRAY_BASE,
     TYPE_NAME_BOOLEAN,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_INTEGER,
     TYPE_NAME_SOFA,
     TYPE_NAME_STRING,
@@ -17,7 +18,6 @@ from cassis.typesystem import (
     TYPE_NAME_TOP,
     TypeCheckError,
     is_predefined,
-    TYPE_NAME_DOCUMENT_ANNOTATION,
 )
 from tests.fixtures import *
 from tests.util import assert_xml_equal
@@ -315,7 +315,6 @@ def test_type_inherits_from_annotation():
     ],
 )
 def test_is_predefined(type_name: str, expected: bool):
-
     assert is_predefined(type_name) == expected
 
 
@@ -498,7 +497,7 @@ def test_is_primitive_collection(type_name: str, expected: bool):
         ("uima.cas.DoubleArray", True),
     ],
 )
-def test_is_primitive_collection(type_name: str, expected: bool):
+def test_is_primitive_array(type_name: str, expected: bool):
     typesystem = TypeSystem()
 
     assert typesystem.is_primitive_array(type_name) == expected
@@ -883,9 +882,9 @@ def test_that_merging_types_creates_self_contained_type_system():
 def test_that_dkpro_core_typeystem_can_be_loaded():
     ts = load_dkpro_core_typesystem()
 
-    POS = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS")
-    NamedEntity = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity")
-    CoreferenceLink = ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.coref.type.CoreferenceLink")
+    assert ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.lexmorph.type.pos.POS") is not None
+    assert ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.ner.type.NamedEntity") is not None
+    assert ts.get_type("de.tudarmstadt.ukp.dkpro.core.api.coref.type.CoreferenceLink") is not None
 
 
 # Type checking

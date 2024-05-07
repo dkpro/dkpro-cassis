@@ -12,7 +12,6 @@ from cassis.cas import Cas, IdGenerator, Sofa, View
 from cassis.typesystem import (
     _LIST_TYPES,
     _PRIMITIVE_ARRAY_TYPES,
-    _PRIMITIVE_LIST_TYPES,
     FEATURE_BASE_NAME_BEGIN,
     FEATURE_BASE_NAME_END,
     FEATURE_BASE_NAME_HEAD,
@@ -295,7 +294,8 @@ class CasXmiDeserializer:
             else:
                 view = cas.create_view(sofa.sofaID, xmiID=sofa.xmiID, sofaNum=sofa.sofaNum)
 
-            # Directly set the sofaString and offsetConverter for the sofa to avoid recomputing the offset convertion (slow!) when using the setter
+            # Directly set the sofaString and offsetConverter for the sofa to avoid recomputing the offset convertion
+            # (slow!) when using the setter
             view.get_sofa()._sofaString = sofa.sofaString
             view.get_sofa()._offset_converter = sofa._offset_converter
             view.sofa_mime = sofa.mimeType

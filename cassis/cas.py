@@ -13,6 +13,8 @@ from sortedcontainers import SortedKeyList
 
 from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
+    FEATURE_BASE_NAME_LANGUAGE,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
@@ -21,8 +23,6 @@ from cassis.typesystem import (
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
-    TYPE_NAME_DOCUMENT_ANNOTATION,
-    FEATURE_BASE_NAME_LANGUAGE,
 )
 
 _validator_optional_string = validators.optional(validators.instance_of(str))

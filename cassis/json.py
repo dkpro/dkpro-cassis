@@ -1,12 +1,42 @@
 import base64
 import json
 import math
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from io import TextIOBase, TextIOWrapper
 from math import isnan
+from typing import Union, IO, Optional, Dict, List
+from toposort import toposort_flatten
 
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
-from cassis.typesystem import *
+from cassis.typesystem import (
+    TYPE_NAME_ANNOTATION,
+    TypeSystem,
+    is_predefined,
+    merge_typesystems,
+    TYPE_NAME_SOFA,
+    FEATURE_BASE_NAME_SOFAARRAY,
+    array_type_name_for_type,
+    FEATURE_BASE_NAME_SOFASTRING,
+    FEATURE_BASE_NAME_SOFAID,
+    FEATURE_BASE_NAME_SOFAMIME,
+    FEATURE_BASE_NAME_SOFANUM,
+    FEATURE_BASE_NAME_SOFAURI,
+    TYPE_NAME_FS_ARRAY,
+    TYPE_NAME_BYTE_ARRAY,
+    TYPE_NAME_FLOAT_ARRAY,
+    TYPE_NAME_DOUBLE_ARRAY,
+    TypeSystemMode,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
+    Type,
+    Feature,
+    TYPE_NAME_TOP,
+    is_primitive_array,
+    TYPE_NAME_FLOAT,
+    TYPE_NAME_DOUBLE,
+    element_type_name_for_array_type,
+    is_primitive,
+    is_array,
+)
 
 RESERVED_FIELD_PREFIX = "%"
 REF_FEATURE_PREFIX = "@"

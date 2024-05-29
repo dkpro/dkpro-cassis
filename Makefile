@@ -11,8 +11,10 @@ pin:
 	pip-compile --extra dev -o requirements-dev.txt pyproject.toml
 	pip-compile --extra doc -o requirements-doc.txt pyproject.toml
 
-dependencies:
-	pip install pip-tools
+init:
+	pip install --upgrade pip pip-tools
+
+dependencies: init
 	pip-sync requirements.txt requirements-dev.txt
 
 # Tests
@@ -37,6 +39,7 @@ lint:
 
 # Docs
 docs:
+	pip-sync requirements-doc.txt
 	cd docs && make html
 
 # Building and publishing

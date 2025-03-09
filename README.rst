@@ -307,23 +307,25 @@ a UIMA array type such as :code:`uima.cas.FSArray`.
 
 .. code:: python
 
-    from cassis import *
-    from cassis.typesystem import TYPE_NAME_FS_ARRAY, TYPE_NAME_ANNOTATION
-
+    # Setting up an annotation type with an array feature containing
+    # references to other annotations
     typesystem = TypeSystem()
-
     ArrayHolder = typesystem.create_type(name='example.ArrayHolder')
-    typesystem.create_feature(domainType=ArrayHolder, name='array', rangeType=TYPE_NAME_FS_ARRAY)
+    typesystem.create_feature(domainType=ArrayHolder, name='values', rangeType=TYPE_NAME_FS_ARRAY)
 
     cas = Cas(typesystem=typesystem)
 
+    # Populating the document an annotation that contains references to another annotation in its array feature
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
     FSArray = cas.typesystem.get_type(TYPE_NAME_FS_ARRAY)
-
     ann = Annotation(begin=0, end=1)
-    cas.add(ann1)
-    holder = ArrayHolder(array=FSArray(elements=[ann, ann, ann]))
+    cas.add(ann)
+    holder = ArrayHolder(values=FSArray(elements=[ann, ann, ann]))
     cas.add(holder)
+
+    # Reading the elements from the array feature
+    for e in holder.values.elements:
+        print(e)
 
 Managing views
 ~~~~~~~~~~~~~~

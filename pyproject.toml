@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dkpro-cassis"
 version = "0.10.0-dev"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [ { name = "The DKPro cassis team" } ]
 maintainers = [ { name = "Richard Eckart de Castilho" } ]
 description = "UIMA CAS processing library in Python"
@@ -18,42 +18,43 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering :: Human Machine Interfaces",
     "Topic :: Text Processing :: Linguistic"
 ]
 dependencies = [
-    "lxml~=4.9.1",
-    "attrs>=21.2,<24",
+    "lxml~=5.3.1",
+    "attrs>=21.2,<26",
     "sortedcontainers~=2.4",
-    "toposort~=1.7",
-    "more-itertools~=8.12",
+    "toposort~=1.10",
+    "more-itertools~=10.6",
     "deprecation~=2.1",
-    "importlib_resources~=5.4"
+    "importlib_resources~=6.5.2"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest~=7.2",
-    "tox~=3.24",
-    "lxml-asserts~=0.1",
-    "pytest-lazy-fixture~=0.6",
-    "pytest-cov~=3.0",
-    "codecov~=2.1",
-    "rstcheck~=3.3",
-    "docutils~=0.20,!=0.21.*",
-    "ruff~=0.4.3",
+    "pytest~=8.3.5",
+    "pytest-lazy-fixtures~=1.1.2",
+    "pytest-cov~=6.0.0",
+    "tox~=4.24.2",
+    "lxml-asserts~=0.1.2",
+    "codecov~=2.1.13",
+    "rstcheck~=6.2.4",
+    "docutils~=0.21.2",
+    "ruff~=0.9.10",
     "pip-tools~=7.4.1"
 ]
 doc = [
     "sphinx",
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
-    "docutils~=0.20,!=0.21.*"
+    "docutils~=0.21.2"
 ]
 
 [project.urls]

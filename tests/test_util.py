@@ -1,28 +1,30 @@
 from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_FS_ARRAY
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
+from pytest_lazy_fixtures import lf 
+
 
 FIXTURES = [
-    (pytest.lazy_fixture("small_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
-    (pytest.lazy_fixture("cas_with_inheritance_xmi"), pytest.lazy_fixture("typesystem_with_inheritance_xml")),
-    (pytest.lazy_fixture("cas_with_collections_xmi"), pytest.lazy_fixture("typesystem_with_collections_xml")),
-    (pytest.lazy_fixture("cas_with_references_xmi"), pytest.lazy_fixture("webanno_typesystem_xml")),
-    (pytest.lazy_fixture("cas_with_nonindexed_fs_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
-    (pytest.lazy_fixture("cas_with_empty_array_references_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
-    (pytest.lazy_fixture("cas_with_reserved_names_xmi"), pytest.lazy_fixture("typesystem_with_reserved_names_xml")),
-    (pytest.lazy_fixture("cas_with_two_sofas_xmi"), pytest.lazy_fixture("small_typesystem_xml")),
-    (pytest.lazy_fixture("cas_with_smileys_xmi"), pytest.lazy_fixture("dkpro_typesystem_xml")),
+    (lf("small_xmi"), lf("small_typesystem_xml")),
+    (lf("cas_with_inheritance_xmi"), lf("typesystem_with_inheritance_xml")),
+    (lf("cas_with_collections_xmi"), lf("typesystem_with_collections_xml")),
+    (lf("cas_with_references_xmi"), lf("webanno_typesystem_xml")),
+    (lf("cas_with_nonindexed_fs_xmi"), lf("dkpro_typesystem_xml")),
+    (lf("cas_with_empty_array_references_xmi"), lf("dkpro_typesystem_xml")),
+    (lf("cas_with_reserved_names_xmi"), lf("typesystem_with_reserved_names_xml")),
+    (lf("cas_with_two_sofas_xmi"), lf("small_typesystem_xml")),
+    (lf("cas_with_smileys_xmi"), lf("dkpro_typesystem_xml")),
     (
-        pytest.lazy_fixture("cas_with_floating_point_special_values_xmi"),
-        pytest.lazy_fixture("typesystem_with_floating_points_xml"),
+        lf("cas_with_floating_point_special_values_xmi"),
+        lf("typesystem_with_floating_points_xml"),
     ),
     (
-        pytest.lazy_fixture("cas_has_fs_with_no_namespace_xmi"),
-        pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
+        lf("cas_has_fs_with_no_namespace_xmi"),
+        lf("typesystem_has_types_with_no_namespace_xml"),
     ),
     (
-        pytest.lazy_fixture("cas_with_multiple_references_allowed_string_array_xmi"),
-        pytest.lazy_fixture("typesystem_with_multiple_references_allowed_xml"),
+        lf("cas_with_multiple_references_allowed_string_array_xmi"),
+        lf("typesystem_with_multiple_references_allowed_xml"),
     ),
 ]
 

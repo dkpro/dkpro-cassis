@@ -1,5 +1,6 @@
 import warnings
 from pathlib import Path
+from pytest_lazy_fixtures import lf 
 
 import pytest as pytest
 
@@ -23,15 +24,15 @@ from tests.fixtures import *
 from tests.util import assert_xml_equal
 
 TYPESYSTEM_FIXTURES = [
-    pytest.lazy_fixture("small_typesystem_xml"),
-    pytest.lazy_fixture("typesystem_with_inheritance_xml"),
-    pytest.lazy_fixture("small_typesystem_with_predefined_types_xml"),
-    pytest.lazy_fixture("dkpro_typesystem_xml"),
-    pytest.lazy_fixture("typesystem_has_types_with_no_namespace_xml"),
-    pytest.lazy_fixture("typesystem_with_redefined_documentannotation_xml"),
-    pytest.lazy_fixture("typesystem_with_reserved_names_xml"),
-    pytest.lazy_fixture("webanno_typesystem_xml"),
-    pytest.lazy_fixture("inception_typesystem_xml"),
+    lf("small_typesystem_xml"),
+    lf("typesystem_with_inheritance_xml"),
+    lf("small_typesystem_with_predefined_types_xml"),
+    lf("dkpro_typesystem_xml"),
+    lf("typesystem_has_types_with_no_namespace_xml"),
+    lf("typesystem_with_redefined_documentannotation_xml"),
+    lf("typesystem_with_reserved_names_xml"),
+    lf("webanno_typesystem_xml"),
+    lf("inception_typesystem_xml"),
 ]
 
 # Feature
@@ -619,10 +620,10 @@ def test_subsumes(parent_name: str, child_name: str, expected: bool):
 @pytest.mark.parametrize(
     "typesystem_path",
     [
-        pytest.lazy_fixture("small_typesystem_path"),
-        pytest.lazy_fixture("small_typesystem_with_predefined_types_path"),
-        pytest.lazy_fixture("typesystem_with_inheritance_path"),
-        pytest.lazy_fixture("dkpro_typesystem_path"),
+        lf("small_typesystem_path"),
+        lf("small_typesystem_with_predefined_types_path"),
+        lf("typesystem_with_inheritance_path"),
+        lf("dkpro_typesystem_path"),
     ],
 )
 def test_deserializing_from_file(typesystem_path):

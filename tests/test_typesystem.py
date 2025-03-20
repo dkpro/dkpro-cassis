@@ -887,6 +887,13 @@ def test_that_type_can_be_created_in_different_packages():
     ts2.create_type(name="my.TestType")
 
 
+def test_comparison_across_type_systems():
+    ts1 = TypeSystem()
+    ts2 = TypeSystem()
+    assert ts1.get_type("uima.cas.Boolean") == ts2.get_type("uima.cas.Boolean")
+    assert ts1.get_type("uima.cas.Boolean") != ts2.get_type("uima.cas.Integer")
+
+
 # DKPro Core Support
 
 

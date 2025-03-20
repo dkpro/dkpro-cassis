@@ -549,7 +549,7 @@ class Feature:
         return str(self)
 
 
-@attr.s(slots=True, hash=False, eq=True, repr=False)
+@attr.s(slots=True, hash=False, eq=False, repr=False)
 class Type:
     """Describes types in a type system.
 
@@ -741,7 +741,19 @@ class Type:
         return hash(self.name)
 
     def __eq__(self, other):
-        return self.name == other.name
+        if self is other:
+            return True
+        if not isinstance(other, Type):
+            return False
+        if self.typesystem == other.typesystem:
+            return self.name == other.name
+        else:
+            return (
+                self.name == other.name
+                and self.supertype == other.supertype
+                and sorted(self.all_features, key=lambda feat: feat.name)
+                == sorted(other.all_features, key=lambda feat: feat.name)
+            )
 
     def __str__(self):
         return f"Type(name={self.name})"

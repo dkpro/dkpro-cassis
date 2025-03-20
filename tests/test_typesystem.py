@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from pytest_lazy_fixtures import lf 
+from pytest_lazy_fixtures import lf
 
 import pytest as pytest
 
@@ -875,6 +875,16 @@ def test_that_merging_types_creates_self_contained_type_system():
     assert merged_type_c is not None
     assert merged_type_c.supertype is merged_type_a
     assert merged_type_c.supertype is not type_c
+
+
+def test_that_type_can_be_created_in_different_packages():
+    ts1 = TypeSystem()
+    ts1.create_type(name="my.cool.TestType")
+    ts1.create_type(name="TestType")
+
+    ts2 = TypeSystem()
+    ts2.create_type(name="my.cool.TestType")
+    ts2.create_type(name="my.TestType")
 
 
 # DKPro Core Support

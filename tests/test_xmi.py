@@ -5,7 +5,7 @@ from lxml import etree
 
 from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
-from pytest_lazy_fixtures import lf 
+from pytest_lazy_fixtures import lf
 from tests.test_files.test_cas_generators import (
     MultiFeatureRandomCasGenerator,
     MultiTypeRandomCasGenerator,

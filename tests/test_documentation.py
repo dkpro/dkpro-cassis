@@ -2,6 +2,7 @@ import pathlib
 
 from rstcheck_core import checker
 
+
 def test_readme_is_proper_rst():
     parent = pathlib.Path(__file__).parent.resolve().parent
     path_to_readme = parent / "README.rst"

@@ -846,19 +846,20 @@ class TypeSystem:
     def __iter__(self) -> Iterator[Type]:
         return self.get_types()
 
-    def contains_type(self, typename: str) -> bool:
+    def contains_type(self, typename: str, match_exactly: bool = False) -> bool:
         """Checks whether this type system contains a type with name `typename`. If a type is a short name (i.e. it
         does not contain a dot) and there is exactly one type with this short name, this method will consider the
         type to be included in the type system.
 
         Args:
             typename: The name of type whose existence is to be checked.
+            match_exactly: require name to match exactly - no short name matching
 
         Returns:
             `True` if a type with `typename` exists, else `False`.
         """
 
-        if "." in typename:
+        if "." in typename or match_exactly:
             return typename in self._types
 
         try:
@@ -880,7 +881,7 @@ class TypeSystem:
         if supertypeName in _INHERITANCE_FINAL_TYPES:
             raise ValueError(f"[{name}] cannot inherit from [{supertypeName}] because the latter is inheritance final")
 
-        if self.contains_type(name) and not is_predefined(name):
+        if self.contains_type(name, True) and not is_predefined(name):
             raise ValueError(f"Type with name [{name}] already exists!")
 
         supertype = self.get_type(supertypeName)
@@ -895,12 +896,13 @@ class TypeSystem:
         self._types[name] = new_type
         return new_type
 
-    def get_type(self, type_name: str) -> Type:
+    def get_type(self, type_name: str, match_exactly: bool = False) -> Type:
         """Finds a type by name in the type system of this CAS. If a type is a short name (i.e. it
         does not contain a dot) and there is exactly one type with this short name, this method will return this type.
 
         Args:
             typename: The name of the type to retrieve
+            match_exactly: require name to match exactly - no short name matching
 
         Returns:
             The type with name `typename`
@@ -910,7 +912,7 @@ class TypeSystem:
         if type_name in self._types:
             return self._types[type_name]
 
-        if "." not in type_name:
+        if not match_exactly and "." not in type_name:
             types_by_simple_name = defaultdict(list)
             for tn, t in self._types.items():
                 types_by_simple_name[t.short_name].append(t)
@@ -1502,7 +1504,7 @@ def merge_typesystems(*typesystems: TypeSystem) -> TypeSystem:
                 continue
 
             # The supertype is defined, so we can add the current type to the new type system
-            if not merged_ts.contains_type(t.name):
+            if not merged_ts.contains_type(t.name, True):
                 # Create the type and add its features as it does not exist yet in the merged type system
                 created_type = merged_ts.create_type(
                     name=t.name, description=t.description, supertypeName=t.supertype.name

@@ -13,6 +13,7 @@ pin:
 
 init:
 	pip install --upgrade pip pip-tools
+	pip install setuptools setuptools_scm wheel
 
 dependencies: init
 	pip-sync requirements.txt requirements-dev.txt

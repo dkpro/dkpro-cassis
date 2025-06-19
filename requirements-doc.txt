@@ -77,7 +77,7 @@ tomli==2.2.1
     # via sphinx
 toposort==1.10
     # via dkpro-cassis (pyproject.toml)
-urllib3==2.3.0
+urllib3==2.5.0
     # via requests
 zipp==3.21.0
     # via

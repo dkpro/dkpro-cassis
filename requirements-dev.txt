@@ -137,7 +137,7 @@ typing-extensions==4.12.2
     #   rich
     #   tox
     #   typer
-urllib3==2.3.0
+urllib3==2.5.0
     # via requests
 virtualenv==20.29.3
     # via tox

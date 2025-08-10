@@ -367,6 +367,38 @@ class Cas:
         """
         self.add_all(annotations)
 
+    def cut_sofa_string_to_range(self, sofa_begin:int, sofa_end:int, overlap=True):
+        """Replaces current sofa string with a cutout of the given range. Removes all annotations outside of range,
+            but keeps annotations that overlap with cutout points by default.
+
+                Args:
+                    sofa_begin: The beginning of the cutout sofa.
+                    sofa_end: The end of the cutout sofa.
+                    overlap: If true, keeps overlapping annotations and modifies begin and end of annotation accordingly.
+
+                Raises:
+                    ValueError: If cutout indices are invalid.
+                """
+        if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
+            self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
+            for annotation in self.select_all():
+                if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
+                    annotation.begin = annotation.begin - sofa_begin
+                    annotation.end = annotation.end - sofa_begin
+                elif overlap and sofa_begin < annotation.end <= sofa_end:
+                    annotation.begin = 0
+                    annotation.end = sofa_end - sofa_begin
+                elif overlap and sofa_begin <= annotation.begin < sofa_end:
+                    annotation.begin = annotation.begin - sofa_begin
+                    annotation.end = len(self.sofa_string)
+                elif overlap and annotation.begin <= sofa_begin and sofa_end <= annotation.end:
+                    annotation.begin = 0
+                    annotation.end = len(self.sofa_string)
+                else:
+                    self.remove(annotation)
+        else:
+            raise ValueError(f"Invalid indices for begin {sofa_begin} and end {sofa_end}")
+
     def remove(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the
         annotation was not present.
@@ -385,6 +417,26 @@ class Cas:
             annotation: The annotation to remove.
         """
         self.remove(annotation)
+
+
+    def remove_in_range(self, cut_begin:int, cut_end:int, type_: Union[Type, str]=None):
+        """Removes annotations between two indices of the sofa string.
+
+        Args:
+            cut_begin: The beginning of the cutting interval.
+            cut_end: The end of the cutting interval.
+            type_: The type or name of the type name whose annotation instances are to be found
+        Raises:
+            ValueError: If range indices are invalid or annotation type_ not found.
+        """
+
+        annotations = self.select_all() if type_ is None else self.select(type_)
+        if 0 <= cut_begin < cut_end <= len(self.sofa_string):
+            for annotation in annotations:
+                if cut_begin <= annotation.begin < annotation.end <= cut_end:
+                    self.remove(annotation)
+        else:
+            raise ValueError(f"Invalid indices for begin {cut_begin} and end {cut_end}")
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: FeatureStructure) -> str:

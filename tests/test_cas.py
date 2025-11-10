@@ -216,6 +216,57 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
     assert set(actual_tokens_in_second_sentence) == set(tokens_in_second_sentence + [subtoken2])
 
 
+def test_select_covered_randomized():
+    """Randomized test: use two distinct types and repeat many times.
+
+    One type (`CoverType`) is used only for the reference covering annotation.
+    Another type (`RandType`) is used for the annotations that may be covered.
+
+    The test runs 100 iterations with a deterministic seed per iteration and
+    verifies that `select_covered` returns the same set as `select` filtered
+    by containment.
+    """
+    sofa_length = 1000
+
+    for i in range(100):
+        cas = Cas()
+        cas.sofa_string = "x" * sofa_length
+
+        # Create two distinct types: one for the covering annotation, one for
+        # the annotations that should be selected.
+        CoverType = cas.typesystem.create_type("test.CoverAnno")
+        RandType = cas.typesystem.create_type("test.RandAnno")
+
+        annotations = []
+        # Generate a number of random annotations with varying lengths
+        for _ in range(200):
+            b = random.randint(0, sofa_length - 2)
+            # keep annotation length modest
+            e = random.randint(b + 1, min(b + 50, sofa_length))
+            annotations.append(RandType(begin=b, end=e))
+
+        # Add annotations to the CAS
+        cas.add_all(annotations)
+
+        # Create a random covering annotation (use the CoverType)
+        cover_b = random.randint(0, sofa_length - 2)
+        cover_e = random.randint(cover_b + 1, min(cover_b + 200, sofa_length))
+        cover = CoverType(begin=cover_b, end=cover_e)
+        cas.add(cover)
+
+        # Expected result: select the RandType and filter by coverage
+        selected_all = list(cas.select(RandType.name))
+        expected = [a for a in selected_all if a.begin >= cover.begin and a.end <= cover.end]
+
+        # Actual: use select_covered with a type name
+        actual_name = list(cas.select_covered(RandType.name, cover))
+        assert actual_name == expected
+
+        # Also test passing the Type object
+        actual_type = list(cas.select_covered(cas.typesystem.get_type(RandType.name), cover))
+        assert actual_type == expected
+
+
 def test_select_covering(small_typesystem_xml, tokens, sentences):
     ts = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=ts)

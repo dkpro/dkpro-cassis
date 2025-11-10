@@ -20,7 +20,7 @@
     <elements>C</elements>
   </cas:StringArray>
 
-  <cassis:Group xmi:id="5" sofa="1" integers="1 2 3" shorts="1 2 3" longs="1 2 3" floats="1.0 2.0 3.0" doubles="1.0 2.0 3.0" bytes="42DB3064" booleans="true false" fses="0 6 7">
+  <cassis:Group xmi:id="5" sofa="1" begin="0" end="0" integers="1 2 3" shorts="1 2 3" longs="1 2 3" floats="1.0 2.0 3.0" doubles="1.0 2.0 3.0" bytes="42DB3064" booleans="true false" fses="0 6 7">
     <strings>A</strings>
     <strings>B</strings>
     <strings>C</strings>
@@ -48,9 +48,9 @@
   <cas:LongArray xmi:id="17" elements="2516571677013944794"/>
   <cas:DoubleArray xmi:id="18" elements="0.4362829094329638 0.6487936445670887 0.6959691863162578"/>
 
-  <cassis:Group xmi:id="19" sofa="1" integers="" shorts="" longs="" floats="" doubles="" bytes="" booleans="" fses=""/>
+  <cassis:Group xmi:id="19" sofa="1" begin="0" end="0" integers="" shorts="" longs="" floats="" doubles="" bytes="" booleans="" fses=""/>
 
-  <cassis:Group xmi:id="20" sofa="1"/>
+  <cassis:Group xmi:id="20" sofa="1" begin="0" end="0"/>
 
   <cas:FSArray xmi:id="21" elements="" />
 

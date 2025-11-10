@@ -1,11 +1,17 @@
 import csv
 from collections import defaultdict
-from functools import cmp_to_key
 from io import IOBase, StringIO
-from typing import Dict, Iterable, Set
+from typing import Any, Dict, Iterable, Set
 
 from cassis import Cas
-from cassis.typesystem import FEATURE_BASE_NAME_SOFA, TYPE_NAME_ANNOTATION, FeatureStructure, Type, is_array
+from cassis.typesystem import (
+    FEATURE_BASE_NAME_SOFA,
+    TYPE_NAME_ANNOTATION,
+    FeatureStructure,
+    Type,
+    is_annotation,
+    is_array,
+)
 
 _EXCLUDED_FEATURES = {FEATURE_BASE_NAME_SOFA}
 _NULL_VALUE = "<NULL>"
@@ -74,7 +80,7 @@ def _render_feature_structure(
 ) -> []:
     row_data = [fs_id_to_anchor.get(fs.xmiID)]
 
-    if max_covered_text > 0 and _is_annotation_fs(fs):
+    if max_covered_text > 0 and is_annotation(fs):
         covered_text = fs.get_covered_text()
         if covered_text and len(covered_text) >= max_covered_text:
             prefix = covered_text[0 : (max_covered_text // 2)]
@@ -143,7 +149,19 @@ def _generate_anchors(
     for t in types_sorted:
         type_ = cas.typesystem.get_type(t)
         feature_structures = all_feature_structures_by_type[type_.name]
-        feature_structures.sort(key=cmp_to_key(lambda a, b: _compare_fs(type_, a, b)))
+        # Sort deterministically using a stable key function. We avoid using
+        # the comparator-based approach to prevent unpredictable comparisons
+        # between mixed types during lexicographic tuple comparisons.
+        feature_structures.sort(
+            key=lambda fs: (
+                0,
+                fs.begin,
+                fs.end,
+                str(_feature_structure_hash(type_, fs)),
+            )
+            if is_annotation(fs)
+            else (1, None, None, str(_feature_structure_hash(type_, fs)))
+        )
 
         for fs in feature_structures:
             add_index_mark = mark_indexed and fs in indexed_feature_structures
@@ -159,7 +177,7 @@ def _generate_anchors(
 def _generate_anchor(fs: FeatureStructure, add_index_mark: bool) -> str:
     anchor = fs.type.name.rsplit(".", 2)[-1]  # Get the short type name (no package)
 
-    if _is_annotation_fs(fs):
+    if is_annotation(fs):
         anchor += f"[{fs.begin}-{fs.end}]"
 
     if add_index_mark:
@@ -171,7 +189,7 @@ def _generate_anchor(fs: FeatureStructure, add_index_mark: bool) -> str:
     return anchor
 
 
-def _is_primitive_value(value: any) -> bool:
+def _is_primitive_value(value: Any) -> bool:
     return type(value) in (int, float, bool, str)
 
 
@@ -182,65 +200,34 @@ def _is_array_fs(fs: FeatureStructure) -> bool:
     return is_array(fs.type)
 
 
-def _is_annotation_fs(fs: FeatureStructure) -> bool:
-    return hasattr(fs, "begin") and isinstance(fs.begin, int) and hasattr(fs, "end") and isinstance(fs.end, int)
-
-
-def _compare_fs(type_: Type, a: FeatureStructure, b: FeatureStructure) -> int:
-    if a is b:
-        return 0
-
-    # duck-typing check if something is a annotation - if yes, try sorting by offets
-    fs_a_is_annotation = _is_annotation_fs(a)
-    fs_b_is_annotation = _is_annotation_fs(b)
-    if fs_a_is_annotation != fs_b_is_annotation:
-        return -1
-    if fs_a_is_annotation and fs_b_is_annotation:
-        begin_cmp = a.begin - b.begin
-        if begin_cmp != 0:
-            return begin_cmp
-
-        begin_cmp = b.end - a.end
-        if begin_cmp != 0:
-            return begin_cmp
-
-    # Alternative implementation
-    # Doing arithmetics on the hash value as we have done with the offsets does not work because the hashes do not
-    # provide a global order. Hence, we map all results to 0, -1 and 1 here.
-    fs_hash_a = _feature_structure_hash(type_, a)
-    fs_hash_b = _feature_structure_hash(type_, b)
-    if fs_hash_a == fs_hash_b:
-        return 0
-    return -1 if fs_hash_a < fs_hash_b else 1
-
-
 def _feature_structure_hash(type_: Type, fs: FeatureStructure):
-    hash_ = 0
-    if _is_array_fs(fs):
-        return len(fs.elements) if fs.elements else 0
+    # For backward compatibility keep a function that returns a stable string
+    # representation of the FS contents. This is used as a deterministic
+    # tie-breaker when sorting. We avoid returning complex nested tuples to
+    # keep comparisons simple and stable across original and deserialized CASes.
+    def _render_val(v):
+        if v is None:
+            return "<NULL>"
+        if type(v) in (int, float, bool, str):
+            return str(v)
+        if _is_array_fs(v):
+            # Join element representations with '|'
+            return "[" + ",".join(_render_val(e) for e in (v.elements or [])) + "]"
+        # Feature structure reference
+        try:
+            if is_annotation(v):
+                return f"{v.type.name}@{v.begin}-{v.end}"
+            else:
+                return f"{v.type.name}"
+        except Exception:
+            return str(v)
 
-    # Should be possible to get away with not sorting here assuming that all_features returns the features always in
-    # the same order
+    if _is_array_fs(fs):
+        return _render_val(fs.elements or [])
+
+    parts: list[str] = []
     for feature in type_.all_features:
         if feature.name == FEATURE_BASE_NAME_SOFA:
             continue
-
-        feature_value = getattr(fs, feature.name)
-
-        if _is_array_fs(feature_value):
-            if feature_value.elements is not None:
-                for element in feature_value.elements:
-                    hash_ = _feature_value_hash(feature_value, hash_)
-        else:
-            hash_ = _feature_value_hash(feature_value, hash_)
-    return hash_
-
-
-def _feature_value_hash(feature_value: any, hash_: int):
-    # Note we do not recurse further into arrays here because that could lead to endless loops!
-    if type(feature_value) in (int, float, bool, str):
-        return hash_ + hash(feature_value)
-    else:
-        # If we get here, it is a feature structure reference... we cannot really recursively
-        # go into it to calculate a recursive hash... so we just check if the value is non-null
-        return hash_ * (-1 if feature_value is None else 1)
+        parts.append(_render_val(getattr(fs, feature.name)))
+    return "|".join(parts)

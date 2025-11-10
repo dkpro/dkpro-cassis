@@ -208,9 +208,9 @@ class Cas:
         self,
         typesystem: TypeSystem = None,
         lenient: bool = False,
-        sofa_string: str = None,
-        sofa_mime: str = None,
-        document_language: str = None,
+        sofa_string: Optional[str] = None,
+        sofa_mime: Optional[str] = None,
+        document_language: Optional[str] = None,
     ):
         """Creates a CAS with the specified typesystem. If no typesystem is given, then the default one
         is used which only contains UIMA-predefined types.
@@ -226,7 +226,7 @@ class Cas:
         # possible right now to add not-mutable references because the view functionality heavily
         # relies on this functionality.
         self._sofas = {}
-        self._views = {}
+        self._views: dict[str, View] = {}
 
         self._xmi_id_generator = IdGenerator()
         self._sofa_num_generator = IdGenerator()
@@ -720,14 +720,14 @@ class Cas:
         self,
         generate_missing_ids: bool = True,
         include_inlinable_arrays_and_lists: bool = False,
-        seeds: Iterable = None,
+        seeds: Optional[Iterable[FeatureStructure]] = None,
     ) -> Iterable[FeatureStructure]:
         """This function traverses the whole CAS in order to find all directly and indirectly referenced
         feature structures. Traversing is needed as it can be that a feature structure is not added to the sofa but
         referenced by another feature structure as a feature."""
         all_fs = {}
 
-        openlist = []
+        openlist: list[FeatureStructure] = []
         if seeds is not None:  # Using "is not None" to distinguish empty seeds from not using seeds at all
             openlist.extend(seeds)
         else:

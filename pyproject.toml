@@ -37,18 +37,17 @@ dependencies = [
     "importlib_resources~=6.5.2"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest~=8.3.5",
     "pytest-lazy-fixtures~=1.1.2",
     "pytest-cov~=6.0.0",
-    "tox~=4.24.2",
     "lxml-asserts~=0.1.2",
     "codecov~=2.1.13",
     "rstcheck~=6.2.4",
     "docutils~=0.21.2",
     "ruff~=0.9.10",
-    "pip-tools~=7.4.1"
+    "taskipy"
 ]
 doc = [
     "sphinx",
@@ -62,9 +61,32 @@ Homepage = "https://dkpro.github.io"
 Documentation = "https://cassis.readthedocs.io"
 Repository = "https://github.com/dkpro/dkpro-cassis"
 
+[tool.taskipy.tasks]
+test = "pytest -m 'not performance' tests/"
+test-cov = "pytest -m 'not performance' --cov=./ --cov-report=xml tests/"
+format = "ruff format cassis/ tests/"
+lint = "ruff check cassis/ tests/"
+fix = "ruff check --fix cassis/ tests/"
+
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+target-version = "py39"
+
+[tool.ruff.lint]
+# Equivalent to flake8's E9,F63,F7,F82 (syntax errors and undefined names)
+select = [
+    "E9",   # Runtime errors
+    "F63",  # Invalid print syntax
+    "F7",   # Syntax errors in type comments
+    "F82",  # Undefined names in __all__
+    "F",    # Pyflakes (includes undefined names, unused imports, etc.)
+]
+# Equivalent to flake8's --max-complexity=10
+mccabe = { max-complexity = 10 }
 
 [tool.ruff.lint.per-file-ignores]
+# Allow star imports in test files for test utilities
 "**/{tests,docs,tools}/*" = [ "F403", "F405" ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

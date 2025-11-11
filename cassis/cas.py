@@ -23,6 +23,7 @@ from cassis.typesystem import (
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
+    load_typesystem,
 )
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
@@ -831,6 +832,105 @@ class Cas:
         result._sofa_num_generator = self._sofa_num_generator
         result._xmi_id_generator = self._xmi_id_generator
         return result
+
+    def deep_copy(self, copy_typesystem: bool = False) -> "Cas":
+        """
+        Returns a deep copy of the current Cas
+        :param copy_typesystem: whether to copy the original typesystem or not
+        """
+        ts = self.typesystem
+        if copy_typesystem:
+            ts = self.typesystem.to_xml()
+            ts = load_typesystem(ts)
+
+        cas_copy = Cas(ts,
+                       document_language=self.document_language,
+                       lenient=self._lenient,
+                       sofa_mime=self.sofa_mime,
+                       )
+
+        # basic
+        cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
+        cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)
+
+        cas_copy._views = {}
+        cas_copy._sofas = {}
+
+        # sofas
+        for sofa in self.sofas:
+
+            sofa_copy = Sofa(
+                sofaID=sofa.sofaID,
+                sofaNum=sofa.sofaNum,
+                type=ts.get_type(sofa.type.name),
+                xmiID=sofa.xmiID,
+            )
+            sofa_copy.mimeType = sofa.mimeType
+            sofa_copy.sofaArray = sofa.sofaArray
+            sofa_copy.sofaString = sofa.sofaString
+            sofa_copy.sofaURI = sofa.sofaURI
+
+            cas_copy._sofas[sofa_copy.sofaID] = sofa_copy
+            cas_copy._views[sofa_copy.sofaID] = View(sofa=sofa_copy)
+
+        references = dict()
+        referenced_lists = dict()
+        referenced_arrays = dict()
+
+        all_copied_fs = dict()
+
+        for fs in self._find_all_fs():
+
+            # change view based on sofaID of item.sofa
+            if hasattr(fs, 'sofa'):
+                cas_copy._current_view = cas_copy._views[fs.sofa.sofaID]
+
+            t = ts.get_type(fs.type.name)
+            fs_copy = t()
+
+            for feature in t.all_features:
+                if ts.is_primitive(feature.rangeType) or ts.is_primitive_collection(feature.rangeType):
+                    fs_copy[feature.name] = fs.get(feature.name)
+                elif feature.name not in ["FSArray", "sofa"]:
+                    if hasattr(fs[feature.name], 'xmiID') and fs[feature.name].xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, fs[feature.name].xmiID))
+                    elif ts.is_list(feature.rangeType):
+                        referenced_list = []
+                        for item in fs[feature.name]:
+                            if hasattr(item, 'xmiID') and item.xmiID is not None:
+                                referenced_list.append(item.xmiID)
+                        if len(referenced_list) > 0:
+                            referenced_lists[feature.name].append((fs.xmiID, referenced_list))
+                    elif ts.is_array(feature.rangeType):
+                        referenced_list = []
+                        for item in fs[feature.name].elements:
+                            if hasattr(item, 'xmiID') and item.xmiID is not None:
+                                referenced_list.append(item.xmiID)
+                        referenced_arrays.setdefault(feature.name, [])
+                        referenced_arrays[feature.name].append((fs.xmiID, referenced_list))
+
+            fs_copy.xmiID = fs.xmiID
+            if hasattr(fs_copy, 'sofa'):
+                cas_copy.add(fs_copy, keep_id=True)
+            all_copied_fs[fs_copy.xmiID] = fs_copy
+
+        for feature, pairs in references.items():
+            for current_ID, reference_ID in pairs:
+                try:
+                    all_copied_fs[current_ID][feature] = all_copied_fs[reference_ID]
+                except KeyError as e:
+                    print("Reference feature", current_ID, "not found.", feature, e)
+
+        for feature, pairs in referenced_arrays.items():
+            for current_ID, referenced_list in pairs:
+                ts = cas_copy.typesystem
+                array_copy = ts.get_type("FSArray")()
+                array_copy.elements = []
+                for reference_ID in referenced_list:
+                    array_copy.elements.append(all_copied_fs[reference_ID])
+                all_copied_fs[current_ID][feature] = array_copy
+        return cas_copy
 
 
 def _sort_func(a: FeatureStructure) -> Tuple[int, int, int]:

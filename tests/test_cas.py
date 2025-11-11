@@ -604,3 +604,28 @@ def test_covered_text_on_annotation_without_sofa():
 
     with pytest.raises(AnnotationHasNoSofa):
         ann.get_covered_text()
+
+
+def test_deep_copy_without_typesystem(small_xmi, small_typesystem_xml):
+    org = load_cas_from_xmi(small_xmi, typesystem=load_typesystem(small_typesystem_xml))
+    copy = org.deep_copy(copy_typesystem=False)
+
+    assert org != copy
+    assert len(copy.to_json(pretty_print=True)) == len(org.to_json(pretty_print=True))
+    assert copy.to_json(pretty_print=True) == org.to_json(pretty_print=True)
+
+    assert org.typesystem == copy.typesystem
+
+
+def test_deep_copy_with_typesystem(small_xmi, small_typesystem_xml):
+    org = load_cas_from_xmi(small_xmi, typesystem=load_typesystem(small_typesystem_xml))
+    copy = org.deep_copy(copy_typesystem=True)
+
+    assert org != copy
+    assert len(copy.to_json(pretty_print=True)) == len(org.to_json(pretty_print=True))
+    assert copy.to_json(pretty_print=True) == org.to_json(pretty_print=True)
+
+
+    assert org.typesystem != copy.typesystem
+    assert len(org.typesystem.to_xml()) == len(copy.typesystem.to_xml())
+    assert org.typesystem.to_xml() == copy.typesystem.to_xml()

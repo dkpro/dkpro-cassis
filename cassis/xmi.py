@@ -619,13 +619,19 @@ class CasXmiSerializer:
                 continue
 
             # Map back from offsets in Unicode codepoints to UIMA UTF-16 based offsets
-            if (
-                ts.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION)
-                and feature_name == FEATURE_BASE_NAME_BEGIN
-                or feature_name == FEATURE_BASE_NAME_END
+            # Ensure we only convert begin/end for annotation instances. Parentheses are
+            # required because `and` has higher precedence than `or` and we must not
+            # attempt conversion for the END feature on non-annotations.
+            if ts.is_instance_of(fs.type.name, TYPE_NAME_ANNOTATION) and (
+                feature_name == FEATURE_BASE_NAME_BEGIN or feature_name == FEATURE_BASE_NAME_END
             ):
-                sofa: Sofa = fs.sofa
-                value = sofa._offset_converter.python_to_external(value)
+                # Be defensive: only perform offset conversion if the sofa and its
+                # offset converter have been initialized. In some workflows (e.g. a
+                # freshly constructed CAS without sofa strings) the converter may
+                # not exist yet and conversion is not possible.
+                sofa = getattr(fs, "sofa", None)
+                if sofa is not None and getattr(sofa, "_offset_converter", None) is not None:
+                    value = sofa._offset_converter.python_to_external(value)
 
             if ts.is_instance_of(feature.rangeType, TYPE_NAME_STRING_ARRAY) and not feature.multipleReferencesAllowed:
                 if value.elements is not None:  # Compare to none as not to skip if elements is empty!

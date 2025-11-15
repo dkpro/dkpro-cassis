@@ -604,3 +604,78 @@ def test_covered_text_on_annotation_without_sofa():
 
     with pytest.raises(AnnotationHasNoSofa):
         ann.get_covered_text()
+
+
+def test_remove_in_range(small_typesystem_xml, small_xmi):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem)
+
+    begin = 10
+    end = 20
+
+    expected_leftover_annotations = [annotation for annotation in cas.select_all()
+                                     if not (begin <= annotation.begin < annotation.end <= end)]
+
+    cas.remove_in_range(begin, end)
+
+    result_leftover_annotations = cas.select_all()
+
+    assert len(result_leftover_annotations) == len(expected_leftover_annotations)
+
+    for annotation in expected_leftover_annotations:
+        assert annotation in result_leftover_annotations
+
+def test_remove_in_range_with_type(small_typesystem_xml, small_xmi):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem)
+
+    begin = 0
+    end = 27
+    type_ = 'cassis.Token'
+    expected_leftover_annotations = [annotation for annotation in cas.select_all()
+                                     if not (begin <= annotation.begin < annotation.end <= end
+                                     and annotation.type.name == type_)]
+
+    cas.remove_in_range(begin, end, type_)
+
+    result_leftover_annotations = cas.select_all()
+
+    assert len(result_leftover_annotations) == len(expected_leftover_annotations)
+
+    for annotation in expected_leftover_annotations:
+        assert annotation in result_leftover_annotations
+        if begin <= annotation.begin < annotation.end <= end:
+            assert annotation.type.name != type_
+
+
+def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem)
+
+    begin = 10
+    end = 20
+
+    expected_leftover_annotations = [annotation for annotation in cas.select_all()
+                                     if (begin <= annotation.begin < end)
+                                        or (annotation.begin < begin < end <= annotation.end)]
+
+    cas.cut_sofa_string_to_range(begin, end)
+
+    assert len(cas.select_all()) == len(expected_leftover_annotations)
+
+
+def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = load_cas_from_xmi(small_xmi, typesystem)
+
+    begin = 10
+    end = 20
+
+    expected_leftover_annotations = [annotation for annotation in cas.select_all()
+                                     if begin <= annotation.begin < annotation.end <= end]
+
+    cas.cut_sofa_string_to_range(begin, end, overlap=False)
+
+    assert len(cas.select_all()) == len(expected_leftover_annotations)
+
+    print(cas.sofa_string)

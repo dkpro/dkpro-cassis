@@ -11,6 +11,7 @@ from cassis.typesystem import (
     AnnotationHasNoSofa,
 )
 from tests.fixtures import *
+from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 
 # Cas
 
@@ -565,3 +566,39 @@ def test_deep_copy_with_typesystem(small_xmi, small_typesystem_xml):
     assert org.typesystem != copy.typesystem
     assert len(org.typesystem.to_xml()) == len(copy.typesystem.to_xml())
     assert org.typesystem.to_xml() == copy.typesystem.to_xml()
+
+
+def test_random_multi_type_random_deep_copy():
+    generator = MultiTypeRandomCasGenerator()
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        generator.type_count = i + 1
+        typesystem = generator.generate_type_system()
+        org = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in org.views)}")
+        copy = org.deep_copy(copy_typesystem=True)
+
+        org_text = org.to_xmi(pretty_print=True)
+        copy_text = copy.to_xmi(pretty_print=True)
+
+        assert org != copy
+        assert len(org_text) == len(copy_text)
+        assert org_text == copy_text
+
+
+def test_random_multi_feature_deep_copy():
+    generator = MultiFeatureRandomCasGenerator()
+    for i in range(0, 10):
+        generator.size = (i + 1) * 10
+        typesystem = generator.generate_type_system()
+        org = generator.generate_cas(typesystem)
+        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in org.views)}")
+        copy = org.deep_copy(copy_typesystem=True)
+
+        org_text = org.to_xmi(pretty_print=True)
+        copy_text = copy.to_xmi(pretty_print=True)
+
+        assert org != copy
+        assert len(org_text) == len(copy_text)
+        assert org_text == copy_text
+

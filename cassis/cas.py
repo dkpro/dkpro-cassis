@@ -835,8 +835,13 @@ class Cas:
 
     def deep_copy(self, copy_typesystem: bool = False) -> "Cas":
         """
-        Returns a deep copy of the current Cas
-        :param copy_typesystem: whether to copy the original typesystem or not
+        Create and return a deep copy of this CAS object.
+        All feature structures, views, and sofas are copied. If `copy_typesystem` is True, the typesystem is also deep-copied;
+        otherwise, the original typesystem is shared between the original and the copy.
+        Args:
+            copy_typesystem (bool): Whether to copy the original typesystem or not. If True, the typesystem is deep-copied.
+        Returns:
+            Cas: A deep copy of this CAS object.
         """
         ts = self.typesystem
         if copy_typesystem:
@@ -849,14 +854,9 @@ class Cas:
                        sofa_mime=self.sofa_mime,
                        )
 
-        # basic
-        cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
-        cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)
-
         cas_copy._views = {}
         cas_copy._sofas = {}
 
-        # sofas
         for sofa in self.sofas:
 
             sofa_copy = Sofa(
@@ -873,63 +873,77 @@ class Cas:
             cas_copy._sofas[sofa_copy.sofaID] = sofa_copy
             cas_copy._views[sofa_copy.sofaID] = View(sofa=sofa_copy)
 
+        # removes the _IntialView created with the initialization of the copied CAS
+        cas_copy._current_view = cas_copy._views["_InitialView"]
+
         references = dict()
-        referenced_lists = dict()
         referenced_arrays = dict()
 
         all_copied_fs = dict()
+        referenced_view = {}
 
         for fs in self._find_all_fs():
 
-            # change view based on sofaID of item.sofa
-            if hasattr(fs, 'sofa'):
-                cas_copy._current_view = cas_copy._views[fs.sofa.sofaID]
+            # the referenced view is required when adding the fs to the copied cas later
+            if hasattr(fs, 'sofa') and fs.sofa and hasattr(fs, 'xmiID') and fs.xmiID:
+                referenced_view[fs.xmiID] = fs.sofa.sofaID
 
             t = ts.get_type(fs.type.name)
             fs_copy = t()
 
             for feature in t.all_features:
-                if ts.is_primitive(feature.rangeType) or ts.is_primitive_collection(feature.rangeType):
+                if ts.is_primitive(feature.rangeType):
                     fs_copy[feature.name] = fs.get(feature.name)
-                elif feature.name not in ["FSArray", "sofa"]:
+                elif ts.is_primitive_collection(feature.rangeType):
+                    fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
+                    fs_copy[feature.name].elements = fs.get(feature.name).elements
+                elif ts.is_array(feature.rangeType):
+                    fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
+                    # collect referenced xmiIDs for mapping later
+                    referenced_list = []
+                    for item in fs[feature.name].elements:
+                        if hasattr(item, 'xmiID') and item.xmiID is not None:
+                            referenced_list.append(item.xmiID)
+                    referenced_arrays.setdefault(fs.xmiID, {})
+                    referenced_arrays[fs.xmiID][feature.name] = referenced_list
+                elif feature.rangeType.name == TYPE_NAME_SOFA:
+                    # ignore sofa references
+                    pass
+                else:
                     if hasattr(fs[feature.name], 'xmiID') and fs[feature.name].xmiID is not None:
                         references.setdefault(feature.name, [])
                         references[feature.name].append((fs.xmiID, fs[feature.name].xmiID))
-                    elif ts.is_list(feature.rangeType):
-                        referenced_list = []
-                        for item in fs[feature.name]:
-                            if hasattr(item, 'xmiID') and item.xmiID is not None:
-                                referenced_list.append(item.xmiID)
-                        if len(referenced_list) > 0:
-                            referenced_lists[feature.name].append((fs.xmiID, referenced_list))
-                    elif ts.is_array(feature.rangeType):
-                        referenced_list = []
-                        for item in fs[feature.name].elements:
-                            if hasattr(item, 'xmiID') and item.xmiID is not None:
-                                referenced_list.append(item.xmiID)
-                        referenced_arrays.setdefault(feature.name, [])
-                        referenced_arrays[feature.name].append((fs.xmiID, referenced_list))
+                    else:
+                        warnings.warn(f"Original non-primitive feature \"{feature.name}\" was and not copied from feature structure {fs.xmiID}.")
 
             fs_copy.xmiID = fs.xmiID
-            if hasattr(fs_copy, 'sofa'):
-                cas_copy.add(fs_copy, keep_id=True)
             all_copied_fs[fs_copy.xmiID] = fs_copy
 
+        # set references to single objects
         for feature, pairs in references.items():
             for current_ID, reference_ID in pairs:
                 try:
                     all_copied_fs[current_ID][feature] = all_copied_fs[reference_ID]
                 except KeyError as e:
-                    print("Reference feature", current_ID, "not found.", feature, e)
+                    warnings.warn(f"Reference {reference_ID} not found for feature '{feature}' of feature structure {current_ID}")
 
-        for feature, pairs in referenced_arrays.items():
-            for current_ID, referenced_list in pairs:
-                ts = cas_copy.typesystem
-                array_copy = ts.get_type("FSArray")()
-                array_copy.elements = []
-                for reference_ID in referenced_list:
-                    array_copy.elements.append(all_copied_fs[reference_ID])
-                all_copied_fs[current_ID][feature] = array_copy
+        # set references for objects in arrays
+        for current_ID, arrays in referenced_arrays.items():
+            for feature, referenced_list in arrays.items():
+                elements = [all_copied_fs[reference_ID] for reference_ID in referenced_list]
+                all_copied_fs[current_ID][feature].elements = elements
+
+        # add feature structures to the appropriate views
+        feature_structures = sorted(all_copied_fs.values(), key=lambda f: f.xmiID, reverse=False)
+        for item in all_copied_fs.values():
+            if hasattr(item, 'xmiID') and item.xmiID is not None:
+                view_name = referenced_view.get(item.xmiID)
+                if view_name is not None:
+                    cas_copy._current_view = cas_copy._views[view_name]
+            cas_copy.add(item, keep_id=True)
+
+        cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
+        cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)
         return cas_copy
 
 

@@ -9,6 +9,7 @@ from cassis.typesystem import (
     TYPE_NAME_STRING,
     TYPE_NAME_TOP,
     AnnotationHasNoSofa,
+    FeatureStructure,
 )
 from tests.fixtures import *
 
@@ -24,7 +25,7 @@ def test_default_typesystem_is_not_shared():
     cas2.typesystem.create_type(name="test.Type")
 
 
-def test_default_typesystem_is_not_shared_load_from_xmi(empty_cas_xmi):
+def test_default_typesystem_is_not_shared_load_from_xmi(empty_cas_xmi: str):
     # https://github.com/dkpro/dkpro-cassis/issues/67
     cas1 = load_cas_from_xmi(empty_cas_xmi)
     cas2 = load_cas_from_xmi(empty_cas_xmi)
@@ -138,7 +139,7 @@ def test_document_language_can_be_set_using_constructor():
 # Select
 
 
-def test_select(small_typesystem_xml, tokens, sentences):
+def test_select(small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]):
     ts = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
@@ -152,7 +153,9 @@ def test_select(small_typesystem_xml, tokens, sentences):
     assert set(cas.select(ts.get_type(TYPE_NAME_TOP))) == set(tokens) | set(sentences)
 
 
-def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+def test_select_also_returns_parent_instances(
+    small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]
+):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_all(annotations)
@@ -162,7 +165,7 @@ def test_select_also_returns_parent_instances(small_typesystem_xml, tokens, sent
     assert set(actual_annotations) == set(annotations)
 
 
-def test_select_covered(small_typesystem_xml, tokens, sentences):
+def test_select_covered(small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]):
     ts = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
@@ -176,7 +179,7 @@ def test_select_covered(small_typesystem_xml, tokens, sentences):
     assert list(cas.select_covered(ts.get_type("cassis.Token"), second_sentence)) == tokens_in_second_sentence
 
 
-def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
+def test_select_covered_overlapping(small_typesystem_xml: str):
     ts = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=ts)
 
@@ -192,7 +195,9 @@ def test_select_covered_overlapping(small_typesystem_xml, tokens, sentences):
     assert list(cas.select_covered(ts.get_type("test.Annotation"), sentence)) == annotations
 
 
-def test_select_covered_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+def test_select_covered_also_returns_parent_instances(
+    small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]
+):
     typesystem = load_typesystem(small_typesystem_xml)
     SubTokenType = typesystem.create_type("cassis.SubToken", supertypeName="cassis.Token")
 
@@ -216,7 +221,58 @@ def test_select_covered_also_returns_parent_instances(small_typesystem_xml, toke
     assert set(actual_tokens_in_second_sentence) == set(tokens_in_second_sentence + [subtoken2])
 
 
-def test_select_covering(small_typesystem_xml, tokens, sentences):
+def test_select_covered_randomized():
+    """Randomized test: use two distinct types and repeat many times.
+
+    One type (`CoverType`) is used only for the reference covering annotation.
+    Another type (`RandType`) is used for the annotations that may be covered.
+
+    The test runs 100 iterations with a deterministic seed per iteration and
+    verifies that `select_covered` returns the same set as `select` filtered
+    by containment.
+    """
+    sofa_length = 1000
+
+    for i in range(100):
+        cas = Cas()
+        cas.sofa_string = "x" * sofa_length
+
+        # Create two distinct types: one for the covering annotation, one for
+        # the annotations that should be selected.
+        CoverType = cas.typesystem.create_type("test.CoverAnno")
+        RandType = cas.typesystem.create_type("test.RandAnno")
+
+        annotations: list[FeatureStructure] = []
+        # Generate a number of random annotations with varying lengths
+        for _ in range(200):
+            b = random.randint(0, sofa_length - 2)
+            # keep annotation length modest
+            e = random.randint(b + 1, min(b + 50, sofa_length))
+            annotations.append(RandType(begin=b, end=e))
+
+        # Add annotations to the CAS
+        cas.add_all(annotations)
+
+        # Create a random covering annotation (use the CoverType)
+        cover_b = random.randint(0, sofa_length - 2)
+        cover_e = random.randint(cover_b + 1, min(cover_b + 200, sofa_length))
+        cover = CoverType(begin=cover_b, end=cover_e)
+        cas.add(cover)
+
+        # Expected result: select the RandType and filter by coverage
+        selected_all = list(cas.select(RandType.name))
+        expected = [a for a in selected_all if a.begin >= cover.begin and a.end <= cover.end]
+
+        # Actual: use select_covered with a type name
+        actual_name = list(cas.select_covered(RandType.name, cover))
+        assert actual_name == expected
+
+        # Also test passing the Type object
+        actual_type = list(cas.select_covered(cas.typesystem.get_type(RandType.name), cover))
+        assert actual_type == expected
+
+
+def test_select_covering(small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]):
     ts = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=ts)
     cas.add_all(tokens + sentences)
@@ -239,7 +295,9 @@ def test_select_covering(small_typesystem_xml, tokens, sentences):
         assert actual_second_sentence == second_sentence
 
 
-def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tokens, sentences):
+def test_select_covering_also_returns_parent_instances(
+    small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]
+):
     typesystem = load_typesystem(small_typesystem_xml)
     SubSentenceType = typesystem.create_type("cassis.SubSentence", supertypeName="cassis.Sentence")
 
@@ -267,7 +325,9 @@ def test_select_covering_also_returns_parent_instances(small_typesystem_xml, tok
         assert result == {second_sentence, subsentence2}
 
 
-def test_select_only_returns_annotations_of_current_view(tokens, sentences, small_typesystem_xml):
+def test_select_only_returns_annotations_of_current_view(
+    tokens: list[FeatureStructure], sentences: list[FeatureStructure], small_typesystem_xml: str
+):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_all(tokens)
     view = cas.create_view("testView")
@@ -280,7 +340,7 @@ def test_select_only_returns_annotations_of_current_view(tokens, sentences, smal
     assert sentences == actual_annotations_in_test_view
 
 
-def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_with_collections_xml):
+def test_select_returns_feature_structures(cas_with_collections_xmi: str, typesystem_with_collections_xml: str):
     typesystem = load_typesystem(typesystem_with_collections_xml)
     cas = load_cas_from_xmi(cas_with_collections_xmi, typesystem=typesystem)
 
@@ -292,28 +352,28 @@ def test_select_returns_feature_structures(cas_with_collections_xmi, typesystem_
 # Covered text
 
 
-def test_get_covered_text_tokens(tokens):
+def test_get_covered_text_tokens(tokens: list[FeatureStructure]):
     actual_text = [token.get_covered_text() for token in tokens]
 
     expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
     assert actual_text == expected_text
 
 
-def test_FeatureStructure_get_covered_text_tokens(tokens):
+def test_FeatureStructure_get_covered_text_tokens(tokens: list[FeatureStructure]):
     actual_text = [token.get_covered_text() for token in tokens]
 
     expected_text = ["Joe", "waited", "for", "the", "train", ".", "The", "train", "was", "late", "."]
     assert actual_text == expected_text
 
 
-def test_get_covered_text_sentences(sentences):
+def test_get_covered_text_sentences(sentences: list[FeatureStructure]):
     actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]
     assert actual_text == expected_text
 
 
-def test_FeatureStructure_get_covered_text_sentences(sentences):
+def test_FeatureStructure_get_covered_text_sentences(sentences: list[FeatureStructure]):
     actual_text = [sentence.get_covered_text() for sentence in sentences]
 
     expected_text = ["Joe waited for the train .", "The train was late ."]
@@ -323,7 +383,7 @@ def test_FeatureStructure_get_covered_text_sentences(sentences):
 # Adding annotations
 
 
-def test_add_annotation(small_typesystem_xml):
+def test_add_annotation(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type("cassis.Token")
     cas = Cas(typesystem)
@@ -344,7 +404,7 @@ def test_add_annotation(small_typesystem_xml):
     assert actual_tokens == tokens
 
 
-def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
+def test_add_annotation_generates_ids(small_typesystem_xml: str, tokens: list[FeatureStructure]):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem)
     TokenType = typesystem.get_type("cassis.Token")
@@ -364,7 +424,7 @@ def test_add_annotation_generates_ids(small_typesystem_xml, tokens):
     assert all([token.xmiID is not None for token in actual_tokens])
 
 
-def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
+def test_annotations_are_ordered_correctly(small_typesystem_xml: str, tokens: list[FeatureStructure]):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem)
 
@@ -379,7 +439,7 @@ def test_annotations_are_ordered_correctly(small_typesystem_xml, tokens):
     assert actual_tokens == tokens
 
 
-def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
+def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
 
     TokenType = typesystem.get_type("cassis.Token")
@@ -390,7 +450,7 @@ def test_leniency_type_not_in_typeystem_not_lenient(small_typesystem_xml):
         cas.add(token)
 
 
-def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
+def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
 
     TokenType = typesystem.get_type("cassis.Token")
@@ -400,7 +460,7 @@ def test_leniency_type_not_in_typeystem_lenient(small_typesystem_xml):
     cas.add(token)
 
 
-def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesystem_with_inheritance_xml):
+def test_select_returns_children_fs_instances(cas_with_inheritance_xmi: str, typesystem_with_inheritance_xml: str):
     typesystem = load_typesystem(typesystem_with_inheritance_xml)
 
     cas = load_cas_from_xmi(cas_with_inheritance_xmi, typesystem=typesystem)
@@ -415,7 +475,9 @@ def test_select_returns_children_fs_instances(cas_with_inheritance_xmi, typesyst
 # Removing
 
 
-def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
+def test_removing_of_existing_fs_works(
+    small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]
+):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_all(annotations)
@@ -433,7 +495,9 @@ def test_removing_of_existing_fs_works(small_typesystem_xml, tokens, sentences):
     assert set(actual_annotations) == set()
 
 
-def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
+def test_removing_removes_from_view(
+    small_typesystem_xml: str, tokens: list[FeatureStructure], sentences: list[FeatureStructure]
+):
     annotations = tokens + sentences
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     view = cas.create_view("testView")
@@ -448,14 +512,14 @@ def test_removing_removes_from_view(small_typesystem_xml, tokens, sentences):
     assert set(view.select(TYPE_NAME_ANNOTATION)) == set(annotations)
 
 
-def test_removing_throws_if_fs_not_found(small_typesystem_xml, tokens, sentences):
+def test_removing_throws_if_fs_not_found(small_typesystem_xml: str, tokens: list[FeatureStructure]):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
 
     with pytest.raises(ValueError):
         cas.remove(tokens[0])
 
 
-def test_removing_throws_if_fs_in_other_view(small_typesystem_xml, tokens, sentences):
+def test_removing_throws_if_fs_in_other_view(small_typesystem_xml: str, tokens: list[FeatureStructure]):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     cas.add_all(tokens)
 
@@ -487,7 +551,7 @@ def test_removing_many_annotations():
     assert sum(1 for e in cas.select(NamedEntity.name) if e.source == "A") == 0
 
 
-def test_fail_on_duplicate_fs_id(small_typesystem_xml):
+def test_fail_on_duplicate_fs_id(small_typesystem_xml: str):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
 
     TokenType = cas.typesystem.get_type("cassis.Token")

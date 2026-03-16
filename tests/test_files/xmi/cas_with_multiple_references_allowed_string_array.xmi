@@ -8,7 +8,7 @@
 
     <tcas:DocumentAnnotation xmi:id="1" sofa="1" begin="0" end="47" language="x-unspecified"/>
 
-    <test:type xmi:id="2" sofa="1" target="3"/>
+	<test:type xmi:id="2" sofa="1" target="3" begin="0" end="0"/>
 
 	<cas:StringArray xmi:id="3">
 		<elements>LNC</elements>

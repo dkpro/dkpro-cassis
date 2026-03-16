@@ -597,6 +597,25 @@ def test_covered_text_on_non_annotation():
         top.get_covered_text()
 
 
+def test_add_non_annotation_and_select():
+    """Create a non-annotation type, add an instance and verify select returns it."""
+    cas = Cas()
+
+    # Create a type that does not define annotation offsets (begin/end)
+    NonAnnotation = cas.typesystem.create_type("test.NonAnnotation")
+
+    # Instantiate and add to CAS
+    fs = NonAnnotation()
+    cas.add(fs)
+
+    # Should be retrievable by select using the type name
+    selected = list(cas.select("test.NonAnnotation"))
+    assert selected == [fs]
+
+    # And visible via select_all
+    assert fs in cas.select_all()
+
+
 def test_covered_text_on_annotation_without_sofa():
     cas = Cas()
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
@@ -604,3 +623,17 @@ def test_covered_text_on_annotation_without_sofa():
 
     with pytest.raises(AnnotationHasNoSofa):
         ann.get_covered_text()
+
+
+def test_runtime_generated_annotation_is_detected_and_shown_in_anchor():
+    ts = TypeSystem()
+    # Create a new annotation subtype (should inherit from Annotation base)
+    MyAnno = ts.create_type("my.pkg.MyAnnotation", supertypeName="uima.tcas.Annotation")
+
+    cas = Cas(ts)
+    # Create an instance of the runtime-generated type; ensure we can set begin/end
+    a = MyAnno(begin=5, end=10)
+    cas.add(a)
+
+    text = cas_to_comparable_text(cas)
+    assert "MyAnnotation[5-10]" in text

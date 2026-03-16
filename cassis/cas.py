@@ -19,10 +19,12 @@ from cassis.typesystem import (
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
     FeatureStructure,
+    Annotation,
     Type,
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
+    is_annotation,
 )
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
@@ -171,13 +173,14 @@ class View:
         return self._indices
 
     def add_annotation_to_index(self, annotation: FeatureStructure):
+        """Adds a feature structure to the type index for this view."""
         self._indices[annotation.type.name].add(annotation)
 
     def get_all_annotations(self) -> List[FeatureStructure]:
-        """Gets all the annotations in this view.
+        """Gets all the FeatureStructure in this view.
 
         Returns:
-            A list of all annotations in this view.
+            A list of all FeatureStructure in this view.
 
         """
         result = []
@@ -334,6 +337,8 @@ class Cas:
         if hasattr(annotation, "sofa"):
             annotation.sofa = self.get_sofa()
 
+        # Add to the index. The view index accepts any FeatureStructure;
+        # `_sort_func` will duck-type annotation-like objects when sorting.
         self._current_view.add_annotation_to_index(annotation)
 
     @deprecation.deprecated(details="Use add()")
@@ -387,7 +392,7 @@ class Cas:
         self.remove(annotation)
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
-    def get_covered_text(self, annotation: FeatureStructure) -> str:
+    def get_covered_text(self, annotation: Annotation) -> str:
         """Gets the text that is covered by `annotation`.
 
         Args:
@@ -413,7 +418,7 @@ class Cas:
         t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
         return self._get_feature_structures(t)
 
-    def select_covered(self, type_: Union[Type, str], covering_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covered(self, type_: Union[Type, str], covering_annotation: Annotation) -> List[Annotation]:
         """Returns a list of covered annotations.
 
         Return all annotations that are covered
@@ -439,7 +444,7 @@ class Cas:
                 result.append(annotation)
         return result
 
-    def select_covering(self, type_: Union[Type, str], covered_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covering(self, type_: Union[Type, str], covered_annotation: Annotation) -> List[FeatureStructure]:
         """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -465,7 +470,7 @@ class Cas:
             if c_begin >= annotation.begin and c_end <= annotation.end:
                 yield annotation
 
-    def select_all(self) -> List[FeatureStructure]:
+    def select_all(self) -> List[Annotation]:
         """Finds all feature structures in this Cas
 
         Returns:
@@ -834,8 +839,8 @@ class Cas:
 
 
 def _sort_func(a: FeatureStructure) -> Tuple[int, int, int]:
-    d = a.__slots__
-    if "begin" in d and "end" in d:
-        return a.begin, a.end, id(a)
-    else:
-        return sys.maxsize, sys.maxsize, id(a)
+    if is_annotation(a):
+        return a.begin, a.end, a.xmiID if getattr(a, "xmiID", None) is not None else id(a)
+
+    # Non-annotation feature structures are sorted after annotations using large sentinels
+    return sys.maxsize, sys.maxsize, a.xmiID if getattr(a, "xmiID", None) is not None else id(a)

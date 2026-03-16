@@ -500,6 +500,23 @@ class FeatureStructure:
         return str(self)
 
 
+@attr.s(slots=True, hash=False, eq=True, order=True, repr=False)
+class Annotation(FeatureStructure):
+    """Concrete base class for annotation instances.
+
+    Generated types that represent (subtypes of) `uima.tcas.Annotation` will
+    inherit from this class so that static typing can rely on a nominal base
+    providing `begin` and `end`.
+    """
+
+    begin: int = attr.ib(default=0)
+    end: int = attr.ib(default=0)
+
+
+def is_annotation(fs: FeatureStructure) -> bool:
+    return hasattr(fs, "begin") and isinstance(fs.begin, int) and hasattr(fs, "end") and isinstance(fs.end, int)
+
+
 @attr.s(slots=True, eq=False, order=False, repr=False)
 class Feature:
     """A feature defines one attribute of a feature structure"""
@@ -572,15 +589,44 @@ class Type:
     def __attrs_post_init__(self):
         """Build the constructor that can create feature structures of this type"""
         name = _string_to_valid_classname(self.name)
-        fields = {feature.name: attr.ib(default=None, repr=(feature.name != "sofa")) for feature in self.all_features}
+
+        # Determine whether this type is (transitively) a subtype of uima.tcas.Annotation
+        def _is_annotation_type(t: "Type") -> bool:
+            cur = t
+            while cur is not None:
+                if cur.name == TYPE_NAME_ANNOTATION:
+                    return True
+                cur = cur.supertype
+            return False
+
+        # When inheriting from our concrete Annotation base, do not redeclare
+        # the 'begin' and 'end' features as fields; they are already present.
+        fields = {}
+        for feature in self.all_features:
+            if feature.name in {"begin", "end"} and _is_annotation_type(self):
+                # skip - Annotation base provides these
+                continue
+            fields[feature.name] = attr.ib(default=None, repr=(feature.name != "sofa"))
         fields["type"] = attr.ib(default=self)
 
         # We assign this to a lambda to make it lazy
         # When creating large type systems, almost no types are used so
         # creating them on the fly is on average better
-        self._constructor_fn = lambda: attr.make_class(
-            name, fields, bases=(FeatureStructure,), slots=True, eq=False, order=False
-        )
+        bases = (Annotation,) if _is_annotation_type(self) else (FeatureStructure,)
+
+        def _make_fs_class():
+            cls = attr.make_class(name, fields, bases=bases, slots=True, eq=False, order=False)
+            # Ensure generated FS classes are hashable. When a class defines an
+            # __eq__ (inherited or generated) but no __hash__, Python makes
+            # instances unhashable. We want FeatureStructure-based instances to
+            # be usable as dict/set keys (they are keyed by xmiID), so assign the
+            # base FeatureStructure.__hash__ implementation to the generated
+            # class if it doesn't already provide one.
+            if getattr(cls, "__hash__", None) is None:
+                cls.__hash__ = FeatureStructure.__hash__
+            return cls
+
+        self._constructor_fn = _make_fs_class
 
     def __call__(self, **kwargs) -> FeatureStructure:
         """Creates an feature structure of this type

@@ -682,7 +682,7 @@ def test_crop_sofa_string(small_typesystem_xml, small_xmi):
         expected_end = min(orig_end, end) - begin
         assert annotation.begin == expected_begin
         assert annotation.end == expected_end
-    
+
     # Additionally verify that index-based selectors (e.g., select_covered) behave correctly
     # after cropping by comparing against the annotations we tracked before the crop.
     if expected_leftover_annotations:

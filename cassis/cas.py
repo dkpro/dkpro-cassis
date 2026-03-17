@@ -396,6 +396,9 @@ class Cas:
             structures, perform an explicit graph traversal and removal or implement an
             opt-in ``cascade=True`` behavior.
         """
+        if self.sofa_string is None:
+            raise ValueError("Cannot crop sofa string: CAS has no sofa string for the current view")
+
         if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
             self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
             # Make an explicit snapshot of the current annotations to avoid

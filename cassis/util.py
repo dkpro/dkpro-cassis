@@ -244,3 +244,63 @@ def _feature_value_hash(feature_value: any, hash_: int):
         # If we get here, it is a feature structure reference... we cannot really recursively
         # go into it to calculate a recursive hash... so we just check if the value is non-null
         return hash_ * (-1 if feature_value is None else 1)
+
+
+def covered_by(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if span X (x_begin,x_end) is covered by span Y (y_begin,y_end).
+
+        Equivalent to: y_begin <= x_begin and x_end <= y_end
+        """
+        return y_begin <= x_begin and x_end <= y_end
+
+
+def covering(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if span X covers span Y.
+
+        Equivalent to: x_begin <= y_begin and y_end <= x_end
+        """
+        return x_begin <= y_begin and y_end <= x_end
+
+
+def colocated(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if spans X and Y have identical begin and end."""
+        return x_begin == y_begin and x_end == y_end
+
+
+def overlapping(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if spans X and Y overlap in any way.
+
+        Matches the original semantics: intersection non-empty. Zero-width spans count
+        as overlapping if their begin equals the other's begin or end.
+        """
+        return y_begin == x_begin or y_end == x_end or (x_begin < y_end and y_begin < x_end)
+
+
+def overlapping_at_begin(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X starts before Y and overlaps Y on the left."""
+        return x_begin < y_begin and y_begin < x_end and x_end <= y_end
+
+
+def overlapping_at_end(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X overlaps Y on the right (starts inside Y and ends after Y)."""
+        return y_begin <= x_begin and x_begin < y_end and y_end < x_end
+
+
+def following(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X starts at or after Y ends."""
+        return x_begin >= y_end
+
+
+def preceding(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X ends before or at the position Y starts."""
+        return y_begin >= x_end
+
+
+def beginning_with(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X and Y begin at the same position."""
+        return x_begin == y_begin
+
+
+def ending_with(x_begin: int, x_end: int, y_begin: int, y_end: int) -> bool:
+        """Return True if X and Y end at the same position."""
+        return x_end == y_end

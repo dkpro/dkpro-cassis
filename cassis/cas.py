@@ -387,7 +387,7 @@ class Cas:
                     annotation.end = annotation.end - sofa_begin
                 elif overlap and sofa_begin < annotation.end <= sofa_end:
                     annotation.begin = 0
-                    annotation.end = sofa_end - sofa_begin
+                    annotation.end = annotation.end - sofa_begin
                 elif overlap and sofa_begin <= annotation.begin < sofa_end:
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = len(self.sofa_string)

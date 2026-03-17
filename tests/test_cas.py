@@ -626,8 +626,8 @@ def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
 
     assert len(result_leftover_annotations) == len(expected_leftover_annotations)
 
-    for annotation in expected_leftover_annotations:
-        assert annotation in result_leftover_annotations
+    for expected in expected_leftover_annotations:
+        assert any(a is expected for a in result_leftover_annotations)
 
 
 def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
@@ -649,10 +649,10 @@ def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
 
     assert len(result_leftover_annotations) == len(expected_leftover_annotations)
 
-    for annotation in expected_leftover_annotations:
-        assert annotation in result_leftover_annotations
-        if begin <= annotation.begin < annotation.end <= end:
-            assert annotation.type.name != type_
+    for expected in expected_leftover_annotations:
+        assert any(a is expected for a in result_leftover_annotations)
+        if begin <= expected.begin < expected.end <= end:
+            assert expected.type.name != type_
 
 
 def test_crop_sofa_string(small_typesystem_xml, small_xmi):

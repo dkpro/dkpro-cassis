@@ -15,6 +15,7 @@ from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
     TYPE_NAME_DOCUMENT_ANNOTATION,
+    TYPE_NAME_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
@@ -469,7 +470,15 @@ class Cas:
             ValueError: If range indices are invalid.
         """
 
-        annotations = self.select_all() if type_ is None else self.select(type_)
+        # If no type is provided, operate on annotation-like feature
+        # structures only (those that have `begin` and `end`) to avoid
+        # AttributeError for arbitrary FS (e.g., instances of uima.cas.TOP).
+        if type_ is None:
+            # Only operate on annotation-like feature structures to avoid
+            # AttributeError for non-annotation FS present in the view.
+            annotations = [a for a in self.select_all() if self.typesystem.is_instance_of(a.type, TYPE_NAME_ANNOTATION)]
+        else:
+            annotations = self.select(type_)
         if self.sofa_string is None:
             raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
 

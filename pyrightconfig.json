@@ -1,0 +1,21 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "include": [
+    "cassis",
+    "tests"
+  ],
+  "exclude": [
+    "dkpro_cassis.egg-info",
+    "build",
+    "dist",
+    ".venv",
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*"
+  ],
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": false,
+  "reportOptionalMemberAccess": false,
+  "reportMissingImports": false
+}

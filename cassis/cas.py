@@ -1016,7 +1016,7 @@ class Cas:
             cas_copy._sofas[sofa_copy.sofaID] = sofa_copy
             cas_copy._views[sofa_copy.sofaID] = View(sofa=sofa_copy)
 
-        # removes the _IntialView created with the initialization of the copied CAS
+        # removes the _InitialView created with the initialization of the copied CAS
         cas_copy._current_view = cas_copy._views["_InitialView"]
 
         references = dict()
@@ -1043,7 +1043,8 @@ class Cas:
                         continue
 
                     fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
-                    fs_copy[feature.name].elements = val.elements
+                    # shallow-copy the elements list to avoid sharing the same list object
+                    fs_copy[feature.name].elements = list(val.elements)
                 elif ts.is_array(feature.rangeType):
                     val = fs[feature.name]
                     if val is None:

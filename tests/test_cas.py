@@ -1223,6 +1223,39 @@ def test_deep_copy_none_primitive_collection_feature():
     assert getattr(copied_foo, "ints") is None
 
 
+def test_deep_copy_primitive_collection_elements_are_copied():
+    """Ensure primitive collection `elements` list is copied, not shared."""
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "ints",
+        rangeType=typesystem.get_type(TYPE_NAME_INTEGER_ARRAY),
+        elementType=typesystem.get_type(TYPE_NAME_INTEGER),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    foo = Foo()
+
+    IntegerArray = typesystem.get_type(TYPE_NAME_INTEGER_ARRAY)
+    int_arr = IntegerArray()
+    int_arr.elements = [1, 2, 3]
+    foo.ints = int_arr
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+    copied_foo = list(copy.select("test.Foo"))[0]
+
+    # content equal but container should be a different object
+    assert copied_foo.ints.elements == int_arr.elements
+    assert copied_foo.ints.elements is not int_arr.elements
+
+    # mutation of original should not affect the copy
+    int_arr.elements.append(99)
+    assert 99 not in copied_foo.ints.elements
+
+
 def test_deep_copy_empty_array():
     """Ensure empty FSArray is preserved as empty in the copy."""
     typesystem = TypeSystem()

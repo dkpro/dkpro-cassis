@@ -367,7 +367,7 @@ class Cas:
         """
         self.add_all(annotations)
 
-    def crop_sofa_string(self, sofa_begin: int, sofa_end: int, overlap=True):
+    def crop_sofa_string(self, sofa_begin: int, sofa_end: int, overlap: bool = True):
         """Replaces current sofa string with a cutout of the given range. Removes all annotations outside of range,
         but keeps annotations that overlap with cutout points by default.
 
@@ -401,19 +401,37 @@ class Cas:
             # Make an explicit snapshot of the current annotations to avoid
             # issues when removing/modifying elements during iteration.
             for annotation in list(self.select_all()):
+                # Determine whether the annotation will be kept and how its
+                # offsets need to be adjusted. If offsets are adjusted we must
+                # reindex the annotation (remove then add) so that the
+                # underlying SortedKeyList remains correctly ordered by the
+                # updated begin/end values.
                 if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
+                    # fully contained
+                    self._current_view.remove_annotation_from_index(annotation)
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = annotation.end - sofa_begin
+                    self._current_view.add_annotation_to_index(annotation)
                 elif overlap and sofa_begin < annotation.end <= sofa_end:
+                    # left overlap (annotation starts before cut)
+                    self._current_view.remove_annotation_from_index(annotation)
                     annotation.begin = 0
                     annotation.end = annotation.end - sofa_begin
+                    self._current_view.add_annotation_to_index(annotation)
                 elif overlap and sofa_begin <= annotation.begin < sofa_end:
+                    # right overlap (annotation ends after cut)
+                    self._current_view.remove_annotation_from_index(annotation)
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = len(self.sofa_string)
+                    self._current_view.add_annotation_to_index(annotation)
                 elif overlap and annotation.begin <= sofa_begin and sofa_end <= annotation.end:
+                    # annotation fully covers the cut
+                    self._current_view.remove_annotation_from_index(annotation)
                     annotation.begin = 0
                     annotation.end = len(self.sofa_string)
+                    self._current_view.add_annotation_to_index(annotation)
                 else:
+                    # annotation falls completely outside the cut; remove it
                     self.remove(annotation)
         else:
             raise ValueError(f"Invalid indices for begin {sofa_begin} and end {sofa_end}")
@@ -437,7 +455,7 @@ class Cas:
         """
         self.remove(annotation)
 
-    def remove_annotations_in_range(self, begin: int, end: int, type_: Union[Type, str] = None):
+    def remove_annotations_in_range(self, begin: int, end: int, type_: Optional[Union[Type, str]] = None):
         """Removes annotations between two indices of the sofa string.
 
         Args:
@@ -449,6 +467,9 @@ class Cas:
         """
 
         annotations = self.select_all() if type_ is None else self.select(type_)
+        if self.sofa_string is None:
+            raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
+
         if 0 <= begin < end <= len(self.sofa_string):
             # Make an explicit snapshot of the annotations to avoid issues when
             # removing elements during iteration (defensive copy).

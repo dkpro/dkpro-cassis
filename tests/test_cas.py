@@ -211,7 +211,6 @@ def test_select_covered_also_returns_parent_instances(
 
     cas = Cas(typesystem=typesystem)
     cas.sofa_string = "012345678901234567890"
-    cas.sofa_string = "012345678901234567890"
     cas.add_all(annotations)
 
     first_sentence, second_sentence = sentences
@@ -683,6 +682,21 @@ def test_crop_sofa_string(small_typesystem_xml, small_xmi):
         expected_end = min(orig_end, end) - begin
         assert annotation.begin == expected_begin
         assert annotation.end == expected_end
+    
+    # Additionally verify that index-based selectors (e.g., select_covered) behave correctly
+    # after cropping by comparing against the annotations we tracked before the crop.
+    if expected_leftover_annotations:
+        ref_annotation = expected_leftover_annotations[0][0]
+        covered_by_ref = list(cas.select_covered(ref_annotation.type.name, ref_annotation))
+        expected_covered = [
+            ann
+            for ann, _, _ in expected_leftover_annotations
+            if ann.type.name == ref_annotation.type.name
+            and ref_annotation.begin <= ann.begin
+            and ann.end <= ref_annotation.end
+        ]
+        sort_key = lambda a: (a.begin, a.end, a.type.name)
+        assert sorted(covered_by_ref, key=sort_key) == sorted(expected_covered, key=sort_key)
 
 
 def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
@@ -712,6 +726,21 @@ def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
         expected_end = orig_end - begin
         assert annotation.begin == expected_begin
         assert annotation.end == expected_end
+
+    # Additionally verify that index-based selectors (e.g., select_covered) behave correctly
+    # after cropping when only fully contained annotations are kept.
+    if expected_leftover_annotations:
+        ref_annotation = expected_leftover_annotations[0][0]
+        covered_by_ref = list(cas.select_covered(ref_annotation.type.name, ref_annotation))
+        expected_covered = [
+            ann
+            for ann, _, _ in expected_leftover_annotations
+            if ann.type.name == ref_annotation.type.name
+            and ref_annotation.begin <= ann.begin
+            and ann.end <= ref_annotation.end
+        ]
+        sort_key = lambda a: (a.begin, a.end, a.type.name)
+        assert sorted(covered_by_ref, key=sort_key) == sorted(expected_covered, key=sort_key)
 
 
 def test_crop_sofa_string_left_overlap(small_typesystem_xml):

@@ -1022,6 +1022,8 @@ class Cas:
         references = dict()
         referenced_arrays = dict()
         referenced_lists = dict()
+        # for primitive lists (e.g. IntegerList) we collect primitive head values
+        referenced_primitive_lists = dict()
 
         all_copied_fs = dict()
         referenced_view = {}
@@ -1042,9 +1044,26 @@ class Cas:
                     if val is None:
                         continue
 
-                    fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
-                    # shallow-copy the elements list to avoid sharing the same list object
-                    fs_copy[feature.name].elements = list(val.elements)
+                    # Distinguish primitive arrays (have `elements`) from primitive lists (use head/tail)
+                    if ts.is_array(feature.rangeType):
+                        fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
+                        # shallow-copy the elements list to avoid sharing the same list object
+                        fs_copy[feature.name].elements = list(val.elements)
+                    elif ts.is_list(feature.rangeType):
+                        # collect primitive values from head/tail style lists
+                        current = val
+                        prim_list = []
+                        while hasattr(current, FEATURE_BASE_NAME_HEAD):
+                            head = getattr(current, FEATURE_BASE_NAME_HEAD)
+                            prim_list.append(head)
+                            current = current.tail
+
+                        # store the primitive list values along with the declared range type name
+                        referenced_primitive_lists.setdefault(fs.xmiID, {})
+                        referenced_primitive_lists[fs.xmiID][feature.name] = (
+                            feature.rangeType.name,
+                            prim_list,
+                        )
                 elif ts.is_array(feature.rangeType):
                     val = fs[feature.name]
                     if val is None:
@@ -1126,6 +1145,23 @@ class Cas:
         for current_ID, lists in referenced_lists.items():
             for feature, referenced_list in lists.items():
                 all_copied_fs[current_ID][feature] = _build_fs_list(referenced_list)
+
+        # rebuild primitive head/tail lists (e.g. IntegerList, FloatList, StringList)
+        for current_ID, lists in referenced_primitive_lists.items():
+            for feature, (list_type_name, primitive_values) in lists.items():
+                # derive Empty/NonEmpty concrete type names from the abstract list type
+                suffix = list_type_name.split(".")[-1]
+                empty_name = f"uima.cas.Empty{suffix}"
+                nonempty_name = f"uima.cas.NonEmpty{suffix}"
+
+                current = ts.get_type(empty_name)()
+                for value in reversed(primitive_values):
+                    node = ts.get_type(nonempty_name)()
+                    node.tail = current
+                    node.head = value
+                    current = node
+
+                all_copied_fs[current_ID][feature] = current
 
         # ensure Sofa.sofaArray references point to the copied feature structures
         for sofa_id, sofa_copy in cas_copy._sofas.items():

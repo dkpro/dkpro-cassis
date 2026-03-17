@@ -15,6 +15,7 @@ from cassis.typesystem import (
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
 from cassis.util import overlapping
+from cassis.cas import Cas
 
 # Cas
 
@@ -351,6 +352,36 @@ def test_select_returns_feature_structures(cas_with_collections_xmi: str, typesy
     arrs = cas.select("uima.cas.StringArray")
 
     assert len(arrs) == 3
+
+
+def test_deep_copy_with_primitive_integer_list():
+    """Deep-copying a CAS that contains a primitive IntegerList feature should succeed.
+
+    This reproduces the scenario where `uima.cas.IntegerList` (a primitive list using
+    `head`/`tail`) is used as a feature value. The deep-copy implementation must not
+    assume an `elements` attribute for primitive lists.
+    """
+    cas = Cas()
+    ts = cas.typesystem
+
+    # Create a type that has a primitive integer list feature
+    MyType = ts.create_type("test.WithIntegerList")
+    ts.create_feature(MyType, name="ints", rangeType="uima.cas.IntegerList")
+
+    # Build a simple NonEmptyIntegerList node: head=42, tail=EmptyIntegerList
+    nonempty = ts.get_type("uima.cas.NonEmptyIntegerList")()
+    nonempty.head = 42
+    nonempty.tail = ts.get_type("uima.cas.EmptyIntegerList")()
+
+    myfs = MyType()
+    myfs.ints = nonempty
+
+    cas.add(myfs)
+
+    # Should not raise and copied value should preserve the head element
+    cas_copy = cas.deep_copy()
+    copied = list(cas_copy.select("test.WithIntegerList"))[0]
+    assert copied.ints.head == 42
 
 
 # Covered text

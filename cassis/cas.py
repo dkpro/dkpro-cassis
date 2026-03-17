@@ -381,7 +381,9 @@ class Cas:
                 """
         if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
             self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
-            for annotation in self.select_all():
+            # Make an explicit snapshot of the current annotations to avoid
+            # issues when removing/modifying elements during iteration.
+            for annotation in list(self.select_all()):
                 if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = annotation.end - sofa_begin
@@ -432,7 +434,9 @@ class Cas:
 
         annotations = self.select_all() if type_ is None else self.select(type_)
         if 0 <= cut_begin < cut_end <= len(self.sofa_string):
-            for annotation in annotations:
+            # Make an explicit snapshot of the annotations to avoid issues when
+            # removing elements during iteration (defensive copy).
+            for annotation in list(annotations):
                 if cut_begin <= annotation.begin < annotation.end <= cut_end:
                     self.remove(annotation)
         else:

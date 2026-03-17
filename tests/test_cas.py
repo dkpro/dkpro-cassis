@@ -677,5 +677,3 @@ def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
     cas.cut_sofa_string_to_range(begin, end, overlap=False)
 
     assert len(cas.select_all()) == len(expected_leftover_annotations)
-
-    print(cas.sofa_string)

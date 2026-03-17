@@ -28,32 +28,32 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic"
 ]
 dependencies = [
-    "lxml~=5.3.1",
+    "lxml~=6.0.2",
     "attrs>=21.2,<26",
     "sortedcontainers~=2.4",
     "toposort~=1.10",
-    "more-itertools~=10.6",
+    "more-itertools~=10.8.0",
     "deprecation~=2.1",
     "importlib_resources~=6.5.2"
 ]
 
 [dependency-groups]
 dev = [
-    "pytest~=8.3.5",
-    "pytest-lazy-fixtures~=1.1.2",
-    "pytest-cov~=6.0.0",
+    "pytest>=8.3.5",
+    "pytest-lazy-fixtures~=1.4.0",
+    "pytest-cov~=7.0.0",
     "lxml-asserts~=0.1.2",
-    "codecov~=2.1.13",
-    "rstcheck~=6.2.4",
-    "docutils~=0.21.2",
+    "rstcheck~=6.2.5",
+    "docutils~=0.22.0",
     "ruff~=0.9.10",
-    "taskipy"
+    "taskipy",
+    "pyright"
 ]
 doc = [
     "sphinx",
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
-    "docutils~=0.21.2"
+    "docutils~=0.22.0"
 ]
 
 [project.urls]
@@ -66,6 +66,7 @@ test = "pytest -m 'not performance' tests/"
 test-cov = "pytest -m 'not performance' --cov=./ --cov-report=xml tests/"
 format = "ruff format cassis/ tests/"
 lint = "ruff check cassis/ tests/"
+typecheck = "pyright cassis/ tests/"
 fix = "ruff check --fix cassis/ tests/"
 
 [tool.ruff]

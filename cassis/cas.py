@@ -367,7 +367,7 @@ class Cas:
         """
         self.add_all(annotations)
 
-    def cut_sofa_string_to_range(self, sofa_begin: int, sofa_end: int, overlap=True):
+    def crop_sofa_string(self, sofa_begin: int, sofa_end: int, overlap=True):
         """Replaces current sofa string with a cutout of the given range. Removes all annotations outside of range,
         but keeps annotations that overlap with cutout points by default.
 
@@ -378,6 +378,23 @@ class Cas:
 
         Raises:
             ValueError: If cutout indices are invalid.
+        Note:
+            Removal performed by this method only removes annotations from the current view's
+            index. Feature structures that are removed from the view remain in memory and any
+            references from kept annotations to those feature structures are left intact. Such
+            transitively referenced feature structures will still be discovered by traversal
+            (e.g. ``_find_all_fs()``) and included during serialization.
+
+            Important: only the annotations that are kept (inside the cut or overlapping
+            the cut boundaries) have their ``begin``/``end`` offsets adjusted to the new
+            sofa coordinate space. Feature structures that are removed from the view are
+            not re-anchored or relocated — they keep their original ``begin``/``end``
+            values. As a result, serializers may attempt to transcode offsets that fall
+            outside the new sofa range; the offset converter will emit ``UserWarning``
+            messages for unmappable offsets but will not raise an exception. If you
+            require a cascading delete or re-anchoring of transitively referenced feature
+            structures, perform an explicit graph traversal and removal or implement an
+            opt-in ``cascade=True`` behavior.
         """
         if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
             self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
@@ -420,7 +437,7 @@ class Cas:
         """
         self.remove(annotation)
 
-    def remove_in_range(self, begin: int, end: int, type_: Union[Type, str] = None):
+    def remove_annotations_in_range(self, begin: int, end: int, type_: Union[Type, str] = None):
         """Removes annotations between two indices of the sofa string.
 
         Args:

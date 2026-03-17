@@ -210,6 +210,8 @@ def test_select_covered_also_returns_parent_instances(
     annotations.append(subtoken2)
 
     cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "012345678901234567890"
+    cas.sofa_string = "012345678901234567890"
     cas.add_all(annotations)
 
     first_sentence, second_sentence = sentences
@@ -608,7 +610,7 @@ def test_covered_text_on_annotation_without_sofa():
         ann.get_covered_text()
 
 
-def test_remove_in_range(small_typesystem_xml, small_xmi):
+def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -619,7 +621,7 @@ def test_remove_in_range(small_typesystem_xml, small_xmi):
         annotation for annotation in cas.select_all() if not (begin <= annotation.begin < annotation.end <= end)
     ]
 
-    cas.remove_in_range(begin, end)
+    cas.remove_annotations_in_range(begin, end)
 
     result_leftover_annotations = cas.select_all()
 
@@ -629,7 +631,7 @@ def test_remove_in_range(small_typesystem_xml, small_xmi):
         assert annotation in result_leftover_annotations
 
 
-def test_remove_in_range_with_type(small_typesystem_xml, small_xmi):
+def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -642,7 +644,7 @@ def test_remove_in_range_with_type(small_typesystem_xml, small_xmi):
         if not (begin <= annotation.begin < annotation.end <= end and annotation.type.name == type_)
     ]
 
-    cas.remove_in_range(begin, end, type_)
+    cas.remove_annotations_in_range(begin, end, type_)
 
     result_leftover_annotations = cas.select_all()
 
@@ -654,7 +656,7 @@ def test_remove_in_range_with_type(small_typesystem_xml, small_xmi):
             assert annotation.type.name != type_
 
 
-def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
+def test_crop_sofa_string(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -670,7 +672,7 @@ def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
 
     original_sofa = cas.sofa_string
 
-    cas.cut_sofa_string_to_range(begin, end)
+    cas.crop_sofa_string(begin, end)
 
     assert cas.sofa_string == original_sofa[begin:end]
     assert len(cas.select_all()) == len(expected_leftover_annotations)
@@ -683,7 +685,7 @@ def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
         assert annotation.end == expected_end
 
 
-def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
+def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -699,7 +701,7 @@ def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
 
     original_sofa = cas.sofa_string
 
-    cas.cut_sofa_string_to_range(begin, end, overlap=False)
+    cas.crop_sofa_string(begin, end, overlap=False)
 
     assert cas.sofa_string == original_sofa[begin:end]
     assert len(cas.select_all()) == len(expected_leftover_annotations)
@@ -712,7 +714,7 @@ def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
         assert annotation.end == expected_end
 
 
-def test_cut_sofa_string_left_overlap(small_typesystem_xml):
+def test_crop_sofa_string_left_overlap(small_typesystem_xml):
     """Ensure annotations that start before the cut and end inside it are kept and adjusted."""
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=typesystem)
@@ -730,7 +732,7 @@ def test_cut_sofa_string_left_overlap(small_typesystem_xml):
 
     original_sofa = cas.sofa_string
 
-    cas.cut_sofa_string_to_range(begin, end)
+    cas.crop_sofa_string(begin, end)
 
     assert cas.sofa_string == original_sofa[begin:end]
 
@@ -765,7 +767,7 @@ def test_cut_sofa_string_left_overlap(small_typesystem_xml):
         (10, 20, False, True, 0, 10),
     ],
 )
-def test_cut_sofa_string_various_overlap_cases(
+def test_crop_sofa_string_various_overlap_cases(
     small_typesystem_xml, ann_begin, ann_end, overlap, expect_kept, expect_begin, expect_end
 ):
     typesystem = load_typesystem(small_typesystem_xml)
@@ -783,7 +785,7 @@ def test_cut_sofa_string_various_overlap_cases(
 
     original_sofa = cas.sofa_string
 
-    cas.cut_sofa_string_to_range(begin, end, overlap=overlap)
+    cas.crop_sofa_string(begin, end, overlap=overlap)
 
     assert cas.sofa_string == original_sofa[begin:end]
 
@@ -793,3 +795,113 @@ def test_cut_sofa_string_various_overlap_cases(
         assert ann.end == expect_end
     else:
         assert ann not in cas.select_all()
+
+
+def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
+    """Annotations outside the cut that are referenced from kept annotations remain discoverable."""
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    # Create parent and child types and a feature on parent referencing child
+    Child = typesystem.create_type("test.Child")
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature("test.Parent", "child", "test.Child")
+
+    # Create instances: child is outside cut, parent inside and references child
+    child = Child(begin=0, end=5)
+    parent = Parent(begin=12, end=15)
+    parent.child = child
+
+    cas.add(child)
+    cas.add(parent)
+
+    begin = 10
+    end = 20
+
+    # Ensure a sofa string is present for cutting (length > end)
+    cas.sofa_string = "a" * 50
+
+    cas.crop_sofa_string(begin, end)
+
+    # Child was outside the cut and therefore removed from the view index
+    assert child not in cas.select_all()
+
+    # But child is still reachable via parent and will be discovered by traversal
+    all_fs = list(cas._find_all_fs())
+    assert child in all_fs
+
+
+def test_crop_sofa_string_serialization_roundtrip_transitive_refs(small_typesystem_xml):
+    """Cut the sofa, serialize to JSON and back; ensure transitively referenced
+    FS outside the cut are serialized and re-loaded without exceptions."""
+    from cassis.json import load_cas_from_json
+
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    Child = typesystem.create_type("test.Child")
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature("test.Parent", "child", "test.Child")
+
+    child = Child(begin=0, end=5)
+    parent = Parent(begin=12, end=15)
+    parent.child = child
+
+    cas.add(child)
+    cas.add(parent)
+
+    # ensure sofa present and long enough
+    cas.sofa_string = "a" * 50
+
+    begin = 10
+    end = 20
+
+    cas.crop_sofa_string(begin, end)
+
+    # Round-trip via JSON should not raise; deserialize and ensure child present
+    json_str = cas.to_json(pretty_print=False)
+    new_cas = load_cas_from_json(json_str)
+
+    all_fs = list(new_cas._find_all_fs())
+    assert any(fs.type.name == "test.Child" and getattr(fs, "begin", None) == 0 for fs in all_fs)
+
+
+def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(small_typesystem_xml):
+    """Place the transitively referenced FS beyond the new sofa length and
+    ensure serialization/deserialization does not raise an exception but
+    emits warnings during offset transcoding."""
+    from cassis.json import load_cas_from_json
+
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    Child = typesystem.create_type("test.Child")
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature("test.Parent", "child", "test.Child")
+
+    # child placed beyond the cut and beyond the eventual new sofa length
+    child = Child(begin=30, end=35)
+    parent = Parent(begin=12, end=15)
+    parent.child = child
+
+    cas.add(child)
+    cas.add(parent)
+
+    # original sofa long enough to accommodate child positions
+    cas.sofa_string = "a" * 50
+
+    begin = 10
+    end = 20
+
+    cas.crop_sofa_string(begin, end)
+
+    # serialization/transcoding may warn but should not raise
+    with pytest.warns(UserWarning):
+        json_str = cas.to_json(pretty_print=False)
+
+    with pytest.warns(UserWarning):
+        new_cas = load_cas_from_json(json_str)
+
+    # Ensure child was serialized and reloaded (may have unmapped offsets)
+    all_fs = list(new_cas._find_all_fs())
+    assert any(fs.type.name == "test.Child" for fs in all_fs)

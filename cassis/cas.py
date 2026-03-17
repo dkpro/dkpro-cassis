@@ -428,7 +428,7 @@ class Cas:
             end: The end of the cutting interval.
             type_: The type or name of the type name whose annotation instances are to be found
         Raises:
-            ValueError: If range indices are invalid or annotation type_ not found.
+            ValueError: If range indices are invalid.
         """
 
         annotations = self.select_all() if type_ is None else self.select(type_)

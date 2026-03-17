@@ -12,6 +12,7 @@ from cassis.typesystem import (
     FeatureStructure,
 )
 from tests.fixtures import *
+from cassis.util import overlapping
 
 # Cas
 
@@ -663,7 +664,7 @@ def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
     expected_leftover_annotations = [
         (annotation, annotation.begin, annotation.end)
         for annotation in cas.select_all()
-        if (begin <= annotation.begin < end) or (annotation.begin < begin < end <= annotation.end)
+        if overlapping(begin, end, annotation.begin, annotation.end)
     ]
 
     original_sofa = cas.sofa_string

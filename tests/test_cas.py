@@ -1,4 +1,5 @@
 import random
+import pytest
 
 import attr
 
@@ -709,3 +710,86 @@ def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
         expected_end = orig_end - begin
         assert annotation.begin == expected_begin
         assert annotation.end == expected_end
+
+
+def test_cut_sofa_string_left_overlap(small_typesystem_xml):
+    """Ensure annotations that start before the cut and end inside it are kept and adjusted."""
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    # Create a sofa string and an annotation that starts before the cut and ends inside it
+    cas.sofa_string = "012345678901234567890"
+    Token = cas.typesystem.get_type("cassis.Token")
+    ann = Token()
+    ann.begin = 5
+    ann.end = 12
+    cas.add(ann)
+
+    begin = 10
+    end = 20
+
+    original_sofa = cas.sofa_string
+
+    cas.cut_sofa_string_to_range(begin, end)
+
+    assert cas.sofa_string == original_sofa[begin:end]
+
+    # After cut, the annotation should be adjusted: begin -> 0, end -> orig_end - begin
+    assert ann.begin == 0
+    assert ann.end == 12 - begin
+
+
+@pytest.mark.parametrize(
+    "ann_begin,ann_end,overlap,expect_kept,expect_begin,expect_end",
+    [
+        # non-overlap before
+        (0, 5, True, False, None, None),
+        (0, 5, False, False, None, None),
+        # non-overlap after
+        (21, 25, True, False, None, None),
+        (21, 25, False, False, None, None),
+        # fully contained
+        (12, 15, True, True, 12 - 10, 15 - 10),
+        (12, 15, False, True, 12 - 10, 15 - 10),
+        # left-overlap
+        (5, 12, True, True, 0, 12 - 10),
+        (5, 12, False, False, None, None),
+        # right-overlap
+        (15, 25, True, True, 15 - 10, 10),
+        (15, 25, False, False, None, None),
+        # fully covering
+        (5, 25, True, True, 0, 10),
+        (5, 25, False, False, None, None),
+        # exact match
+        (10, 20, True, True, 0, 10),
+        (10, 20, False, True, 0, 10),
+    ],
+)
+def test_cut_sofa_string_various_overlap_cases(
+    small_typesystem_xml, ann_begin, ann_end, overlap, expect_kept, expect_begin, expect_end
+):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    cas.sofa_string = "012345678901234567890"
+    Token = cas.typesystem.get_type("cassis.Token")
+    ann = Token()
+    ann.begin = ann_begin
+    ann.end = ann_end
+    cas.add(ann)
+
+    begin = 10
+    end = 20
+
+    original_sofa = cas.sofa_string
+
+    cas.cut_sofa_string_to_range(begin, end, overlap=overlap)
+
+    assert cas.sofa_string == original_sofa[begin:end]
+
+    if expect_kept:
+        assert ann in cas.select_all()
+        assert ann.begin == expect_begin
+        assert ann.end == expect_end
+    else:
+        assert ann not in cas.select_all()

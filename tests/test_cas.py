@@ -669,6 +669,132 @@ def test_random_multi_feature_deep_copy():
         assert org_text == copy_text
 
 
+def _make_fs_list(typesystem, *elements):
+    empty_fs_list_type = typesystem.get_type("uima.cas.EmptyFSList")
+    non_empty_fs_list_type = typesystem.get_type("uima.cas.NonEmptyFSList")
+
+    current = empty_fs_list_type()
+    for element in reversed(elements):
+        node = non_empty_fs_list_type()
+        node.head = element
+        node.tail = current
+        current = node
+
+    return current
+
+
+def _fs_list_elements(fs_list):
+    elements = []
+    current = fs_list
+
+    while hasattr(current, "head"):
+        elements.append(current.head)
+        current = current.tail
+
+    return elements
+
+
+def test_deep_copy_preserves_inline_fslist_feature():
+    typesystem = TypeSystem()
+    Item = typesystem.create_type("test.Item", supertypeName=TYPE_NAME_ANNOTATION)
+    Container = typesystem.create_type("test.Container", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(
+        Container,
+        "items",
+        rangeType="uima.cas.FSList",
+        elementType=Item,
+        multipleReferencesAllowed=False,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "abcd"
+
+    first = Item(begin=0, end=1)
+    second = Item(begin=1, end=2)
+    container = Container(begin=0, end=2)
+    container.items = _make_fs_list(typesystem, first, second)
+
+    cas.add_all([first, second, container])
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_container = copy.select("test.Container")[0]
+    copied_items = _fs_list_elements(copied_container.items)
+
+    assert copied_container.items is not None
+    assert [item.begin for item in copied_items] == [0, 1]
+    assert copied_container.items is not container.items
+    assert copied_items[0] is not first
+    assert copied_items[1] is not second
+
+
+def test_deep_copy_preserves_referenced_fslist_feature():
+    typesystem = TypeSystem()
+    Item = typesystem.create_type("test.Item", supertypeName=TYPE_NAME_ANNOTATION)
+    Container = typesystem.create_type("test.Container", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(
+        Container,
+        "items",
+        rangeType="uima.cas.FSList",
+        elementType=Item,
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "abcd"
+
+    first = Item(begin=0, end=1)
+    second = Item(begin=1, end=2)
+    container = Container(begin=0, end=2)
+    container.items = _make_fs_list(typesystem, first, second)
+
+    cas.add_all([first, second, container])
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_container = copy.select("test.Container")[0]
+    copied_items = _fs_list_elements(copied_container.items)
+
+    assert copied_container.items is not None
+    assert [item.begin for item in copied_items] == [0, 1]
+    assert copied_container.items is not container.items
+    assert copied_items[0] is not first
+    assert copied_items[1] is not second
+
+
+def test_deep_copy_fully_decoupled(small_xmi, small_typesystem_xml):
+    """Ensure deep copies do not share feature structure instances with the original.
+
+    We create copies with and without copying the typesystem and assert that
+    none of the FeatureStructure objects returned by `_find_all_fs()` are the
+    identical (``is``) between the original and the copy.
+    """
+    typesystem = load_typesystem(small_typesystem_xml)
+    org = load_cas_from_xmi(small_xmi, typesystem=typesystem)
+
+    for copy_typesystem in (False, True):
+        copy = org.deep_copy(copy_typesystem=copy_typesystem)
+
+        org_fs = list(org._find_all_fs())
+        copy_fs = list(copy._find_all_fs())
+
+        # sanity: number of FS should match
+        assert len(org_fs) == len(copy_fs)
+
+        for a in org_fs:
+            assert all(a is not b for b in copy_fs)
+
+        # Ensure the CAS-level sofas are distinct objects
+        for org_sofa in org.sofas:
+            copy_sofa = copy._sofas.get(org_sofa.sofaID)
+            assert org_sofa is not copy_sofa
+
+        # Ensure no FS references the same sofa object across original and copy
+        org_sofa_refs = {id(fs.sofa) for fs in org_fs if hasattr(fs, "sofa") and fs.sofa is not None}
+        copy_sofa_refs = {id(fs.sofa) for fs in copy_fs if hasattr(fs, "sofa") and fs.sofa is not None}
+        assert org_sofa_refs.isdisjoint(copy_sofa_refs)
+
+
 def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
@@ -892,7 +1018,7 @@ def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
     cas = Cas(typesystem=typesystem)
 
     # Create parent and child types and a feature on parent referencing child
-    Child = typesystem.create_type("test.Child")
+    typesystem.create_type("test.Child")
     Parent = typesystem.create_type("test.Parent")
     typesystem.create_feature("test.Parent", "child", "test.Child")
 
@@ -994,3 +1120,118 @@ def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(sma
     # Ensure child was serialized and reloaded (may have unmapped offsets)
     all_fs = list(new_cas._find_all_fs())
     assert any(fs.type.name == "test.Child" for fs in all_fs)
+
+
+def test_deep_copy_array_with_none_entries():
+    """Ensure FSArray with None entries preserves positions and references are decoupled."""
+    typesystem = TypeSystem()
+    Child = typesystem.create_type("test.Child")
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "arr",
+        rangeType=typesystem.get_type("uima.cas.FSArray"),
+        elementType=Child,
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    # create two child FS and an array with a None placeholder
+    child1 = Child()
+    child2 = Child()
+    cas.add(child1)
+    cas.add(child2)
+
+    arr = typesystem.get_type("uima.cas.FSArray")()
+    arr.elements = [child1, None, child2]
+
+    foo = Foo()
+    foo.arr = arr
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_foos = list(copy.select("test.Foo"))
+    assert len(copied_foos) == 1
+    copied_arr = copied_foos[0].arr
+    # preserve length and None placeholder
+    assert len(copied_arr.elements) == 3
+    assert copied_arr.elements[1] is None
+    # ensure child objects were copied (not identical)
+    assert copied_arr.elements[0] is not child1
+    assert copied_arr.elements[2] is not child2
+
+
+def test_deep_copy_none_non_primitive_feature():
+    """Ensure non-primitive features set to None are preserved in the copy without warnings."""
+    typesystem = TypeSystem()
+    Child = typesystem.create_type("test.Child")
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(Parent, "child", "test.Child")
+
+    cas = Cas(typesystem=typesystem)
+    parent = Parent()
+    parent.child = None
+    cas.add(parent)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+    copied_parent = list(copy.select("test.Parent"))[0]
+    assert getattr(copied_parent, "child") is None
+
+
+def test_deep_copy_empty_array():
+    """Ensure empty FSArray is preserved as empty in the copy."""
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "arr",
+        rangeType=typesystem.get_type("uima.cas.FSArray"),
+        elementType=typesystem.get_type(TYPE_NAME_TOP),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    foo = Foo()
+    arr = typesystem.get_type("uima.cas.FSArray")()
+    arr.elements = []
+    foo.arr = arr
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+    copied_foo = list(copy.select("test.Foo"))[0]
+    assert hasattr(copied_foo, "arr")
+    assert copied_foo.arr.elements == []
+
+
+def test_deep_copy_multiple_views_and_sofas_are_decoupled():
+    """Create multiple views, deep copy and ensure sofas and view-assignments are decoupled."""
+    ts = TypeSystem()
+    Token = ts.create_type("test.Token", supertypeName=TYPE_NAME_ANNOTATION)
+
+    cas = Cas(typesystem=ts)
+    cas.sofa_string = "01234567890123456789"
+
+    # initial view: add token
+    t1 = Token(begin=0, end=2)
+    cas.add(t1)
+
+    # create and populate second view
+    view2 = cas.create_view("v2")
+    view2.sofa_string = "abcdefghij"
+    t2 = Token(begin=0, end=3)
+    view2.add(t2)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    # ensure top-level sofas are distinct objects
+    for orig_sofa in cas.sofas:
+        copy_sofa = copy._sofas.get(orig_sofa.sofaID)
+        assert copy_sofa is not orig_sofa
+
+    # ensure annotations were copied into respective views and are not identical
+    orig_tokens = list(cas._find_all_fs())
+    copy_tokens = list(copy._find_all_fs())
+    assert len(orig_tokens) == len(copy_tokens)
+    for a in orig_tokens:
+        assert all(a is not b for b in copy_tokens)

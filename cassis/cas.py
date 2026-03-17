@@ -904,9 +904,8 @@ class Cas:
                     elif feature.rangeType.name == TYPE_NAME_FS_LIST and hasattr(feature_value, FEATURE_BASE_NAME_HEAD):
                         v = feature_value
                         while hasattr(v, FEATURE_BASE_NAME_HEAD):
-                            if not v.head or v.head.xmiID in all_fs:
-                                continue
-                            openlist.append(v.head)
+                            if v.head and v.head.xmiID not in all_fs:
+                                openlist.append(v.head)
                             v = v.tail
                     # For primitive arrays / lists, we do not need to handle the elements
                     continue
@@ -953,15 +952,54 @@ class Cas:
             ts = self.typesystem.to_xml()
             ts = load_typesystem(ts)
 
+        # Determine document language only if a DocumentAnnotation already
+        # exists on the original CAS. Calling `self.document_language` would
+        # implicitly create a DocumentAnnotation via
+        # `get_document_annotation()`, which we avoid during copying.
+        document_language = None
+        existing_doc_ann = list(self.select(TYPE_NAME_DOCUMENT_ANNOTATION))
+        if existing_doc_ann:
+            # Use the stored language value (may be None)
+            document_language = existing_doc_ann[0].get(FEATURE_BASE_NAME_LANGUAGE)
+
         cas_copy = Cas(
             ts,
-            document_language=self.document_language,
+            document_language=document_language,
             lenient=self._lenient,
             sofa_mime=self.sofa_mime,
         )
 
         cas_copy._views = {}
         cas_copy._sofas = {}
+
+        def _collect_fs_list_references(fs_list: FeatureStructure) -> List[Optional[int]]:
+            referenced_list = []
+            current = fs_list
+
+            while hasattr(current, FEATURE_BASE_NAME_HEAD):
+                head = current.head
+                if head is None:
+                    referenced_list.append(None)
+                elif hasattr(head, "xmiID") and head.xmiID is not None:
+                    referenced_list.append(head.xmiID)
+                else:
+                    warnings.warn("FSList item without xmiID encountered during deep copy; preserving as None in copy.")
+                    referenced_list.append(None)
+
+                current = current.tail
+
+            return referenced_list
+
+        def _build_fs_list(referenced_list: List[Optional[int]]) -> FeatureStructure:
+            current = ts.get_type("uima.cas.EmptyFSList")()
+
+            for reference_id in reversed(referenced_list):
+                node = ts.get_type("uima.cas.NonEmptyFSList")()
+                node.tail = current
+                node.head = all_copied_fs.get(reference_id) if reference_id is not None else None
+                current = node
+
+            return current
 
         for sofa in self.sofas:
             sofa_copy = Sofa(
@@ -983,6 +1021,7 @@ class Cas:
 
         references = dict()
         referenced_arrays = dict()
+        referenced_lists = dict()
 
         all_copied_fs = dict()
         referenced_view = {}
@@ -1003,23 +1042,45 @@ class Cas:
                     fs_copy[feature.name].elements = fs.get(feature.name).elements
                 elif ts.is_array(feature.rangeType):
                     fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
-                    # collect referenced xmiIDs for mapping later
+                    # collect referenced xmiIDs for mapping later and preserve None placeholders
                     referenced_list = []
                     for item in fs[feature.name].elements:
-                        if hasattr(item, "xmiID") and item.xmiID is not None:
+                        if item is None:
+                            referenced_list.append(None)
+                        elif hasattr(item, "xmiID") and item.xmiID is not None:
                             referenced_list.append(item.xmiID)
+                        else:
+                            warnings.warn(
+                                f"Array feature '{feature.name}' of FS {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
+                            )
+                            referenced_list.append(None)
                     referenced_arrays.setdefault(fs.xmiID, {})
                     referenced_arrays[fs.xmiID][feature.name] = referenced_list
+                elif ts.is_list(feature.rangeType):
+                    val = fs[feature.name]
+                    if val is None:
+                        continue
+
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                    else:
+                        referenced_lists.setdefault(fs.xmiID, {})
+                        referenced_lists[fs.xmiID][feature.name] = _collect_fs_list_references(val)
                 elif feature.rangeType.name == TYPE_NAME_SOFA:
                     # ignore sofa references
                     pass
                 else:
-                    if hasattr(fs[feature.name], "xmiID") and fs[feature.name].xmiID is not None:
+                    val = fs[feature.name]
+                    # If the original feature value is None, preserve it without warning
+                    if val is None:
+                        continue
+                    if hasattr(val, "xmiID") and val.xmiID is not None:
                         references.setdefault(feature.name, [])
-                        references[feature.name].append((fs.xmiID, fs[feature.name].xmiID))
+                        references[feature.name].append((fs.xmiID, val.xmiID))
                     else:
                         warnings.warn(
-                            f'Original non-primitive feature "{feature.name}" was and not copied from feature structure {fs.xmiID}.'
+                            f'Original non-primitive feature "{feature.name}" was not copied from feature structure {fs.xmiID}.'
                         )
 
             fs_copy.xmiID = fs.xmiID
@@ -1038,8 +1099,30 @@ class Cas:
         # set references for objects in arrays
         for current_ID, arrays in referenced_arrays.items():
             for feature, referenced_list in arrays.items():
-                elements = [all_copied_fs[reference_ID] for reference_ID in referenced_list]
+                elements = []
+                for reference_ID in referenced_list:
+                    if reference_ID is None:
+                        elements.append(None)
+                        continue
+                    try:
+                        elements.append(all_copied_fs[reference_ID])
+                    except KeyError:
+                        warnings.warn(
+                            f"Reference {reference_ID} not found for array feature '{feature}' of feature structure {current_ID}; inserting None."
+                        )
+                        elements.append(None)
                 all_copied_fs[current_ID][feature].elements = elements
+
+        # rebuild FSList features from copied members
+        for current_ID, lists in referenced_lists.items():
+            for feature, referenced_list in lists.items():
+                all_copied_fs[current_ID][feature] = _build_fs_list(referenced_list)
+
+        # ensure Sofa.sofaArray references point to the copied feature structures
+        for sofa_id, sofa_copy in cas_copy._sofas.items():
+            orig_sofa_array = sofa_copy.sofaArray
+            if hasattr(orig_sofa_array, "xmiID") and orig_sofa_array.xmiID in all_copied_fs:
+                sofa_copy.sofaArray = all_copied_fs[orig_sofa_array.xmiID]
 
         # add feature structures to the appropriate views (add in xmiID order)
         feature_structures = sorted(all_copied_fs.values(), key=lambda f: f.xmiID, reverse=False)

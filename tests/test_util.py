@@ -38,12 +38,12 @@ def test_cas_to_comparable_text_on_minimal_cas():
 
     expected = (
         '"uima.tcas.Annotation"\n'
-        '"<ANCHOR>","<COVERED_TEXT>","begin","end"\n'
-        '"Annotation[0-1]*@_InitialView","A","0","1"\n'
-        '"Annotation[1-2]*@_InitialView","B","1","2"\n'
-        '"Annotation[2-3]*@_InitialView","C","2","3"\n'
-        '"Annotation[3-4]*@_InitialView","D","3","4"\n'
-        '"Annotation[4-5]*@_InitialView","E","4","5"\n'
+        '"<ANCHOR>","<COVERED_TEXT>"\n'
+        '"Annotation[0-1]*@_InitialView","A"\n'
+        '"Annotation[1-2]*@_InitialView","B"\n'
+        '"Annotation[2-3]*@_InitialView","C"\n'
+        '"Annotation[3-4]*@_InitialView","D"\n'
+        '"Annotation[4-5]*@_InitialView","E"\n'
     )
 
     assert cas_to_comparable_text(cas) == expected
@@ -83,15 +83,35 @@ def test_cas_to_comparable_text_excluding_types():
 
     expected = (
         '"type.A"\n'
-        '"<ANCHOR>","<COVERED_TEXT>","begin","end"\n'
-        '"A[0-1]*@_InitialView","A","0","1"\n'
-        '"A[1-2]*@_InitialView","B","1","2"\n'
-        '"A[2-3]*@_InitialView","C","2","3"\n'
-        '"A[3-4]*@_InitialView","D","3","4"\n'
-        '"A[4-5]*@_InitialView","E","4","5"\n'
+        '"<ANCHOR>","<COVERED_TEXT>"\n'
+        '"A[0-1]*@_InitialView","A"\n'
+        '"A[1-2]*@_InitialView","B"\n'
+        '"A[2-3]*@_InitialView","C"\n'
+        '"A[3-4]*@_InitialView","D"\n'
+        '"A[4-5]*@_InitialView","E"\n'
     )
 
     assert cas_to_comparable_text(cas, exclude_types=[TypeB.name]) == expected
+
+
+def test_cas_to_comparable_text_orders_same_location_annotations_deterministically():
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("type.Foo", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(name="value", domainType=Foo, rangeType="uima.cas.String")
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "ABCDE"
+    cas.add(Foo(begin=0, end=1, value="b"))
+    cas.add(Foo(begin=0, end=1, value="a"))
+
+    expected = (
+        '"type.Foo"\n'
+        '"<ANCHOR>","<COVERED_TEXT>","value"\n'
+        '"Foo[0-1]*@_InitialView","A","a"\n'
+        '"Foo[0-1]*@_InitialView(1)","A","b"\n'
+    )
+
+    assert cas_to_comparable_text(cas) == expected
 
 
 def test_cas_to_comparable_text_with_null_arrays():

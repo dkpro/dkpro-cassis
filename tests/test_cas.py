@@ -613,8 +613,9 @@ def test_remove_in_range(small_typesystem_xml, small_xmi):
     begin = 10
     end = 20
 
-    expected_leftover_annotations = [annotation for annotation in cas.select_all()
-                                     if not (begin <= annotation.begin < annotation.end <= end)]
+    expected_leftover_annotations = [
+        annotation for annotation in cas.select_all() if not (begin <= annotation.begin < annotation.end <= end)
+    ]
 
     cas.remove_in_range(begin, end)
 
@@ -625,16 +626,19 @@ def test_remove_in_range(small_typesystem_xml, small_xmi):
     for annotation in expected_leftover_annotations:
         assert annotation in result_leftover_annotations
 
+
 def test_remove_in_range_with_type(small_typesystem_xml, small_xmi):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
     begin = 0
     end = 27
-    type_ = 'cassis.Token'
-    expected_leftover_annotations = [annotation for annotation in cas.select_all()
-                                     if not (begin <= annotation.begin < annotation.end <= end
-                                     and annotation.type.name == type_)]
+    type_ = "cassis.Token"
+    expected_leftover_annotations = [
+        annotation
+        for annotation in cas.select_all()
+        if not (begin <= annotation.begin < annotation.end <= end and annotation.type.name == type_)
+    ]
 
     cas.remove_in_range(begin, end, type_)
 
@@ -655,13 +659,26 @@ def test_cut_sofa_string_to_range(small_typesystem_xml, small_xmi):
     begin = 10
     end = 20
 
-    expected_leftover_annotations = [annotation for annotation in cas.select_all()
-                                     if (begin <= annotation.begin < end)
-                                        or (annotation.begin < begin < end <= annotation.end)]
+    # Snapshot annotations' original offsets so we can compute expected adjusted offsets
+    expected_leftover_annotations = [
+        (annotation, annotation.begin, annotation.end)
+        for annotation in cas.select_all()
+        if (begin <= annotation.begin < end) or (annotation.begin < begin < end <= annotation.end)
+    ]
+
+    original_sofa = cas.sofa_string
 
     cas.cut_sofa_string_to_range(begin, end)
 
+    assert cas.sofa_string == original_sofa[begin:end]
     assert len(cas.select_all()) == len(expected_leftover_annotations)
+
+    # Verify offsets were adjusted as expected for the remaining annotations
+    for annotation, orig_begin, orig_end in expected_leftover_annotations:
+        expected_begin = max(orig_begin, begin) - begin
+        expected_end = min(orig_end, end) - begin
+        assert annotation.begin == expected_begin
+        assert annotation.end == expected_end
 
 
 def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
@@ -671,9 +688,23 @@ def test_cut_sofa_string_to_range_no_overlap(small_typesystem_xml, small_xmi):
     begin = 10
     end = 20
 
-    expected_leftover_annotations = [annotation for annotation in cas.select_all()
-                                     if begin <= annotation.begin < annotation.end <= end]
+    # Snapshot annotations' original offsets so we can compute expected adjusted offsets
+    expected_leftover_annotations = [
+        (annotation, annotation.begin, annotation.end)
+        for annotation in cas.select_all()
+        if begin <= annotation.begin < annotation.end <= end
+    ]
+
+    original_sofa = cas.sofa_string
 
     cas.cut_sofa_string_to_range(begin, end, overlap=False)
 
+    assert cas.sofa_string == original_sofa[begin:end]
     assert len(cas.select_all()) == len(expected_leftover_annotations)
+
+    # Verify offsets were adjusted as expected for the remaining annotations
+    for annotation, orig_begin, orig_end in expected_leftover_annotations:
+        expected_begin = orig_begin - begin
+        expected_end = orig_end - begin
+        assert annotation.begin == expected_begin
+        assert annotation.end == expected_end

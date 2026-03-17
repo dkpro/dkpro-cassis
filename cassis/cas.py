@@ -1038,13 +1038,21 @@ class Cas:
                 if ts.is_primitive(feature.rangeType):
                     fs_copy[feature.name] = fs.get(feature.name)
                 elif ts.is_primitive_collection(feature.rangeType):
+                    val = fs.get(feature.name)
+                    if val is None:
+                        continue
+
                     fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
-                    fs_copy[feature.name].elements = fs.get(feature.name).elements
+                    fs_copy[feature.name].elements = val.elements
                 elif ts.is_array(feature.rangeType):
+                    val = fs[feature.name]
+                    if val is None:
+                        continue
+
                     fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
                     # collect referenced xmiIDs for mapping later and preserve None placeholders
                     referenced_list = []
-                    for item in fs[feature.name].elements:
+                    for item in val.elements:
                         if item is None:
                             referenced_list.append(None)
                         elif hasattr(item, "xmiID") and item.xmiID is not None:

@@ -1018,7 +1018,7 @@ def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
     cas = Cas(typesystem=typesystem)
 
     # Create parent and child types and a feature on parent referencing child
-    typesystem.create_type("test.Child")
+    Child = typesystem.create_type("test.Child")
     Parent = typesystem.create_type("test.Parent")
     typesystem.create_feature("test.Parent", "child", "test.Child")
 
@@ -1167,7 +1167,7 @@ def test_deep_copy_none_non_primitive_feature():
     typesystem = TypeSystem()
     Child = typesystem.create_type("test.Child")
     Parent = typesystem.create_type("test.Parent")
-    typesystem.create_feature(Parent, "child", "test.Child")
+    typesystem.create_feature(Parent, "child", Child)
 
     cas = Cas(typesystem=typesystem)
     parent = Parent()
@@ -1177,6 +1177,50 @@ def test_deep_copy_none_non_primitive_feature():
     copy = cas.deep_copy(copy_typesystem=False)
     copied_parent = list(copy.select("test.Parent"))[0]
     assert getattr(copied_parent, "child") is None
+
+
+def test_deep_copy_none_fsarray_feature():
+    """Ensure an FSArray feature set to None is preserved in the copy."""
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "arr",
+        rangeType=typesystem.get_type("uima.cas.FSArray"),
+        elementType=typesystem.get_type(TYPE_NAME_TOP),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    foo = Foo()
+    foo.arr = None
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+    copied_foo = list(copy.select("test.Foo"))[0]
+    assert getattr(copied_foo, "arr") is None
+
+
+def test_deep_copy_none_primitive_collection_feature():
+    """Ensure a primitive collection feature set to None is preserved in the copy."""
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "ints",
+        rangeType=typesystem.get_type(TYPE_NAME_INTEGER_ARRAY),
+        elementType=typesystem.get_type(TYPE_NAME_INTEGER),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    foo = Foo()
+    foo.ints = None
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+    copied_foo = list(copy.select("test.Foo"))[0]
+    assert getattr(copied_foo, "ints") is None
 
 
 def test_deep_copy_empty_array():

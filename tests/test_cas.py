@@ -384,6 +384,78 @@ def test_deep_copy_with_primitive_integer_list():
     assert copied.ints.head == 42
 
 
+def test_deep_copy_preserves_shared_fsarray_identity():
+    """If two feature structures share the same FSArray and the feature allows multiple references,
+    the shared array identity should be preserved after deep_copy.
+    """
+    cas = Cas()
+    ts = cas.typesystem
+
+    # Create a simple element type and a parent type with a shareable FSArray feature
+    ElemType = ts.create_type("test.Elem")
+    ParentType = ts.create_type("test.Parent")
+    ts.create_feature(
+        ParentType, name="arr", rangeType="uima.cas.FSArray", elementType="test.Elem", multipleReferencesAllowed=True
+    )
+
+    # create a shared array FS and add it to the CAS so it receives an xmiID
+    array_fs = ts.get_type("uima.cas.FSArray")()
+    # give it one element: an Elem instance
+    elem = ElemType()
+    cas.add(elem)
+    array_fs.elements = [elem]
+    cas.add(array_fs)
+
+    p1 = ParentType()
+    p2 = ParentType()
+    p1.arr = array_fs
+    p2.arr = array_fs
+
+    cas.add(p1)
+    cas.add(p2)
+
+    cas_copy = cas.deep_copy()
+    parents = list(cas_copy.select("test.Parent"))
+    assert len(parents) == 2
+
+    arr1 = parents[0].arr
+    arr2 = parents[1].arr
+
+    # The two parents in the copied CAS must reference the same FS object
+    assert arr1 is arr2
+
+
+def test_deep_copy_inlines_fsarray_when_multiple_references_not_allowed():
+    """FSArray-valued features without multipleReferencesAllowed should be copied inline."""
+    cas = Cas()
+    ts = cas.typesystem
+
+    ElemType = ts.create_type("test.Elem")
+    ParentType = ts.create_type("test.Parent")
+    ts.create_feature(
+        ParentType, name="arr", rangeType="uima.cas.FSArray", elementType="test.Elem", multipleReferencesAllowed=False
+    )
+
+    elem = ElemType()
+    cas.add(elem)
+
+    array_fs = ts.get_type("uima.cas.FSArray")()
+    array_fs.elements = [elem]
+
+    parent = ParentType()
+    parent.arr = array_fs
+    cas.add(parent)
+
+    cas_copy = cas.deep_copy()
+    copied_parent = list(cas_copy.select("test.Parent"))[0]
+
+    assert copied_parent.arr is not None
+    assert copied_parent.arr is not array_fs
+    assert len(copied_parent.arr.elements) == 1
+    assert copied_parent.arr.elements[0] is not elem
+    assert copied_parent.arr.elements[0].type.name == "test.Elem"
+
+
 # Covered text
 
 

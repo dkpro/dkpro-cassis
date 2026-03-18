@@ -1021,6 +1021,7 @@ class Cas:
 
         references = dict()
         referenced_arrays = dict()
+        referenced_fs_arrays = dict()
         referenced_lists = dict()
         # for primitive lists (e.g. IntegerList) we collect primitive head values
         referenced_primitive_lists = dict()
@@ -1035,6 +1036,21 @@ class Cas:
 
             t = ts.get_type(fs.type.name)
             fs_copy = t()
+
+            if t.name == TYPE_NAME_FS_ARRAY and fs.elements is not None:
+                referenced_list = []
+                for item in fs.elements:
+                    if item is None:
+                        referenced_list.append(None)
+                    elif hasattr(item, "xmiID") and item.xmiID is not None:
+                        referenced_list.append(item.xmiID)
+                    else:
+                        warnings.warn(
+                            f"Standalone FSArray {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
+                        )
+                        referenced_list.append(None)
+
+                referenced_fs_arrays[fs.xmiID] = referenced_list
 
             for feature in t.all_features:
                 if ts.is_primitive(feature.rangeType):
@@ -1069,21 +1085,29 @@ class Cas:
                     if val is None:
                         continue
 
-                    fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
-                    # collect referenced xmiIDs for mapping later and preserve None placeholders
-                    referenced_list = []
-                    for item in val.elements:
-                        if item is None:
-                            referenced_list.append(None)
-                        elif hasattr(item, "xmiID") and item.xmiID is not None:
-                            referenced_list.append(item.xmiID)
-                        else:
-                            warnings.warn(
-                                f"Array feature '{feature.name}' of FS {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
-                            )
-                            referenced_list.append(None)
-                    referenced_arrays.setdefault(fs.xmiID, {})
-                    referenced_arrays[fs.xmiID][feature.name] = referenced_list
+                    # If the array itself may be shared (multipleReferencesAllowed), preserve
+                    # its identity by treating it like any other FS reference and wiring it
+                    # up later via `references`. Only inline-copy arrays when they are not
+                    # declared shareable.
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                    else:
+                        fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
+                        # collect referenced xmiIDs for mapping later and preserve None placeholders
+                        referenced_list = []
+                        for item in val.elements:
+                            if item is None:
+                                referenced_list.append(None)
+                            elif hasattr(item, "xmiID") and item.xmiID is not None:
+                                referenced_list.append(item.xmiID)
+                            else:
+                                warnings.warn(
+                                    f"Array feature '{feature.name}' of FS {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
+                                )
+                                referenced_list.append(None)
+                        referenced_arrays.setdefault(fs.xmiID, {})
+                        referenced_arrays[fs.xmiID][feature.name] = referenced_list
                 elif ts.is_list(feature.rangeType):
                     val = fs[feature.name]
                     if val is None:
@@ -1140,6 +1164,21 @@ class Cas:
                         )
                         elements.append(None)
                 all_copied_fs[current_ID][feature].elements = elements
+
+        for current_ID, referenced_list in referenced_fs_arrays.items():
+            elements = []
+            for reference_ID in referenced_list:
+                if reference_ID is None:
+                    elements.append(None)
+                    continue
+                try:
+                    elements.append(all_copied_fs[reference_ID])
+                except KeyError:
+                    warnings.warn(
+                        f"Reference {reference_ID} not found for standalone FSArray {current_ID}; inserting None."
+                    )
+                    elements.append(None)
+            all_copied_fs[current_ID].elements = elements
 
         # rebuild FSList features from copied members
         for current_ID, lists in referenced_lists.items():

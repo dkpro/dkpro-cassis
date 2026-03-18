@@ -1057,11 +1057,19 @@ class Cas:
                 referenced_primitive_arrays[fs.xmiID] = list(fs.elements)
 
             for feature in t.all_features:
+                if t.supertype.name == TYPE_NAME_ARRAY_BASE and feature.name == "elements":
+                    continue
+
                 if ts.is_primitive(feature.rangeType):
                     fs_copy[feature.name] = fs.get(feature.name)
                 elif ts.is_primitive_collection(feature.rangeType):
                     val = fs.get(feature.name)
                     if val is None:
+                        continue
+
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
                         continue
 
                     # Distinguish primitive arrays (have `elements`) from primitive lists (use head/tail)

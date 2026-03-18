@@ -53,9 +53,47 @@ def test_xmi_roundtrip_shared_fsarray_identity():
     cas_copy = cas.deep_copy()
     # identity preserved
     parents = list(cas_copy.select("test.Parent"))
+    assert len(parents) == 2
     assert parents[0].arr is parents[1].arr
 
     # and XMI representation matches (structurally)
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
+def test_xmi_roundtrip_shared_primitive_array_identity():
+    """Ensure shared primitive arrays remain referenced after deep_copy and serialize unchanged."""
+    from cassis.cas import Cas
+
+    typesystem = TypeSystem()
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(
+        Parent,
+        "ints",
+        rangeType="uima.cas.IntegerArray",
+        elementType="uima.cas.Integer",
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem)
+    int_array = typesystem.get_type("uima.cas.IntegerArray")()
+    int_array.elements = [1, 2, 3]
+    cas.add(int_array)
+
+    first = Parent()
+    second = Parent()
+    first.ints = int_array
+    second.ints = int_array
+    cas.add(first)
+    cas.add(second)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+    copied_parents = list(cas_copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].ints is copied_parents[1].ints
+
     xmi_copy = cas_copy.to_xmi()
     assert_xml_equal(xmi_copy, xmi_orig)
 

@@ -384,6 +384,72 @@ def test_deep_copy_with_primitive_integer_list():
     assert copied.ints.head == 42
 
 
+def test_deep_copy_preserves_shared_primitive_array_identity():
+    typesystem = TypeSystem()
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(
+        Parent,
+        "ints",
+        rangeType=typesystem.get_type(TYPE_NAME_INTEGER_ARRAY),
+        elementType=typesystem.get_type(TYPE_NAME_INTEGER),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+
+    IntegerArray = typesystem.get_type(TYPE_NAME_INTEGER_ARRAY)
+    int_arr = IntegerArray()
+    int_arr.elements = [1, 2, 3]
+
+    first = Parent()
+    second = Parent()
+    first.ints = int_arr
+    second.ints = int_arr
+    cas.add(first)
+    cas.add(second)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_parents = list(copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].ints is copied_parents[1].ints
+    assert copied_parents[0].ints.elements == [1, 2, 3]
+    assert copied_parents[0].ints is not int_arr
+
+
+def test_deep_copy_preserves_shared_primitive_list_identity():
+    typesystem = TypeSystem()
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(
+        Parent,
+        "ints",
+        rangeType="uima.cas.IntegerList",
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+
+    shared_list = typesystem.get_type("uima.cas.NonEmptyIntegerList")()
+    shared_list.head = 42
+    shared_list.tail = typesystem.get_type("uima.cas.EmptyIntegerList")()
+
+    first = Parent()
+    second = Parent()
+    first.ints = shared_list
+    second.ints = shared_list
+    cas.add(first)
+    cas.add(second)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_parents = list(copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].ints is copied_parents[1].ints
+    assert copied_parents[0].ints is not shared_list
+    assert copied_parents[0].ints.head == 42
+    assert copied_parents[0].ints.tail.type.name == "uima.cas.EmptyIntegerList"
+
+
 def test_deep_copy_preserves_shared_fsarray_identity():
     """If two feature structures share the same FSArray and the feature allows multiple references,
     the shared array identity should be preserved after deep_copy.

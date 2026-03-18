@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_DOCUMENT_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from pytest_lazy_fixtures import lf
 from tests.test_files.test_cas_generators import (
@@ -12,6 +12,91 @@ from tests.test_files.test_cas_generators import (
     StringArrayMode,
 )
 from tests.util import assert_xml_equal
+
+
+def test_xmi_roundtrip_shared_fsarray_identity():
+    """Ensure that a CAS with two parents sharing the same FSArray deep-copies
+    while preserving shared-array identity and that the copy serializes to
+    the same XMI as the original.
+    """
+    from cassis.cas import Cas
+
+    cas = Cas()
+    ts = cas.typesystem
+
+    ElemType = ts.create_type("test.Elem")
+    ParentType = ts.create_type("test.Parent")
+    ts.create_feature(
+        ParentType,
+        name="arr",
+        rangeType="uima.cas.FSArray",
+        elementType="test.Elem",
+        multipleReferencesAllowed=True,
+    )
+
+    # shared array and element
+    elem = ElemType()
+    cas.add(elem)
+    array_fs = ts.get_type("uima.cas.FSArray")()
+    array_fs.elements = [elem]
+    cas.add(array_fs)
+
+    p1 = ParentType()
+    p2 = ParentType()
+    p1.arr = array_fs
+    p2.arr = array_fs
+    cas.add(p1)
+    cas.add(p2)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+    # identity preserved
+    parents = list(cas_copy.select("test.Parent"))
+    assert len(parents) == 2
+    assert parents[0].arr is parents[1].arr
+
+    # and XMI representation matches (structurally)
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
+def test_xmi_roundtrip_shared_primitive_array_identity():
+    """Ensure shared primitive arrays remain referenced after deep_copy and serialize unchanged."""
+    from cassis.cas import Cas
+
+    typesystem = TypeSystem()
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(
+        Parent,
+        "ints",
+        rangeType="uima.cas.IntegerArray",
+        elementType="uima.cas.Integer",
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem)
+    int_array = typesystem.get_type("uima.cas.IntegerArray")()
+    int_array.elements = [1, 2, 3]
+    cas.add(int_array)
+
+    first = Parent()
+    second = Parent()
+    first.ints = int_array
+    second.ints = int_array
+    cas.add(first)
+    cas.add(second)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+    copied_parents = list(cas_copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].ints is copied_parents[1].ints
+
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
 
 # Deserializing
 
@@ -111,6 +196,69 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     view2 = cas.get_view("sofa2")
     assert 2 == len(list(view1.select_all()))
     assert 1 == len(list(view2.select_all()))
+
+
+def test_deep_copy_preserves_view_membership_for_non_annotation_fs(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
+    <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+             xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
+        <cas:NULL xmi:id="0"/>
+        <tcas:DocumentAnnotation xmi:id="3" sofa="2" begin="0" end="20" language="x-unspecified"/>
+        <cas:IntegerArray xmi:id="4" elements="1 2 3"/>
+        <cas:Sofa xmi:id="1" sofaNum="1" sofaID="sofa1" mimeType="text/plain"
+                  sofaString="First view"/>
+        <cas:View sofa="1" members="4"/>
+        <cas:Sofa xmi:id="2" sofaNum="2" sofaID="sofa2" mimeType="text/plain"
+                  sofaString="Second view contents"/>
+        <cas:View sofa="2" members="3"/>
+    </xmi:XMI>
+    """
+
+    cas = load_cas_from_xmi(cas_xmi, typesystem=typesystem)
+    xmi_orig = cas.to_xmi()
+    cas_copy = cas.deep_copy()
+
+    view1_members = list(cas_copy.get_view("sofa1").select_all())
+    view2_members = list(cas_copy.get_view("sofa2").select_all())
+
+    assert [fs.xmiID for fs in view1_members] == [4]
+    assert [fs.xmiID for fs in view2_members] == [3]
+
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
+def test_deep_copy_preserves_non_annotation_membership_in_multiple_views():
+    cas = Cas()
+    initial_view = cas.get_view("_InitialView")
+    secondary_view = cas.create_view("sofa2")
+
+    initial_view.sofa_string = "First view"
+    secondary_view.sofa_string = "Second view"
+
+    shared_array = cas.typesystem.get_type("uima.cas.IntegerArray")()
+    shared_array.elements = [1, 2, 3]
+    initial_view.add(shared_array)
+    secondary_view.add(shared_array)
+
+    annotation = cas.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)()
+    annotation.begin = 0
+    annotation.end = len(secondary_view.sofa_string)
+    secondary_view.add(annotation)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+
+    view1_members = [fs.xmiID for fs in cas_copy.get_view("_InitialView").select_all()]
+    view2_members = [fs.xmiID for fs in cas_copy.get_view("sofa2").select_all()]
+
+    assert view1_members == [shared_array.xmiID]
+    assert set(view2_members) == {annotation.xmiID, shared_array.xmiID}
+
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
 
 
 def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):

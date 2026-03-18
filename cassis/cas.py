@@ -14,6 +14,7 @@ from sortedcontainers import SortedKeyList
 from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
+    TYPE_NAME_ARRAY_BASE,
     TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
@@ -1022,6 +1023,7 @@ class Cas:
         references = dict()
         referenced_arrays = dict()
         referenced_fs_arrays = dict()
+        referenced_primitive_arrays = dict()
         referenced_lists = dict()
         # for primitive lists (e.g. IntegerList) we collect primitive head values
         referenced_primitive_lists = dict()
@@ -1051,6 +1053,8 @@ class Cas:
                         referenced_list.append(None)
 
                 referenced_fs_arrays[fs.xmiID] = referenced_list
+            elif t.supertype.name == TYPE_NAME_ARRAY_BASE and fs.elements is not None:
+                referenced_primitive_arrays[fs.xmiID] = list(fs.elements)
 
             for feature in t.all_features:
                 if ts.is_primitive(feature.rangeType):
@@ -1179,6 +1183,9 @@ class Cas:
                     )
                     elements.append(None)
             all_copied_fs[current_ID].elements = elements
+
+        for current_ID, elements in referenced_primitive_arrays.items():
+            all_copied_fs[current_ID].elements = list(elements)
 
         # rebuild FSList features from copied members
         for current_ID, lists in referenced_lists.items():

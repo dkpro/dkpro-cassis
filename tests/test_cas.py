@@ -1359,6 +1359,35 @@ def test_deep_copy_primitive_collection_elements_are_copied():
     assert 99 not in copied_foo.ints.elements
 
 
+def test_deep_copy_preserves_standalone_primitive_array_elements():
+    """Ensure copied standalone primitive array FS keep their elements."""
+    typesystem = TypeSystem()
+    Foo = typesystem.create_type("test.Foo")
+    typesystem.create_feature(
+        Foo,
+        "ints",
+        rangeType=typesystem.get_type(TYPE_NAME_INTEGER_ARRAY),
+        elementType=typesystem.get_type(TYPE_NAME_INTEGER),
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    foo = Foo()
+
+    IntegerArray = typesystem.get_type(TYPE_NAME_INTEGER_ARRAY)
+    int_arr = IntegerArray()
+    int_arr.elements = [1, 2, 3]
+    foo.ints = int_arr
+    cas.add(foo)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_arrays = list(copy.select(TYPE_NAME_INTEGER_ARRAY))
+    assert len(copied_arrays) == 1
+    assert copied_arrays[0].elements == [1, 2, 3]
+    assert copied_arrays[0].elements is not int_arr.elements
+
+
 def test_deep_copy_empty_array():
     """Ensure empty FSArray is preserved as empty in the copy."""
     typesystem = TypeSystem()

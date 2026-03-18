@@ -583,6 +583,39 @@ def test_FeatureStructure_get_covered_text_sentences(sentences: list[FeatureStru
     assert actual_text == expected_text
 
 
+def test_deep_copy_preserves_active_view():
+    """If deep_copy is called on a CAS whose current view is non-initial,
+    the copied CAS should have the same active view as the source.
+    """
+    cas = Cas()
+
+    # initial view
+    cas.sofa_string = "initial"
+
+    # create a second view and set its sofa string
+    view2 = cas.create_view("other")
+    view2.sofa_string = "zweite"
+
+    # obtain a Cas object whose current view is the non-initial view
+    cas_other = cas.get_view("other")
+    assert cas_other.get_sofa().sofaID == "other"
+
+    # Record active views on both the original CAS and the view-specific Cas
+    orig_active_on_cas = cas.get_sofa().sofaID
+    orig_active_on_cas_other = cas_other.get_sofa().sofaID
+
+    # deep-copy the CAS while the non-initial view is current
+    cas_copy = cas_other.deep_copy()
+
+    # the copied CAS should have the same active view name and sofa string
+    assert cas_copy.get_sofa().sofaID == cas_other.get_sofa().sofaID
+    assert cas_copy.sofa_string == cas_other.sofa_string
+
+    # ensure the original CAS objects kept their active views
+    assert cas.get_sofa().sofaID == orig_active_on_cas
+    assert cas_other.get_sofa().sofaID == orig_active_on_cas_other
+
+
 # Adding annotations
 
 
@@ -1542,12 +1575,11 @@ def test_deep_copy_multiple_views_and_sofas_are_decoupled():
 
 
 def test_deep_copy_should_remap_sofa_array():
-    """Demonstrates that `deep_copy()` does not remap a Sofa.sofaArray when
-    the sofaArray FS is not indexed in any view (regression test).
+    """Regression test: ensure `deep_copy()` remaps a Sofa.sofaArray even when
+    the sofaArray FS is not indexed in any view.
 
     Expected behavior: the copied CAS should reference a copied sofaArray,
-    not the original object. This test asserts that expectation and thus
-    currently fails until deep_copy is fixed.
+    not the original object.
     """
     cas = Cas()
 

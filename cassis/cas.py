@@ -1253,6 +1253,18 @@ class Cas:
 
         cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
         cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)
+
+        # Restore the active view on the copy to match the source CAS' current view.
+        # During re-indexing we may have set `cas_copy._current_view` multiple
+        # times; ensure the returned copy has the same active sofa as `self`.
+        try:
+            active_sofa_id = self.get_sofa().sofaID
+        except Exception:
+            active_sofa_id = "_InitialView"
+
+        if active_sofa_id in cas_copy._views:
+            cas_copy._current_view = cas_copy._views[active_sofa_id]
+
         return cas_copy
 
 

@@ -543,6 +543,38 @@ def test_get_covered_text_sentences(sentences: list[FeatureStructure]):
     assert actual_text == expected_text
 
 
+def test_deep_copy_preserves_view_specific_language_and_mime():
+    """A CAS with multiple views should preserve each view's language and mime on deep_copy."""
+    cas = Cas()
+
+    # initial view
+    cas.sofa_string = "initial"
+    cas.document_language = "en"
+    cas.sofa_mime = "text/plain"
+
+    # create and set values on a second view
+    view2 = cas.create_view("other")
+    view2.sofa_string = "zweite"
+    view2.document_language = "de"
+    view2.sofa_mime = "text/html"
+
+    # ensure both DocumentAnnotation instances exist on their views
+    assert cas.get_view("_InitialView").document_language == "en"
+    assert cas.get_view("other").document_language == "de"
+
+    cas_copy = cas.deep_copy()
+
+    # verify copy preserves per-view language and mime
+    copy_init = cas_copy.get_view("_InitialView")
+    copy_other = cas_copy.get_view("other")
+
+    assert copy_init.document_language == "en"
+    assert copy_init.sofa_mime == "text/plain"
+
+    assert copy_other.document_language == "de"
+    assert copy_other.sofa_mime == "text/html"
+
+
 def test_FeatureStructure_get_covered_text_sentences(sentences: list[FeatureStructure]):
     actual_text = [sentence.get_covered_text() for sentence in sentences]
 

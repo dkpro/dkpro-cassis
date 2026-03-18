@@ -953,22 +953,7 @@ class Cas:
             ts = self.typesystem.to_xml()
             ts = load_typesystem(ts)
 
-        # Determine document language only if a DocumentAnnotation already
-        # exists on the original CAS. Calling `self.document_language` would
-        # implicitly create a DocumentAnnotation via
-        # `get_document_annotation()`, which we avoid during copying.
-        document_language = None
-        existing_doc_ann = list(self.select(TYPE_NAME_DOCUMENT_ANNOTATION))
-        if existing_doc_ann:
-            # Use the stored language value (may be None)
-            document_language = existing_doc_ann[0].get(FEATURE_BASE_NAME_LANGUAGE)
-
-        cas_copy = Cas(
-            ts,
-            document_language=document_language,
-            lenient=self._lenient,
-            sofa_mime=self.sofa_mime,
-        )
+        cas_copy = Cas(ts, lenient=self._lenient)
 
         cas_copy._views = {}
         cas_copy._sofas = {}

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
+from cassis.typesystem import TYPE_NAME_ANNOTATION, TYPE_NAME_DOCUMENT_ANNOTATION, TYPE_NAME_SOFA, TypeNotFoundError
 from tests.fixtures import *
 from pytest_lazy_fixtures import lf
 from tests.test_files.test_cas_generators import (
@@ -224,6 +224,38 @@ def test_deep_copy_preserves_view_membership_for_non_annotation_fs(small_typesys
 
     assert [fs.xmiID for fs in view1_members] == [4]
     assert [fs.xmiID for fs in view2_members] == [3]
+
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
+def test_deep_copy_preserves_non_annotation_membership_in_multiple_views():
+    cas = Cas()
+    initial_view = cas.get_view("_InitialView")
+    secondary_view = cas.create_view("sofa2")
+
+    initial_view.sofa_string = "First view"
+    secondary_view.sofa_string = "Second view"
+
+    shared_array = cas.typesystem.get_type("uima.cas.IntegerArray")()
+    shared_array.elements = [1, 2, 3]
+    initial_view.add(shared_array)
+    secondary_view.add(shared_array)
+
+    annotation = cas.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)()
+    annotation.begin = 0
+    annotation.end = len(secondary_view.sofa_string)
+    secondary_view.add(annotation)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+
+    view1_members = [fs.xmiID for fs in cas_copy.get_view("_InitialView").select_all()]
+    view2_members = [fs.xmiID for fs in cas_copy.get_view("sofa2").select_all()]
+
+    assert view1_members == [shared_array.xmiID]
+    assert set(view2_members) == {annotation.xmiID, shared_array.xmiID}
 
     xmi_copy = cas_copy.to_xmi()
     assert_xml_equal(xmi_copy, xmi_orig)

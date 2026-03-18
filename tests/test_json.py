@@ -226,6 +226,38 @@ def test_deep_copy_preserves_view_membership_for_non_annotation_fs_in_json():
     assert_json_equal(actual_json, expected_json, sort_keys=True)
 
 
+def test_deep_copy_preserves_non_annotation_membership_in_multiple_views_in_json():
+    cas = Cas()
+    initial_view = cas.get_view("_InitialView")
+    secondary_view = cas.create_view("sofa2")
+
+    initial_view.sofa_string = "First view"
+    secondary_view.sofa_string = "Second view"
+
+    shared_array = cas.typesystem.get_type("uima.cas.IntegerArray")()
+    shared_array.elements = [1, 2, 3]
+    initial_view.add(shared_array)
+    secondary_view.add(shared_array)
+
+    annotation = cas.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)()
+    annotation.begin = 0
+    annotation.end = len(secondary_view.sofa_string)
+    secondary_view.add(annotation)
+
+    expected_json = cas.to_json()
+
+    cas_copy = cas.deep_copy()
+
+    view1_members = [fs.xmiID for fs in cas_copy.get_view("_InitialView").select_all()]
+    view2_members = [fs.xmiID for fs in cas_copy.get_view("sofa2").select_all()]
+
+    assert view1_members == [shared_array.xmiID]
+    assert set(view2_members) == {annotation.xmiID, shared_array.xmiID}
+
+    actual_json = cas_copy.to_json()
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
+
+
 def test_multi_type_random_serialization_deserialization():
     generator = MultiTypeRandomCasGenerator()
     for i in range(0, 10):

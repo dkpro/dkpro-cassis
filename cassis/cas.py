@@ -1032,12 +1032,13 @@ class Cas:
         referenced_primitive_lists = dict()
 
         all_copied_fs = dict()
-        referenced_view = {}
+        referenced_view = defaultdict(list)
 
         for view in self.views:
             for member in view.get_all_annotations():
                 if hasattr(member, "xmiID") and member.xmiID is not None:
-                    referenced_view[member.xmiID] = view.sofa.sofaID
+                    if view.sofa.sofaID not in referenced_view[member.xmiID]:
+                        referenced_view[member.xmiID].append(view.sofa.sofaID)
 
         for fs in self._find_all_fs():
             t = ts.get_type(fs.type.name)
@@ -1235,12 +1236,19 @@ class Cas:
             if not hasattr(item, "xmiID") or item.xmiID is None:
                 continue
 
-            view_name = referenced_view.get(item.xmiID)
-            if view_name is None:
+            view_names = referenced_view.get(item.xmiID)
+            if not view_names:
                 continue
 
-            cas_copy._current_view = cas_copy._views[view_name]
+            # Use the normal add-path once so FS with a `sofa` feature are rebound
+            # to the copied sofa in their primary view. Any additional view
+            # memberships are restored by indexing the same FS directly to avoid
+            # mutating its `sofa` repeatedly.
+            cas_copy._current_view = cas_copy._views[view_names[0]]
             cas_copy.add(item, keep_id=True)
+
+            for view_name in view_names[1:]:
+                cas_copy._views[view_name].add_annotation_to_index(item)
 
         cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
         cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)

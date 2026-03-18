@@ -807,7 +807,7 @@ def test_random_multi_type_random_deep_copy():
         generator.type_count = i + 1
         typesystem = generator.generate_type_system()
         org = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in org.views)}")
+        # Debugging print removed to avoid noisy CI output; keep deep-copy call.
         copy = org.deep_copy(copy_typesystem=True)
 
         org_text = org.to_xmi(pretty_print=True)
@@ -824,7 +824,6 @@ def test_random_multi_feature_deep_copy():
         generator.size = (i + 1) * 10
         typesystem = generator.generate_type_system()
         org = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in org.views)}")
         copy = org.deep_copy(copy_typesystem=True)
 
         org_text = org.to_xmi(pretty_print=True)

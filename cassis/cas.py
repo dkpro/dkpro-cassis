@@ -1025,7 +1025,17 @@ class Cas:
                     if view.sofa.sofaID not in referenced_view[member.xmiID]:
                         referenced_view[member.xmiID].append(view.sofa.sofaID)
 
-        for fs in self._find_all_fs():
+        # Ensure sofa.sofaArray feature structures are discovered even when they
+        # are not indexed in any view. `_find_all_fs(seeds=...)` replaces the
+        # default traversal roots, so we include both the original indexed view
+        # members and any sofaArray roots here.
+        traversal_seeds = []
+        for sofa in self.sofas:
+            traversal_seeds.extend(self.get_view(sofa.sofaID).select_all())
+            if getattr(sofa, "sofaArray", None) is not None:
+                traversal_seeds.append(sofa.sofaArray)
+
+        for fs in self._find_all_fs(seeds=traversal_seeds):
             t = ts.get_type(fs.type.name)
             fs_copy = t()
 
@@ -1208,8 +1218,14 @@ class Cas:
                 all_copied_fs[current_ID][feature] = current
 
         # ensure Sofa.sofaArray references point to the copied feature structures
-        for sofa_id, sofa_copy in cas_copy._sofas.items():
-            orig_sofa_array = sofa_copy.sofaArray
+        # Use the original CAS's sofas to locate the original sofaArray objects
+        # (safer than relying on sofa_copy.sofaArray pointing back to the original
+        # object in all cases) and remap them to the copied FS when available.
+        for orig_sofa in self.sofas:
+            sofa_copy = cas_copy._sofas.get(orig_sofa.sofaID)
+            if sofa_copy is None:
+                continue
+            orig_sofa_array = getattr(orig_sofa, "sofaArray", None)
             if hasattr(orig_sofa_array, "xmiID") and orig_sofa_array.xmiID in all_copied_fs:
                 sofa_copy.sofaArray = all_copied_fs[orig_sofa_array.xmiID]
 

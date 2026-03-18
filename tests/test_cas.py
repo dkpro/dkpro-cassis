@@ -5,6 +5,7 @@ import attr
 
 from cassis.typesystem import (
     TYPE_NAME_ANNOTATION,
+    TYPE_NAME_BYTE_ARRAY,
     TYPE_NAME_INTEGER,
     TYPE_NAME_INTEGER_ARRAY,
     TYPE_NAME_STRING,
@@ -1538,3 +1539,27 @@ def test_deep_copy_multiple_views_and_sofas_are_decoupled():
     assert len(orig_tokens) == len(copy_tokens)
     for a in orig_tokens:
         assert all(a is not b for b in copy_tokens)
+
+
+def test_deep_copy_should_remap_sofa_array():
+    """Demonstrates that `deep_copy()` does not remap a Sofa.sofaArray when
+    the sofaArray FS is not indexed in any view (regression test).
+
+    Expected behavior: the copied CAS should reference a copied sofaArray,
+    not the original object. This test asserts that expectation and thus
+    currently fails until deep_copy is fixed.
+    """
+    cas = Cas()
+
+    # Create a standalone byte array FS and assign an XMI id as if parsed
+    # from external representation. Do NOT add it to any view index.
+    ByteArray = cas.typesystem.get_type(TYPE_NAME_BYTE_ARRAY)
+    byte_array = ByteArray(elements=[1, 2, 3])
+    byte_array.xmiID = 9999
+
+    cas.get_sofa().sofaArray = byte_array
+
+    cas_copy = cas.deep_copy()
+
+    # The copy should not keep a direct reference to the original byte array
+    assert cas_copy.get_sofa().sofaArray is not byte_array

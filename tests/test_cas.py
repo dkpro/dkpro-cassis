@@ -1444,11 +1444,11 @@ def test_deep_copy_preserves_standalone_primitive_array_elements():
     cas.add(foo)
 
     copy = cas.deep_copy(copy_typesystem=False)
+    copied_foo = list(copy.select("test.Foo"))[0]
 
-    copied_arrays = list(copy.select(TYPE_NAME_INTEGER_ARRAY))
-    assert len(copied_arrays) == 1
-    assert copied_arrays[0].elements == [1, 2, 3]
-    assert copied_arrays[0].elements is not int_arr.elements
+    assert copied_foo.ints.elements == [1, 2, 3]
+    assert copied_foo.ints.elements is not int_arr.elements
+    assert list(copy.select(TYPE_NAME_INTEGER_ARRAY)) == []
 
 
 def test_deep_copy_empty_array():

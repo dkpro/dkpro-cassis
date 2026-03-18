@@ -1017,7 +1017,10 @@ class Cas:
             cas_copy._sofas[sofa_copy.sofaID] = sofa_copy
             cas_copy._views[sofa_copy.sofaID] = View(sofa=sofa_copy)
 
-        # removes the _InitialView created with the initialization of the copied CAS
+        # Set the current view to the `_InitialView` entry in the copied CAS.
+        # (`Cas.__init__` creates an `_InitialView`; here we point the current
+        # view at that entry in the `cas_copy._views` mapping so subsequent
+        # `add()` calls index into the initial view by default.)
         cas_copy._current_view = cas_copy._views["_InitialView"]
 
         references = dict()
@@ -1031,11 +1034,12 @@ class Cas:
         all_copied_fs = dict()
         referenced_view = {}
 
-        for fs in self._find_all_fs():
-            # the referenced view is required when adding the fs to the copied cas later
-            if hasattr(fs, "sofa") and fs.sofa and hasattr(fs, "xmiID") and fs.xmiID:
-                referenced_view[fs.xmiID] = fs.sofa.sofaID
+        for view in self.views:
+            for member in view.get_all_annotations():
+                if hasattr(member, "xmiID") and member.xmiID is not None:
+                    referenced_view[member.xmiID] = view.sofa.sofaID
 
+        for fs in self._find_all_fs():
             t = ts.get_type(fs.type.name)
             fs_copy = t()
 
@@ -1223,13 +1227,19 @@ class Cas:
             if hasattr(orig_sofa_array, "xmiID") and orig_sofa_array.xmiID in all_copied_fs:
                 sofa_copy.sofaArray = all_copied_fs[orig_sofa_array.xmiID]
 
-        # add feature structures to the appropriate views (add in xmiID order)
+        # Add only original view members back to the copied indices. Referenced
+        # feature structures that were not indexed in any original view remain
+        # reachable transitively and will still be serialized by `_find_all_fs()`.
         feature_structures = sorted(all_copied_fs.values(), key=lambda f: f.xmiID, reverse=False)
         for item in feature_structures:
-            if hasattr(item, "xmiID") and item.xmiID is not None:
-                view_name = referenced_view.get(item.xmiID)
-                if view_name is not None:
-                    cas_copy._current_view = cas_copy._views[view_name]
+            if not hasattr(item, "xmiID") or item.xmiID is None:
+                continue
+
+            view_name = referenced_view.get(item.xmiID)
+            if view_name is None:
+                continue
+
+            cas_copy._current_view = cas_copy._views[view_name]
             cas_copy.add(item, keep_id=True)
 
         cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)

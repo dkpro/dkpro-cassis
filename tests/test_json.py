@@ -122,6 +122,110 @@ def test_deserialization_serialization_one_way(json_path, annotations):
     assert_json_equal(actual_json, expected_json, sort_keys=True)
 
 
+def test_json_roundtrip_shared_fsarray_identity():
+    cas = Cas()
+    ts = cas.typesystem
+
+    ElemType = ts.create_type("test.Elem")
+    ParentType = ts.create_type("test.Parent")
+    ts.create_feature(
+        ParentType,
+        name="arr",
+        rangeType="uima.cas.FSArray",
+        elementType="test.Elem",
+        multipleReferencesAllowed=True,
+    )
+
+    elem = ElemType()
+    cas.add(elem)
+
+    array_fs = ts.get_type("uima.cas.FSArray")()
+    array_fs.elements = [elem]
+    cas.add(array_fs)
+
+    first = ParentType()
+    second = ParentType()
+    first.arr = array_fs
+    second.arr = array_fs
+    cas.add(first)
+    cas.add(second)
+
+    expected_json = cas.to_json()
+
+    cas_copy = cas.deep_copy()
+    copied_parents = list(cas_copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].arr is copied_parents[1].arr
+
+    actual_json = cas_copy.to_json()
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
+
+
+def test_json_roundtrip_shared_primitive_array_identity():
+    typesystem = TypeSystem()
+    Parent = typesystem.create_type("test.Parent")
+    typesystem.create_feature(
+        Parent,
+        "ints",
+        rangeType="uima.cas.IntegerArray",
+        elementType="uima.cas.Integer",
+        multipleReferencesAllowed=True,
+    )
+
+    cas = Cas(typesystem)
+    int_array = typesystem.get_type("uima.cas.IntegerArray")()
+    int_array.elements = [1, 2, 3]
+    cas.add(int_array)
+
+    first = Parent()
+    second = Parent()
+    first.ints = int_array
+    second.ints = int_array
+    cas.add(first)
+    cas.add(second)
+
+    expected_json = cas.to_json()
+
+    cas_copy = cas.deep_copy()
+    copied_parents = list(cas_copy.select("test.Parent"))
+    assert len(copied_parents) == 2
+    assert copied_parents[0].ints is copied_parents[1].ints
+
+    actual_json = cas_copy.to_json()
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
+
+
+def test_deep_copy_preserves_view_membership_for_non_annotation_fs_in_json():
+    cas = Cas()
+    initial_view = cas.get_view("_InitialView")
+    secondary_view = cas.create_view("sofa2")
+
+    initial_view.sofa_string = "First view"
+    secondary_view.sofa_string = "Second view contents"
+
+    integer_array = cas.typesystem.get_type("uima.cas.IntegerArray")()
+    integer_array.elements = [1, 2, 3]
+    initial_view.add(integer_array)
+
+    document_annotation = cas.typesystem.get_type(TYPE_NAME_DOCUMENT_ANNOTATION)()
+    document_annotation.begin = 0
+    document_annotation.end = len(secondary_view.sofa_string)
+    secondary_view.add(document_annotation)
+
+    expected_json = cas.to_json()
+
+    cas_copy = cas.deep_copy()
+
+    view1_members = list(cas_copy.get_view("_InitialView").select_all())
+    view2_members = list(cas_copy.get_view("sofa2").select_all())
+
+    assert [fs.xmiID for fs in view1_members] == [integer_array.xmiID]
+    assert [fs.xmiID for fs in view2_members] == [document_annotation.xmiID]
+
+    actual_json = cas_copy.to_json()
+    assert_json_equal(actual_json, expected_json, sort_keys=True)
+
+
 def test_multi_type_random_serialization_deserialization():
     generator = MultiTypeRandomCasGenerator()
     for i in range(0, 10):

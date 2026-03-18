@@ -198,6 +198,37 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     assert 1 == len(list(view2.select_all()))
 
 
+def test_deep_copy_preserves_view_membership_for_non_annotation_fs(small_typesystem_xml):
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
+    <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
+             xmlns:cassis="http:///cassis.ecore" xmi:version="2.0">
+        <cas:NULL xmi:id="0"/>
+        <tcas:DocumentAnnotation xmi:id="3" sofa="2" begin="0" end="20" language="x-unspecified"/>
+        <cas:IntegerArray xmi:id="4" elements="1 2 3"/>
+        <cas:Sofa xmi:id="1" sofaNum="1" sofaID="sofa1" mimeType="text/plain"
+                  sofaString="First view"/>
+        <cas:View sofa="1" members="4"/>
+        <cas:Sofa xmi:id="2" sofaNum="2" sofaID="sofa2" mimeType="text/plain"
+                  sofaString="Second view contents"/>
+        <cas:View sofa="2" members="3"/>
+    </xmi:XMI>
+    """
+
+    cas = load_cas_from_xmi(cas_xmi, typesystem=typesystem)
+    xmi_orig = cas.to_xmi()
+    cas_copy = cas.deep_copy()
+
+    view1_members = list(cas_copy.get_view("sofa1").select_all())
+    view2_members = list(cas_copy.get_view("sofa2").select_all())
+
+    assert [fs.xmiID for fs in view1_members] == [4]
+    assert [fs.xmiID for fs in view2_members] == [3]
+
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
 def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):
     typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type("cassis.Token")

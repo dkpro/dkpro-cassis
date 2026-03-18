@@ -13,6 +13,53 @@ from tests.test_files.test_cas_generators import (
 )
 from tests.util import assert_xml_equal
 
+
+def test_xmi_roundtrip_shared_fsarray_identity():
+    """Ensure that a CAS with two parents sharing the same FSArray deep-copies
+    while preserving shared-array identity and that the copy serializes to
+    the same XMI as the original.
+    """
+    from cassis.cas import Cas
+
+    cas = Cas()
+    ts = cas.typesystem
+
+    ElemType = ts.create_type("test.Elem")
+    ParentType = ts.create_type("test.Parent")
+    ts.create_feature(
+        ParentType,
+        name="arr",
+        rangeType="uima.cas.FSArray",
+        elementType="test.Elem",
+        multipleReferencesAllowed=True,
+    )
+
+    # shared array and element
+    elem = ElemType()
+    cas.add(elem)
+    array_fs = ts.get_type("uima.cas.FSArray")()
+    array_fs.elements = [elem]
+    cas.add(array_fs)
+
+    p1 = ParentType()
+    p2 = ParentType()
+    p1.arr = array_fs
+    p2.arr = array_fs
+    cas.add(p1)
+    cas.add(p2)
+
+    xmi_orig = cas.to_xmi()
+
+    cas_copy = cas.deep_copy()
+    # identity preserved
+    parents = list(cas_copy.select("test.Parent"))
+    assert parents[0].arr is parents[1].arr
+
+    # and XMI representation matches (structurally)
+    xmi_copy = cas_copy.to_xmi()
+    assert_xml_equal(xmi_copy, xmi_orig)
+
+
 # Deserializing
 
 FIXTURES = [

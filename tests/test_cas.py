@@ -456,9 +456,6 @@ def test_deep_copy_inlines_fsarray_when_multiple_references_not_allowed():
     assert copied_parent.arr.elements[0].type.name == "test.Elem"
 
 
-# Covered text
-
-
 def test_get_covered_text_tokens(tokens: list[FeatureStructure]):
     actual_text = [token.get_covered_text() for token in tokens]
 

@@ -410,6 +410,10 @@ class Cas:
                 # reindex the annotation (remove then add) so that the
                 # underlying SortedKeyList remains correctly ordered by the
                 # updated begin/end values.
+                if not hasattr(annotation, "begin") or annotation.begin is None:
+                    continue
+                if not hasattr(annotation, "end") or annotation.end is None:
+                    continue
                 if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
                     # fully contained
                     self._current_view.remove_annotation_from_index(annotation)

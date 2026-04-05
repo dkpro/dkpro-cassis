@@ -934,3 +934,75 @@ def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(sma
     # Ensure child was serialized and reloaded (may have unmapped offsets)
     all_fs = list(new_cas._find_all_fs())
     assert any(fs.type.name == "test.Child" for fs in all_fs)
+
+
+def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
+    """Ensure crop_sofa_string works with non-annotation feature structures (no begin/end)."""
+    typesystem = load_typesystem(small_typesystem_xml)
+
+    # Create an annotation and atypical annotations
+    Annotation = typesystem.get_type(TYPE_NAME_ANNOTATION)
+    ann = Annotation(begin=12, end=15)
+
+    # Create a non-annotation type (inheriting from TOP)
+    AtypicalAnnotation = typesystem.create_type("test.AtypicalAnnotation", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature("test.AtypicalAnnotation", "name", TYPE_NAME_STRING)
+    ann_wo_begin = AtypicalAnnotation(name="wo_begin", end=15)
+
+    cas = Cas(typesystem=typesystem)
+    cas.add(ann)
+    cas.add(ann_wo_begin)
+
+    cas.sofa_string = "a" * 50
+
+    cas.crop_sofa_string(10, 20)
+
+    # Normal annotation is modified, because it lies inside the cropped sofa string
+    assert cas.sofa_string == "a" * 10
+    assert ann in cas.select_all()
+    assert ann.begin == 2
+    assert ann.end == 5
+
+    # Atypical annotation should still be in the CAS
+    assert ann_wo_begin in cas.select_all()
+    assert ann_wo_begin.name == "wo_begin"
+    # annotation has been skipped -> end not adjusted
+    assert ann_wo_begin.end == 15
+    assert ann_wo_begin.begin is None
+
+
+
+
+def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
+    """Ensure crop_sofa_string works with non-annotation feature structures (no begin/end)."""
+    typesystem = load_typesystem(small_typesystem_xml)
+    cas = Cas(typesystem=typesystem)
+
+    # Create a non-annotation type (inheriting from TOP)
+    AtypicalAnnotation = typesystem.create_type("test.AtypicalAnnotation", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature("test.AtypicalAnnotation", "name", TYPE_NAME_STRING)
+
+    # Create an annotation and atypical annotations
+    Annotation = typesystem.get_type(TYPE_NAME_ANNOTATION)
+    ann = Annotation(begin=12, end=15)
+    ann_wo_end = AtypicalAnnotation(name="wo_end", begin=12)
+
+    cas.add(ann)
+    cas.add(ann_wo_end)
+
+    cas.sofa_string = "a" * 50
+
+    cas.crop_sofa_string(10, 20)
+
+    # Normal annotation is modified, because it lies inside the cropped sofa string
+    assert cas.sofa_string == "a" * 10
+    assert ann in cas.select_all()
+    assert ann.begin == 2
+    assert ann.end == 5
+
+    # Atypical annotation should still be in the CAS
+    assert ann_wo_end in cas.select_all()
+    assert ann_wo_end.name == "wo_end"
+    # annotation has been skipped -> begin not adjusted
+    assert ann_wo_end.begin == 12
+    assert ann_wo_end.end is None

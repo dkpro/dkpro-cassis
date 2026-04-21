@@ -28,7 +28,7 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic"
 ]
 dependencies = [
-    "lxml~=6.0.2",
+    "lxml>=6.0.2,<6.2.0",
     "attrs>=21.2,<26",
     "sortedcontainers~=2.4",
     "toposort~=1.10",

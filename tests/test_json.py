@@ -129,7 +129,7 @@ def test_multi_type_random_serialization_deserialization():
         generator.type_count = i + 1
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        print(f"CAS size: {sum(len(view.get_all_fs()) for view in randomized_cas.views)}")
         expected_json = randomized_cas.to_json()
 
         loaded_cas = load_cas_from_json(expected_json)
@@ -144,7 +144,7 @@ def test_multi_feature_random_serialization_deserialization():
         generator.size = (i + 1) * 10
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        print(f"CAS size: {sum(len(view.get_all_fs()) for view in randomized_cas.views)}")
         expected_json = randomized_cas.to_json()
 
         loaded_cas = load_cas_from_json(expected_json)

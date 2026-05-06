@@ -689,7 +689,7 @@ class CasXmiSerializer:
         elem = etree.SubElement(root, name)
 
         elem.attrib["sofa"] = str(view.sofa.xmiID)
-        elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_annotations()), key=int))
+        elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_fs()), key=int))
 
     def _collect_list_elements(self, type_name: str, value) -> List[str]:
         if type_name not in _LIST_TYPES:

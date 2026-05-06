@@ -55,7 +55,7 @@ def test_cas_to_comparable_text_on_multi_feature_random():
         generator.size = (i + 1) * 10
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        print(f"CAS size: {sum(len(view.get_all_fs()) for view in randomized_cas.views)}")
         cas_to_comparable_text(randomized_cas)
         # At this point, we are just testing if there is no exception during rendering
 
@@ -66,7 +66,7 @@ def test_cas_to_comparable_text_on_multi_type_random():
         generator.size = (i + 1) * 10
         typesystem = generator.generate_type_system()
         randomized_cas = generator.generate_cas(typesystem)
-        print(f"CAS size: {sum(len(view.get_all_annotations()) for view in randomized_cas.views)}")
+        print(f"CAS size: {sum(len(view.get_all_fs()) for view in randomized_cas.views)}")
         cas_to_comparable_text(randomized_cas)
         # At this point, we are just testing if there is no exception during rendering
 

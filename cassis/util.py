@@ -281,7 +281,7 @@ def _get_indexed_feature_structures(cas: Cas) -> Iterable[FeatureStructure]:
     feature_structures = []
     for sofa in cas.sofas:
         view = cas.get_view(sofa.sofaID)
-        feature_structures.extend(view.select_all())
+        feature_structures.extend(view.select_all_fs())
     return feature_structures
 
 

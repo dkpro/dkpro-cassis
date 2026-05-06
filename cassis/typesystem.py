@@ -500,7 +500,7 @@ class FeatureStructure:
         return str(self)
 
 
-@attr.s(slots=True, hash=False, eq=True, order=True, repr=False)
+@attr.s(slots=True, eq=False, order=False, repr=False)
 class Annotation(FeatureStructure):
     """Concrete base class for annotation instances.
 

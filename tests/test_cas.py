@@ -604,8 +604,8 @@ def test_add_non_annotation_and_select():
     """Create a non-annotation type, add an instance and verify select returns it."""
     cas = Cas()
 
-    # Create a type that does not define annotation offsets (begin/end)
-    NonAnnotation = cas.typesystem.create_type("test.NonAnnotation")
+    # Create a type that is not an annotation (override the default uima.tcas.Annotation supertype)
+    NonAnnotation = cas.typesystem.create_type("test.NonAnnotation", supertypeName=TYPE_NAME_TOP)
 
     # Instantiate and add to CAS
     fs = NonAnnotation()

@@ -4,7 +4,7 @@ import warnings
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import attr
 import deprecation
@@ -618,7 +618,7 @@ class Cas:
         Returns:
             A list of all indexed annotations in the current view.
         """
-        return cast(List[Annotation], [fs for fs in self._current_view.get_all_fs() if is_annotation(fs)])
+        return [fs for fs in self._current_view.get_all_fs() if isinstance(fs, Annotation)]
 
     @deprecation.deprecated(details="Use select_all_annotations() for annotations only or select_all_fs() for all indexed feature structures")
     def select_all(self) -> List[Annotation]:

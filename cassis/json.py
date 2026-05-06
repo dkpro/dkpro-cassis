@@ -565,7 +565,7 @@ class CasJsonSerializer:
     def _serialize_view(self, view: View):
         return {
             VIEW_SOFA_FIELD: view.sofa.xmiID,
-            VIEW_MEMBERS_FIELD: sorted(x.xmiID for x in view.get_all_annotations()),
+            VIEW_MEMBERS_FIELD: sorted(x.xmiID for x in view.get_all_fs()),
         }
 
     def _to_external_type_name(self, type_name: str):

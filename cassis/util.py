@@ -26,6 +26,7 @@ from cassis.typesystem import (
     TYPE_NAME_STRING_ARRAY,
     FeatureStructure,
     Type,
+    is_annotation,
     is_array,
     is_list,
 )
@@ -205,7 +206,7 @@ def _render_feature_structure(
     if indexed_column:
         row_data.append(_bool_to_java_string(id(fs) in indexed_feature_structure_ids))
 
-    if max_covered_text > 0 and _is_annotation_fs(fs):
+    if max_covered_text > 0 and is_annotation(fs):
         covered_text_value = _abbreviate_middle(fs.get_covered_text(), "...", max_covered_text)
         row_data.append(_escape(_render_string_value(covered_text_value, treat_empty_strings_as_null, null_value)))
 
@@ -280,7 +281,7 @@ def _get_indexed_feature_structures(cas: Cas) -> Iterable[FeatureStructure]:
     feature_structures = []
     for sofa in cas.sofas:
         view = cas.get_view(sofa.sofaID)
-        feature_structures.extend(view.select_all())
+        feature_structures.extend(view.select_all_fs())
     return feature_structures
 
 
@@ -354,7 +355,7 @@ def _generate_anchor(
 ) -> str:
     anchor = fs.type.name.rsplit(".", 2)[-1]  # Get the short type name (no package)
 
-    if include_offsets and _is_annotation_fs(fs):
+    if include_offsets and is_annotation(fs):
         anchor += f"[{fs.begin}-{fs.end}]"
 
     if add_index_mark:
@@ -381,10 +382,6 @@ def _is_multi_valued_feature_structure(fs: Any) -> bool:
     return isinstance(fs, FeatureStructure) and (is_array(fs.type) or is_list(fs.type))
 
 
-def _is_annotation_fs(fs: FeatureStructure) -> bool:
-    return hasattr(fs, "begin") and isinstance(fs.begin, int) and hasattr(fs, "end") and isinstance(fs.end, int)
-
-
 def _compare_fs(
     type_: Type,
     a: FeatureStructure,
@@ -395,11 +392,11 @@ def _compare_fs(
     if a is b:
         return 0
 
-    # duck-typing check if something is a annotation - if yes, try sorting by offets
-    fs_a_is_annotation = _is_annotation_fs(a)
-    fs_b_is_annotation = _is_annotation_fs(b)
+    # duck-typing check if something is an annotation - if yes, try sorting by offsets
+    fs_a_is_annotation = is_annotation(a)
+    fs_b_is_annotation = is_annotation(b)
     if fs_a_is_annotation != fs_b_is_annotation:
-        return -1
+        return -1 if fs_a_is_annotation else 1
     if fs_a_is_annotation and fs_b_is_annotation:
         begin_cmp = a.begin - b.begin
         if begin_cmp != 0:
@@ -536,7 +533,9 @@ def _escape(value: str) -> str:
     return value.translate(_ESCAPE_TRANSLATION)
 
 
-def _abbreviate_middle(value: str, middle: str, max_length: int) -> str:
+def _abbreviate_middle(value: Optional[str], middle: str, max_length: int) -> Optional[str]:
+    if value is None:
+        return None
     if len(value) <= max_length:
         return value
 
@@ -584,7 +583,7 @@ def _render_multi_valued_feature_structure(
     if values is None:
         return null_value
 
-    if sort_annotations_in_multi_valued_features and all(_is_annotation_fs(value) for value in values):
+    if sort_annotations_in_multi_valued_features and all(is_annotation(value) for value in values):
         values = sorted(values, key=lambda value: (value.begin, -value.end, value.type.name))
 
     return _render_sequence(

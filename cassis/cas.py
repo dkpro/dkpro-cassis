@@ -14,16 +14,18 @@ from sortedcontainers import SortedKeyList
 from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
-    TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_ANNOTATION,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
     FeatureStructure,
+    Annotation,
     Type,
     TypeCheckError,
     TypeSystem,
     TypeSystemMode,
+    is_annotation,
 )
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
@@ -171,29 +173,59 @@ class View:
         """
         return self._indices
 
-    def add_annotation_to_index(self, annotation: FeatureStructure):
-        self._indices[annotation.type.name].add(annotation)
+    def add_fs_to_indexes(self, fs: FeatureStructure):
+        """Adds a feature structure to the indexes of this view."""
+        self._indices[fs.type.name].add(fs)
 
-    def get_all_annotations(self) -> List[FeatureStructure]:
-        """Gets all the annotations in this view.
+    @deprecation.deprecated(details="Use add_fs_to_indexes()")
+    def add_annotation_to_index(self, annotation: FeatureStructure):
+        """Adds a feature structure to the indexes of this view.
+
+        .. deprecated::
+            Use :meth:`add_fs_to_indexes`.
+        """
+        self.add_fs_to_indexes(annotation)
+
+    def get_all_fs(self) -> List[FeatureStructure]:
+        """Gets all indexed feature structures in this view.
 
         Returns:
-            A list of all annotations in this view.
+            A list of all indexed feature structures (annotations and non-annotations) in this view.
 
         """
         result = []
-        for annotations_by_type in self._indices.values():
-            result.extend(annotations_by_type)
+        for fs_by_type in self._indices.values():
+            result.extend(fs_by_type)
         return result
 
-    def remove_annotation_from_index(self, annotation: FeatureStructure):
-        """Removes an annotation from an index. This throws if the
-        annotation was not present.
+    @deprecation.deprecated(details="Use get_all_fs() for all indexed feature structures or filter with cassis.typesystem.is_annotation")
+    def get_all_annotations(self) -> List[FeatureStructure]:
+        """Gets all indexed annotations in this view.
+
+        .. deprecated::
+            Use :meth:`get_all_fs` for all indexed feature structures, or filter the result
+            with :func:`cassis.typesystem.is_annotation`.
+        """
+        return [fs for fs in self.get_all_fs() if is_annotation(fs)]
+
+    def remove_fs_from_indexes(self, fs: FeatureStructure):
+        """Removes a feature structure from the indexes of this view. Throws if the
+        feature structure was not present.
 
         Args:
-            annotation: The annotation to remove.
+            fs: The feature structure to remove.
         """
-        self._indices[annotation.type.name].remove(annotation)
+        self._indices[fs.type.name].remove(fs)
+
+    @deprecation.deprecated(details="Use remove_fs_from_indexes()")
+    def remove_annotation_from_index(self, annotation: FeatureStructure):
+        """Removes a feature structure from the indexes of this view. Throws if the
+        feature structure was not present.
+
+        .. deprecated::
+            Use :meth:`remove_fs_from_indexes`.
+        """
+        self.remove_fs_from_indexes(annotation)
 
 
 class Index:
@@ -313,29 +345,29 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
-        """Adds an annotation to this Cas.
+    def add(self, fs: FeatureStructure, keep_id: Optional[bool] = True):
+        """Adds a feature structure to this Cas.
 
         Args:
-            annotation: The annotation to add.
-            keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
+            fs: The feature structure to add.
+            keep_id: Keep the XMI id of `fs` if true, else generate a new one.
 
         """
-        if not self._lenient and not self._typesystem.contains_type(annotation.type.name):
-            msg = f"Typesystem of CAS does not contain type [{annotation.type.name}]. "
+        if not self._lenient and not self._typesystem.contains_type(fs.type.name):
+            msg = f"Typesystem of CAS does not contain type [{fs.type.name}]. "
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
-        if keep_id and annotation.xmiID is not None:
-            next_id = annotation.xmiID
+        if keep_id and fs.xmiID is not None:
+            next_id = fs.xmiID
         else:
             next_id = self._get_next_xmi_id()
 
-        annotation.xmiID = next_id
-        if hasattr(annotation, "sofa"):
-            annotation.sofa = self.get_sofa()
+        fs.xmiID = next_id
+        if hasattr(fs, "sofa"):
+            fs.sofa = self.get_sofa()
 
-        self._current_view.add_annotation_to_index(annotation)
+        self._current_view.add_fs_to_indexes(fs)
 
     @deprecation.deprecated(details="Use add()")
     def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
@@ -404,7 +436,7 @@ class Cas:
             self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
             # Make an explicit snapshot of the current annotations to avoid
             # issues when removing/modifying elements during iteration.
-            for annotation in list(self.select_all()):
+            for annotation in list(self.select_all_annotations()):
                 # Determine whether the annotation will be kept and how its
                 # offsets need to be adjusted. If offsets are adjusted we must
                 # reindex the annotation (remove then add) so that the
@@ -412,28 +444,28 @@ class Cas:
                 # updated begin/end values.
                 if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
                     # fully contained
-                    self._current_view.remove_annotation_from_index(annotation)
+                    self._current_view.remove_fs_from_indexes(annotation)
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = annotation.end - sofa_begin
-                    self._current_view.add_annotation_to_index(annotation)
+                    self._current_view.add_fs_to_indexes(annotation)
                 elif overlap and sofa_begin < annotation.end <= sofa_end:
                     # left overlap (annotation starts before cut)
-                    self._current_view.remove_annotation_from_index(annotation)
+                    self._current_view.remove_fs_from_indexes(annotation)
                     annotation.begin = 0
                     annotation.end = annotation.end - sofa_begin
-                    self._current_view.add_annotation_to_index(annotation)
+                    self._current_view.add_fs_to_indexes(annotation)
                 elif overlap and sofa_begin <= annotation.begin < sofa_end:
                     # right overlap (annotation ends after cut)
-                    self._current_view.remove_annotation_from_index(annotation)
+                    self._current_view.remove_fs_from_indexes(annotation)
                     annotation.begin = annotation.begin - sofa_begin
                     annotation.end = len(self.sofa_string)
-                    self._current_view.add_annotation_to_index(annotation)
+                    self._current_view.add_fs_to_indexes(annotation)
                 elif overlap and annotation.begin <= sofa_begin and sofa_end <= annotation.end:
                     # annotation fully covers the cut
-                    self._current_view.remove_annotation_from_index(annotation)
+                    self._current_view.remove_fs_from_indexes(annotation)
                     annotation.begin = 0
                     annotation.end = len(self.sofa_string)
-                    self._current_view.add_annotation_to_index(annotation)
+                    self._current_view.add_fs_to_indexes(annotation)
                 else:
                     # annotation falls completely outside the cut; remove it
                     self.remove(annotation)
@@ -447,7 +479,7 @@ class Cas:
         Args:
             annotation: The annotation to remove.
         """
-        self._current_view.remove_annotation_from_index(annotation)
+        self._current_view.remove_fs_from_indexes(annotation)
 
     @deprecation.deprecated(details="Use remove()")
     def remove_annotation(self, annotation: FeatureStructure):
@@ -468,17 +500,13 @@ class Cas:
             type_: The type or name of the type name whose annotation instances are to be found
         Raises:
             ValueError: If range indices are invalid.
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
         """
 
-        # If no type is provided, operate on annotation-like feature
-        # structures only (those that have `begin` and `end`) to avoid
-        # AttributeError for arbitrary FS (e.g., instances of uima.cas.TOP).
         if type_ is None:
-            # Only operate on annotation-like feature structures to avoid
-            # AttributeError for non-annotation FS present in the view.
-            annotations = [a for a in self.select_all() if self.typesystem.is_instance_of(a.type, TYPE_NAME_ANNOTATION)]
+            annotations = self.select_all_annotations()
         else:
-            annotations = self.select(type_)
+            annotations = self.select(self._require_annotation_type(type_, "remove_annotations_in_range"))
         if self.sofa_string is None:
             raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
 
@@ -492,7 +520,7 @@ class Cas:
             raise ValueError(f"Invalid indices for begin {begin} and end {end}")
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
-    def get_covered_text(self, annotation: FeatureStructure) -> str:
+    def get_covered_text(self, annotation: Annotation) -> str:
         """Gets the text that is covered by `annotation`.
 
         Args:
@@ -518,7 +546,7 @@ class Cas:
         t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
         return self._get_feature_structures(t)
 
-    def select_covered(self, type_: Union[Type, str], covering_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covered(self, type_: Union[Type, str], covering_annotation: Annotation) -> List[Annotation]:
         """Returns a list of covered annotations.
 
         Return all annotations that are covered
@@ -533,8 +561,11 @@ class Cas:
         Returns:
             A list of covered annotations
 
+        Raises:
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
+
         """
-        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        t = self._require_annotation_type(type_, "select_covered")
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
@@ -544,7 +575,7 @@ class Cas:
                 result.append(annotation)
         return result
 
-    def select_covering(self, type_: Union[Type, str], covered_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covering(self, type_: Union[Type, str], covered_annotation: Annotation) -> List[Annotation]:
         """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -559,27 +590,64 @@ class Cas:
         Returns:
             A list of covering annotations
 
+        Raises:
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
+
         """
-        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        t = self._require_annotation_type(type_, "select_covering")
         c_begin = covered_annotation.begin
         c_end = covered_annotation.end
 
-        # We iterate over all annotations and check whether the provided annotation
-        # is covered in the current annotation
+        result = []
         for annotation in self._get_feature_structures(t):
             if c_begin >= annotation.begin and c_end <= annotation.end:
-                yield annotation
+                result.append(annotation)
+        return result
 
-    def select_all(self) -> List[FeatureStructure]:
-        """Finds all feature structures in this Cas
+    def select_all_fs(self) -> List[FeatureStructure]:
+        """Returns all indexed feature structures (annotations and non-annotations) in the current view.
 
         Returns:
-            A list of all annotations in this Cas
-
+            A list of all indexed feature structures in the current view.
         """
-        return self._current_view.get_all_annotations()
+        return self._current_view.get_all_fs()
+
+    def select_all_annotations(self) -> List[Annotation]:
+        """Returns all indexed annotations in the current view.
+
+        Non-annotation feature structures present in the view are filtered out, so it is safe
+        to access ``begin``/``end`` on the returned items.
+
+        Returns:
+            A list of all indexed annotations in the current view.
+        """
+        return [fs for fs in self._current_view.get_all_fs() if is_annotation(fs)]
+
+    @deprecation.deprecated(details="Use select_all_annotations() for annotations only or select_all_fs() for all indexed feature structures")
+    def select_all(self) -> List[Annotation]:
+        """Finds all annotations in this Cas.
+
+        .. deprecated::
+            Use :meth:`select_all_annotations` for annotations only, or
+            :meth:`select_all_fs` for all indexed feature structures.
+        """
+        return self.select_all_annotations()
 
     # FS handling
+
+    def _require_annotation_type(self, type_: Union[Type, str], operation: str) -> Type:
+        """Resolves ``type_`` and validates it is a subtype of ``uima.tcas.Annotation``.
+
+        Raises:
+            TypeError: If the resolved type is not an annotation type.
+        """
+        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        if not self.typesystem.is_instance_of(t, TYPE_NAME_ANNOTATION):
+            raise TypeError(
+                f"Type [{t.name}] is not a subtype of [{TYPE_NAME_ANNOTATION}]; "
+                f"{operation} only operates on annotation types"
+            )
+        return t
 
     def _get_feature_structures(self, type_: Type) -> List[FeatureStructure]:
         """Returns a list of all feature structures of type `type_name` and child types."""
@@ -838,7 +906,7 @@ class Cas:
         else:
             for sofa in self.sofas:
                 view = self.get_view(sofa.sofaID)
-                openlist.extend(view.select_all())
+                openlist.extend(view.select_all_fs())
 
         ts = self.typesystem
         while openlist:
@@ -939,8 +1007,9 @@ class Cas:
 
 
 def _sort_func(a: FeatureStructure) -> Tuple[int, int, int]:
-    d = a.__slots__
-    if "begin" in d and "end" in d:
-        return a.begin, a.end, id(a)
-    else:
-        return sys.maxsize, sys.maxsize, id(a)
+    xmi_id = getattr(a, "xmiID", None)
+    tiebreaker = xmi_id if xmi_id is not None else id(a)
+    if is_annotation(a):
+        return a.begin, a.end, tiebreaker
+    # Non-annotation feature structures sort after annotations.
+    return sys.maxsize, sys.maxsize, tiebreaker

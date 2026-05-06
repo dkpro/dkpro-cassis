@@ -109,8 +109,8 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
 
     view1 = cas.get_view("sofa1")
     view2 = cas.get_view("sofa2")
-    assert 2 == len(list(view1.select_all()))
-    assert 1 == len(list(view2.select_all()))
+    assert 2 == len(list(view1.select_all_annotations()))
+    assert 1 == len(list(view2.select_all_annotations()))
 
 
 def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):

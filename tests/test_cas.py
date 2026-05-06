@@ -336,8 +336,8 @@ def test_select_only_returns_annotations_of_current_view(
     view = cas.create_view("testView")
     view.add_all(sentences)
 
-    actual_annotations_in_initial_view = list(cas.get_view("_InitialView").select_all())
-    actual_annotations_in_test_view = list(cas.get_view("testView").select_all())
+    actual_annotations_in_initial_view = list(cas.get_view("_InitialView").select_all_annotations())
+    actual_annotations_in_test_view = list(cas.get_view("testView").select_all_annotations())
 
     assert tokens == actual_annotations_in_initial_view
     assert sentences == actual_annotations_in_test_view
@@ -600,6 +600,25 @@ def test_covered_text_on_non_annotation():
         top.get_covered_text()
 
 
+def test_add_non_annotation_and_select():
+    """Create a non-annotation type, add an instance and verify select returns it."""
+    cas = Cas()
+
+    # Create a type that is not an annotation (override the default uima.tcas.Annotation supertype)
+    NonAnnotation = cas.typesystem.create_type("test.NonAnnotation", supertypeName=TYPE_NAME_TOP)
+
+    # Instantiate and add to CAS
+    fs = NonAnnotation()
+    cas.add(fs)
+
+    # Should be retrievable by select using the type name
+    selected = list(cas.select("test.NonAnnotation"))
+    assert selected == [fs]
+
+    # And visible via select_all_fs
+    assert fs in cas.select_all_fs()
+
+
 def test_covered_text_on_annotation_without_sofa():
     cas = Cas()
     Annotation = cas.typesystem.get_type(TYPE_NAME_ANNOTATION)
@@ -607,6 +626,20 @@ def test_covered_text_on_annotation_without_sofa():
 
     with pytest.raises(AnnotationHasNoSofa):
         ann.get_covered_text()
+
+
+def test_runtime_generated_annotation_is_detected_and_shown_in_anchor():
+    ts = TypeSystem()
+    # Create a new annotation subtype (should inherit from Annotation base)
+    MyAnno = ts.create_type("my.pkg.MyAnnotation", supertypeName="uima.tcas.Annotation")
+
+    cas = Cas(ts)
+    # Create an instance of the runtime-generated type; ensure we can set begin/end
+    a = MyAnno(begin=5, end=10)
+    cas.add(a)
+
+    text = cas_to_comparable_text(cas)
+    assert "MyAnnotation[5-10]" in text
 
 
 def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
@@ -617,12 +650,12 @@ def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
     end = 20
 
     expected_leftover_annotations = [
-        annotation for annotation in cas.select_all() if not (begin <= annotation.begin < annotation.end <= end)
+        annotation for annotation in cas.select_all_annotations() if not (begin <= annotation.begin < annotation.end <= end)
     ]
 
     cas.remove_annotations_in_range(begin, end)
 
-    result_leftover_annotations = cas.select_all()
+    result_leftover_annotations = cas.select_all_annotations()
 
     assert len(result_leftover_annotations) == len(expected_leftover_annotations)
 
@@ -639,13 +672,13 @@ def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
     type_ = "cassis.Token"
     expected_leftover_annotations = [
         annotation
-        for annotation in cas.select_all()
+        for annotation in cas.select_all_annotations()
         if not (begin <= annotation.begin < annotation.end <= end and annotation.type.name == type_)
     ]
 
     cas.remove_annotations_in_range(begin, end, type_)
 
-    result_leftover_annotations = cas.select_all()
+    result_leftover_annotations = cas.select_all_annotations()
 
     assert len(result_leftover_annotations) == len(expected_leftover_annotations)
 
@@ -665,7 +698,7 @@ def test_crop_sofa_string(small_typesystem_xml, small_xmi):
     # Snapshot annotations' original offsets so we can compute expected adjusted offsets
     expected_leftover_annotations = [
         (annotation, annotation.begin, annotation.end)
-        for annotation in cas.select_all()
+        for annotation in cas.select_all_annotations()
         if overlapping(begin, end, annotation.begin, annotation.end)
     ]
 
@@ -674,7 +707,7 @@ def test_crop_sofa_string(small_typesystem_xml, small_xmi):
     cas.crop_sofa_string(begin, end)
 
     assert cas.sofa_string == original_sofa[begin:end]
-    assert len(cas.select_all()) == len(expected_leftover_annotations)
+    assert len(cas.select_all_annotations()) == len(expected_leftover_annotations)
 
     # Verify offsets were adjusted as expected for the remaining annotations
     for annotation, orig_begin, orig_end in expected_leftover_annotations:
@@ -709,7 +742,7 @@ def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
     # Snapshot annotations' original offsets so we can compute expected adjusted offsets
     expected_leftover_annotations = [
         (annotation, annotation.begin, annotation.end)
-        for annotation in cas.select_all()
+        for annotation in cas.select_all_annotations()
         if begin <= annotation.begin < annotation.end <= end
     ]
 
@@ -718,7 +751,7 @@ def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
     cas.crop_sofa_string(begin, end, overlap=False)
 
     assert cas.sofa_string == original_sofa[begin:end]
-    assert len(cas.select_all()) == len(expected_leftover_annotations)
+    assert len(cas.select_all_annotations()) == len(expected_leftover_annotations)
 
     # Verify offsets were adjusted as expected for the remaining annotations
     for annotation, orig_begin, orig_end in expected_leftover_annotations:
@@ -819,11 +852,11 @@ def test_crop_sofa_string_various_overlap_cases(
     assert cas.sofa_string == original_sofa[begin:end]
 
     if expect_kept:
-        assert ann in cas.select_all()
+        assert ann in cas.select_all_annotations()
         assert ann.begin == expect_begin
         assert ann.end == expect_end
     else:
-        assert ann not in cas.select_all()
+        assert ann not in cas.select_all_annotations()
 
 
 def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
@@ -853,7 +886,7 @@ def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
     cas.crop_sofa_string(begin, end)
 
     # Child was outside the cut and therefore removed from the view index
-    assert child not in cas.select_all()
+    assert child not in cas.select_all_annotations()
 
     # But child is still reachable via parent and will be discovered by traversal
     all_fs = list(cas._find_all_fs())

@@ -549,7 +549,7 @@ class Cas:
                 result.append(annotation)
         return result
 
-    def select_covering(self, type_: Union[Type, str], covered_annotation: Annotation) -> List[FeatureStructure]:
+    def select_covering(self, type_: Union[Type, str], covered_annotation: Annotation) -> List[Annotation]:
         """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -569,11 +569,11 @@ class Cas:
         c_begin = covered_annotation.begin
         c_end = covered_annotation.end
 
-        # We iterate over all annotations and check whether the provided annotation
-        # is covered in the current annotation
+        result = []
         for annotation in self._get_feature_structures(t):
             if c_begin >= annotation.begin and c_end <= annotation.end:
-                yield annotation
+                result.append(annotation)
+        return result
 
     def select_all(self) -> List[Annotation]:
         """Finds all feature structures in this Cas

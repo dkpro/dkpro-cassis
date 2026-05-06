@@ -392,11 +392,11 @@ def _compare_fs(
     if a is b:
         return 0
 
-    # duck-typing check if something is a annotation - if yes, try sorting by offets
+    # duck-typing check if something is an annotation - if yes, try sorting by offsets
     fs_a_is_annotation = is_annotation(a)
     fs_b_is_annotation = is_annotation(b)
     if fs_a_is_annotation != fs_b_is_annotation:
-        return -1
+        return -1 if fs_a_is_annotation else 1
     if fs_a_is_annotation and fs_b_is_annotation:
         begin_cmp = a.begin - b.begin
         if begin_cmp != 0:

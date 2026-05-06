@@ -15,6 +15,7 @@ from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
     TYPE_NAME_DOCUMENT_ANNOTATION,
+    TYPE_NAME_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
     TYPE_NAME_SOFA,
@@ -372,6 +373,78 @@ class Cas:
         """
         self.add_all(annotations)
 
+    def crop_sofa_string(self, sofa_begin: int, sofa_end: int, overlap: bool = True):
+        """Replaces current sofa string with a cutout of the given range. Removes all annotations outside of range,
+        but keeps annotations that overlap with cutout points by default.
+
+        Args:
+            sofa_begin: The beginning of the cutout sofa.
+            sofa_end: The end of the cutout sofa.
+            overlap: If true, keeps overlapping annotations and modifies begin and end of annotation accordingly.
+
+        Raises:
+            ValueError: If cutout indices are invalid.
+        Note:
+            Removal performed by this method only removes annotations from the current view's
+            index. Feature structures that are removed from the view remain in memory and any
+            references from kept annotations to those feature structures are left intact. Such
+            transitively referenced feature structures will still be discovered by traversal
+            (e.g. ``_find_all_fs()``) and included during serialization.
+
+            Important: only the annotations that are kept (inside the cut or overlapping
+            the cut boundaries) have their ``begin``/``end`` offsets adjusted to the new
+            sofa coordinate space. Feature structures that are removed from the view are
+            not re-anchored or relocated — they keep their original ``begin``/``end``
+            values. As a result, serializers may attempt to transcode offsets that fall
+            outside the new sofa range; the offset converter will emit ``UserWarning``
+            messages for unmappable offsets but will not raise an exception. If you
+            require a cascading delete or re-anchoring of transitively referenced feature
+            structures, perform an explicit graph traversal and removal or implement an
+            opt-in ``cascade=True`` behavior.
+        """
+        if self.sofa_string is None:
+            raise ValueError("Cannot crop sofa string: CAS has no sofa string for the current view")
+
+        if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
+            self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
+            # Make an explicit snapshot of the current annotations to avoid
+            # issues when removing/modifying elements during iteration.
+            for annotation in list(self.select_all()):
+                # Determine whether the annotation will be kept and how its
+                # offsets need to be adjusted. If offsets are adjusted we must
+                # reindex the annotation (remove then add) so that the
+                # underlying SortedKeyList remains correctly ordered by the
+                # updated begin/end values.
+                if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
+                    # fully contained
+                    self._current_view.remove_annotation_from_index(annotation)
+                    annotation.begin = annotation.begin - sofa_begin
+                    annotation.end = annotation.end - sofa_begin
+                    self._current_view.add_annotation_to_index(annotation)
+                elif overlap and sofa_begin < annotation.end <= sofa_end:
+                    # left overlap (annotation starts before cut)
+                    self._current_view.remove_annotation_from_index(annotation)
+                    annotation.begin = 0
+                    annotation.end = annotation.end - sofa_begin
+                    self._current_view.add_annotation_to_index(annotation)
+                elif overlap and sofa_begin <= annotation.begin < sofa_end:
+                    # right overlap (annotation ends after cut)
+                    self._current_view.remove_annotation_from_index(annotation)
+                    annotation.begin = annotation.begin - sofa_begin
+                    annotation.end = len(self.sofa_string)
+                    self._current_view.add_annotation_to_index(annotation)
+                elif overlap and annotation.begin <= sofa_begin and sofa_end <= annotation.end:
+                    # annotation fully covers the cut
+                    self._current_view.remove_annotation_from_index(annotation)
+                    annotation.begin = 0
+                    annotation.end = len(self.sofa_string)
+                    self._current_view.add_annotation_to_index(annotation)
+                else:
+                    # annotation falls completely outside the cut; remove it
+                    self.remove(annotation)
+        else:
+            raise ValueError(f"Invalid indices for begin {sofa_begin} and end {sofa_end}")
+
     def remove(self, annotation: FeatureStructure):
         """Removes an annotation from an index. This throws if the
         annotation was not present.
@@ -390,6 +463,38 @@ class Cas:
             annotation: The annotation to remove.
         """
         self.remove(annotation)
+
+    def remove_annotations_in_range(self, begin: int, end: int, type_: Optional[Union[Type, str]] = None):
+        """Removes annotations between two indices of the sofa string.
+
+        Args:
+            begin: The beginning of the cutting interval.
+            end: The end of the cutting interval.
+            type_: The type or name of the type name whose annotation instances are to be found
+        Raises:
+            ValueError: If range indices are invalid.
+        """
+
+        # If no type is provided, operate on annotation-like feature
+        # structures only (those that have `begin` and `end`) to avoid
+        # AttributeError for arbitrary FS (e.g., instances of uima.cas.TOP).
+        if type_ is None:
+            # Only operate on annotation-like feature structures to avoid
+            # AttributeError for non-annotation FS present in the view.
+            annotations = [a for a in self.select_all() if self.typesystem.is_instance_of(a.type, TYPE_NAME_ANNOTATION)]
+        else:
+            annotations = self.select(type_)
+        if self.sofa_string is None:
+            raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
+
+        if 0 <= begin < end <= len(self.sofa_string):
+            # Make an explicit snapshot of the annotations to avoid issues when
+            # removing elements during iteration (defensive copy).
+            for annotation in list(annotations):
+                if begin <= annotation.begin < annotation.end <= end:
+                    self.remove(annotation)
+        else:
+            raise ValueError(f"Invalid indices for begin {begin} and end {end}")
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
     def get_covered_text(self, annotation: Annotation) -> str:

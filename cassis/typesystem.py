@@ -599,11 +599,13 @@ class Type:
                 cur = cur.supertype
             return False
 
+        is_annotation_type = _is_annotation_type(self)
+
         # When inheriting from our concrete Annotation base, do not redeclare
         # the 'begin' and 'end' features as fields; they are already present.
         fields = {}
         for feature in self.all_features:
-            if feature.name in {"begin", "end"} and _is_annotation_type(self):
+            if feature.name in {"begin", "end"} and is_annotation_type:
                 # skip - Annotation base provides these
                 continue
             fields[feature.name] = attr.ib(default=None, repr=(feature.name != "sofa"))
@@ -612,7 +614,7 @@ class Type:
         # We assign this to a lambda to make it lazy
         # When creating large type systems, almost no types are used so
         # creating them on the fly is on average better
-        bases = (Annotation,) if _is_annotation_type(self) else (FeatureStructure,)
+        bases = (Annotation,) if is_annotation_type else (FeatureStructure,)
 
         def _make_fs_class():
             cls = attr.make_class(name, fields, bases=bases, slots=True, eq=False, order=False)

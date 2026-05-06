@@ -14,6 +14,7 @@ from sortedcontainers import SortedKeyList
 from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
+    TYPE_NAME_ANNOTATION,
     TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
@@ -503,13 +504,16 @@ class Cas:
             ValueError: If range indices are invalid.
         """
 
-        # If no type is provided, operate on annotation-like feature
-        # structures only (those that have `begin` and `end`) to avoid
-        # AttributeError for arbitrary FS (e.g., instances of uima.cas.TOP).
         if type_ is None:
             annotations = self.select_all_annotations()
         else:
-            annotations = self.select(type_)
+            t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+            if not self.typesystem.is_instance_of(t, TYPE_NAME_ANNOTATION):
+                raise TypeError(
+                    f"Type [{t.name}] is not a subtype of [{TYPE_NAME_ANNOTATION}]; "
+                    f"remove_annotations_in_range only operates on annotation types"
+                )
+            annotations = self.select(t)
         if self.sofa_string is None:
             raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
 

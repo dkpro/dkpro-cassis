@@ -6,7 +6,7 @@ from enum import Enum, auto
 from io import BytesIO
 from itertools import chain, filterfalse
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, Union
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, TypeGuard, Union
 
 import attr
 from deprecation import deprecated
@@ -513,8 +513,8 @@ class Annotation(FeatureStructure):
     end: int = attr.ib(default=0)
 
 
-def is_annotation(fs: FeatureStructure) -> bool:
-    return hasattr(fs, "begin") and isinstance(fs.begin, int) and hasattr(fs, "end") and isinstance(fs.end, int)
+def is_annotation(fs: FeatureStructure) -> TypeGuard[Annotation]:
+    return isinstance(fs, Annotation)
 
 
 @attr.s(slots=True, eq=False, order=False, repr=False)

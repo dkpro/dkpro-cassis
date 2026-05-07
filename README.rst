@@ -8,7 +8,7 @@ dkpro-cassis
   :target: https://cassis.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
 
-.. image:: https://codecov.io/gh/dkpro/dkpro-cassis/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/dkpro/dkpro-cassis/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/dkpro/dkpro-cassis
 
 .. image:: https://img.shields.io/pypi/l/dkpro-cassis.svg
@@ -464,27 +464,24 @@ If you find this repository helpful, feel free to cite
 Development
 -----------
 
-The required dependencies are managed by **pip**. A virtual environment
-containing all needed packages for development and production can be
-created and activated by
+The project uses `uv <https://docs.astral.sh/uv/>`_ to manage its virtual
+environment and dependencies. To set up a development environment with all
+dev and doc dependencies installed, run
 
 ::
 
-    virtualenv venv --python=python3 --no-site-packages
-    source venv/bin/activate
-    pip install -e ".[test, dev, doc]"
+    uv sync --all-groups
 
-The tests can be run in the current environment by invoking
+Common development tasks are exposed via `taskipy <https://github.com/taskipy/taskipy>`_:
 
 ::
 
-    make test
-
-or in a clean environment via
-
-::
-
-    tox
+    uv run task test       # run the test suite
+    uv run task test-cov   # run tests with coverage
+    uv run task lint       # run ruff linter
+    uv run task format     # format code with ruff
+    uv run task fix        # auto-fix lint issues
+    uv run task typecheck  # run pyright
 
 Release
 -------

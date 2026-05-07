@@ -1779,6 +1779,124 @@ def test_deep_copy_with_nonempty_string_list_range():
     assert copied.strings.head == "hello"
 
 
+def test_deep_copy_preserves_non_indexed_fsarray_element():
+    """deep_copy should preserve FSArray elements that were never `cas.add()`-ed
+    standalone (so they enter traversal with xmiID=None). Regression for the case
+    where xmiIDs are assigned during traversal but our element-id snapshot can run
+    before the referenced FS has been visited.
+    """
+    typesystem = TypeSystem()
+    Child = typesystem.create_type("test.Child", supertypeName=TYPE_NAME_ANNOTATION)
+    Parent = typesystem.create_type("test.Parent", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(
+        Parent,
+        "items",
+        rangeType=typesystem.get_type("uima.cas.FSArray"),
+        elementType=Child,
+        multipleReferencesAllowed=False,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "abcd"
+
+    # Children are NOT cas.add()-ed; they're only reachable via the parent's FSArray.
+    child1 = Child(begin=0, end=1)
+    child2 = Child(begin=1, end=2)
+    arr = typesystem.get_type("uima.cas.FSArray")()
+    arr.elements = [child1, child2]
+
+    parent = Parent(begin=0, end=2)
+    parent.items = arr
+    cas.add(parent)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_parent = copy.select("test.Parent")[0]
+    assert copied_parent.items is not None
+    copied_elements = list(copied_parent.items.elements)
+    assert len(copied_elements) == 2
+    assert copied_elements[0] is not None
+    assert copied_elements[1] is not None
+    assert copied_elements[0].begin == 0 and copied_elements[0].end == 1
+    assert copied_elements[1].begin == 1 and copied_elements[1].end == 2
+
+
+def test_deep_copy_preserves_non_indexed_fslist_element():
+    """deep_copy should preserve FSList head FS that were never `cas.add()`-ed standalone
+    (so they enter traversal with xmiID=None). Regression for the same xmiID-snapshot
+    ordering bug as the FSArray case, but for FSList traversal.
+    """
+    typesystem = TypeSystem()
+    Item = typesystem.create_type("test.Item", supertypeName=TYPE_NAME_ANNOTATION)
+    Container = typesystem.create_type("test.Container", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(
+        Container,
+        "items",
+        rangeType="uima.cas.FSList",
+        elementType=Item,
+        multipleReferencesAllowed=False,
+    )
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "abcd"
+
+    # Items are NOT cas.add()-ed; only reachable via the container's FSList.
+    first = Item(begin=0, end=1)
+    second = Item(begin=1, end=2)
+    container = Container(begin=0, end=2)
+    container.items = _make_fs_list(typesystem, first, second)
+    cas.add(container)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_container = copy.select("test.Container")[0]
+    copied_items = _fs_list_elements(copied_container.items)
+    assert len(copied_items) == 2
+    assert [item.begin for item in copied_items] == [0, 1]
+    assert copied_items[0] is not first
+    assert copied_items[1] is not second
+
+
+def test_deep_copy_preserves_non_indexed_standalone_fsarray_element():
+    """deep_copy of a standalone FSArray FS whose elements were never cas.add()-ed.
+    Exercises the standalone-FSArray branch (sofa.sofaArray-style) for the xmiID
+    traversal-order bug.
+    """
+    typesystem = TypeSystem()
+    Child = typesystem.create_type("test.Child", supertypeName=TYPE_NAME_ANNOTATION)
+    Parent = typesystem.create_type("test.Parent", supertypeName=TYPE_NAME_ANNOTATION)
+    typesystem.create_feature(
+        Parent,
+        "arr",
+        rangeType=typesystem.get_type("uima.cas.FSArray"),
+        elementType=Child,
+        multipleReferencesAllowed=True,  # standalone FSArray FS path
+    )
+
+    cas = Cas(typesystem=typesystem)
+    cas.sofa_string = "abcd"
+
+    child1 = Child(begin=0, end=1)
+    child2 = Child(begin=1, end=2)
+    # Add only the standalone array FS, not its elements.
+    arr = typesystem.get_type("uima.cas.FSArray")()
+    arr.elements = [child1, child2]
+    cas.add(arr)
+
+    parent = Parent(begin=0, end=2)
+    parent.arr = arr
+    cas.add(parent)
+
+    copy = cas.deep_copy(copy_typesystem=False)
+
+    copied_parent = copy.select("test.Parent")[0]
+    copied_elements = list(copied_parent.arr.elements)
+    assert len(copied_elements) == 2
+    assert copied_elements[0] is not None
+    assert copied_elements[1] is not None
+    assert copied_elements[0].begin == 0 and copied_elements[0].end == 1
+
+
 def test_deep_copy_of_empty_cas():
     """Ensure deep_copy works on a freshly initialized CAS with no user FS."""
     cas = Cas()

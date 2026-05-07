@@ -33,6 +33,7 @@ from cassis.typesystem import (
     Annotation,
     Type,
     TypeCheckError,
+    TypeNotFoundError,
     TypeSystem,
     TypeSystemMode,
     is_annotation,
@@ -1125,7 +1126,16 @@ class Cas:
                 traversal_seeds.append(sofa.sofaArray)
 
         for fs in self._find_all_fs(seeds=traversal_seeds):
-            t = ts.get_type(fs.type.name)
+            try:
+                t = ts.get_type(fs.type.name)
+            except TypeNotFoundError as e:
+                raise TypeNotFoundError(
+                    f"deep_copy() cannot copy feature structure of type '{fs.type.name}': "
+                    f"the type is not present in the target typesystem. This can happen when "
+                    f"the source CAS was loaded leniently against an incomplete typesystem and "
+                    f"contains feature structures whose types were not declared. deep_copy() "
+                    f"requires every feature structure's type to be present in the typesystem."
+                ) from e
             fs_copy = t()
 
             if t.name == TYPE_NAME_FS_ARRAY and fs.elements is not None:

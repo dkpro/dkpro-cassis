@@ -8,7 +8,7 @@ authors:
   given-names: "Richard"
   orcid: "https://orcid.org/0000-0003-0991-7045"
 title: "dkpro-cassis"
-version: 0.6.1
+version: 0.11.0
 doi: 10.5281/zenodo.5537447
-date-released: 2021-11-23
+date-released: 2026-05-07
 url: "https://github.com/dkpro/dkpro-cassis"

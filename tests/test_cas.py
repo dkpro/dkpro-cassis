@@ -996,6 +996,7 @@ def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
 
     cas.add(ann)
     cas.add(ann_wo_end)
+    cas.add(ann_wo_end2)
 
     cas.sofa_string = "a" * 50
 
@@ -1013,3 +1014,7 @@ def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
     # annotation has been skipped -> begin not adjusted
     assert ann_wo_end.begin == 2
     assert ann_wo_end.end is None
+
+
+    # Atypical annotation outside of crop range is removed
+    assert ann_wo_end2 in cas.select_all()

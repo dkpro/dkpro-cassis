@@ -442,6 +442,13 @@ class Cas:
             transitively referenced feature structures will still be discovered by traversal
             (e.g. ``_find_all_fs()``) and included during serialization.
 
+            Atypical annotations (missing ``begin``, ``end``, or both) are handled as follows:
+            - Feature structures with only ``begin`` are kept if ``begin <= sofa_end``.
+            - Feature structures with only ``end`` are kept if ``end >= sofa_begin``.
+            - Non-anchored feature structures (missing both) are always kept.
+            For all kept feature structures, existing offsets are adjusted and clamped to the
+            new sofa range.
+
             Important: only the annotations that are kept (inside the cut or overlapping
             the cut boundaries) have their ``begin``/``end`` offsets adjusted to the new
             sofa coordinate space. Feature structures that are removed from the view are
@@ -458,41 +465,62 @@ class Cas:
 
         if 0 <= sofa_begin < sofa_end <= len(self.sofa_string):
             self.sofa_string = self.sofa_string[sofa_begin:sofa_end]
-            # Make an explicit snapshot of the current annotations to avoid
-            # issues when removing/modifying elements during iteration.
-            for annotation in list(self.select_all_annotations()):
+            new_sofa_len = len(self.sofa_string)
+
+            for annotation in list(self.select_all()):
                 # Determine whether the annotation will be kept and how its
                 # offsets need to be adjusted. If offsets are adjusted we must
                 # reindex the annotation (remove then add) so that the
                 # underlying SortedKeyList remains correctly ordered by the
                 # updated begin/end values.
-                if sofa_begin <= annotation.begin and annotation.end <= sofa_end:
-                    # fully contained
-                    self._current_view.remove_fs_from_indexes(annotation)
-                    annotation.begin = annotation.begin - sofa_begin
-                    annotation.end = annotation.end - sofa_begin
-                    self._current_view.add_fs_to_indexes(annotation)
-                elif overlap and sofa_begin < annotation.end <= sofa_end:
-                    # left overlap (annotation starts before cut)
-                    self._current_view.remove_fs_from_indexes(annotation)
-                    annotation.begin = 0
-                    annotation.end = annotation.end - sofa_begin
-                    self._current_view.add_fs_to_indexes(annotation)
-                elif overlap and sofa_begin <= annotation.begin < sofa_end:
-                    # right overlap (annotation ends after cut)
-                    self._current_view.remove_fs_from_indexes(annotation)
-                    annotation.begin = annotation.begin - sofa_begin
-                    annotation.end = len(self.sofa_string)
-                    self._current_view.add_fs_to_indexes(annotation)
-                elif overlap and annotation.begin <= sofa_begin and sofa_end <= annotation.end:
-                    # annotation fully covers the cut
-                    self._current_view.remove_fs_from_indexes(annotation)
-                    annotation.begin = 0
-                    annotation.end = len(self.sofa_string)
-                    self._current_view.add_fs_to_indexes(annotation)
+                has_begin = hasattr(annotation, "begin") and annotation.begin is not None
+                has_end = hasattr(annotation, "end") and annotation.end is not None
+
+                # Determine if the annotation overlaps with the new sofa range
+                if has_begin and has_end:
+                    #     [--- sofa ---]
+                    #     B            E
+                    #
+                    #     [-- ann --]                 (is_inside)
+                    #        [-- ann --]              (is_inside)
+                    #  [------------ ann ----------]  (is_overlapping)
+                    #     [-- ann ----------]         (is_overlapping)
+                    #             [---------- ann --] (is_overlapping)
+                    is_inside = sofa_begin <= annotation.begin and annotation.end <= sofa_end
+                    is_overlapping = overlap and (
+                        (sofa_begin < annotation.end <= sofa_end) or
+                        (sofa_begin <= annotation.begin < sofa_end) or
+                        (annotation.begin <= sofa_begin and sofa_end <= annotation.end)
+                    )
+                    keep = is_inside or is_overlapping
+                elif has_begin:
+                    #    [--- sofa ---]
+                    #    B            E
+                    #
+                    #  [-- ann ...                    (keep = True)
+                    #            [-- ann ...          (keep = True)
+                    #                     [-- ann ... (keep = False)
+                    keep = annotation.begin <= sofa_end
+                elif has_end:
+                    #     [--- sofa ---]
+                    #     B            E
+                    #
+                    #     ... ann --]      (keep = True)
+                    #         ... ann --]  (keep = True)
+                    #  --]                 (keep = False)
+                    keep = annotation.end >= sofa_begin
                 else:
-                    # annotation falls completely outside the cut; remove it
-                    self.remove(annotation)
+                    keep = True # Non-anchored FS are always kept
+
+                if keep:
+                    self._current_view.remove_annotation_from_index(annotation)
+                    if has_begin:
+                        annotation.begin = max(0, min(new_sofa_len, annotation.begin - sofa_begin))
+                    if has_end:
+                        annotation.end = max(0, min(new_sofa_len, annotation.end - sofa_begin))
+                    self._current_view.add_annotation_to_index(annotation)
+                else:
+                    self._current_view.remove_annotation_from_index(annotation)
         else:
             raise ValueError(f"Invalid indices for begin {sofa_begin} and end {sofa_end}")
 

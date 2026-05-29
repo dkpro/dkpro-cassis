@@ -1426,9 +1426,9 @@ def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
     # Atypical annotation should still be in the CAS
     assert ann_wo_begin in cas.select_all()
     assert ann_wo_begin.name == "wo_begin"
-    # annotation has been skipped -> end not adjusted
+    # default begin=0 is treated as a real offset
     assert ann_wo_begin.end == 5
-    assert ann_wo_begin.begin is None
+    assert ann_wo_begin.begin == 0
 
 
     # Atypical annotation outside of crop range is removed
@@ -1469,9 +1469,9 @@ def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
     # Atypical annotation should still be in the CAS
     assert ann_wo_end in cas.select_all()
     assert ann_wo_end.name == "wo_end"
-    # annotation has been skipped -> begin not adjusted
+    # default end=0 is treated as a real offset
     assert ann_wo_end.begin == 2
-    assert ann_wo_end.end is None
+    assert ann_wo_end.end == 0
 
 
     # Atypical annotation outside of crop range is removed

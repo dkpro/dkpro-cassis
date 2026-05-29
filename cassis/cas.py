@@ -14,17 +14,43 @@ from sortedcontainers import SortedKeyList
 from cassis.typesystem import (
     FEATURE_BASE_NAME_HEAD,
     FEATURE_BASE_NAME_LANGUAGE,
-    TYPE_NAME_DOCUMENT_ANNOTATION,
     TYPE_NAME_ANNOTATION,
+    TYPE_NAME_ARRAY_BASE,
+    TYPE_NAME_DOCUMENT_ANNOTATION,
+    TYPE_NAME_EMPTY_FLOAT_LIST,
+    TYPE_NAME_EMPTY_INTEGER_LIST,
+    TYPE_NAME_EMPTY_STRING_LIST,
+    TYPE_NAME_FLOAT_LIST,
     TYPE_NAME_FS_ARRAY,
     TYPE_NAME_FS_LIST,
+    TYPE_NAME_INTEGER_LIST,
+    TYPE_NAME_NON_EMPTY_FLOAT_LIST,
+    TYPE_NAME_NON_EMPTY_INTEGER_LIST,
+    TYPE_NAME_NON_EMPTY_STRING_LIST,
     TYPE_NAME_SOFA,
+    TYPE_NAME_STRING_LIST,
     FeatureStructure,
+    Annotation,
     Type,
     TypeCheckError,
+    TypeNotFoundError,
     TypeSystem,
     TypeSystemMode,
+    is_annotation,
+    load_typesystem,
 )
+
+_PRIMITIVE_LIST_BASE_TYPE = {
+    TYPE_NAME_INTEGER_LIST: TYPE_NAME_INTEGER_LIST,
+    TYPE_NAME_EMPTY_INTEGER_LIST: TYPE_NAME_INTEGER_LIST,
+    TYPE_NAME_NON_EMPTY_INTEGER_LIST: TYPE_NAME_INTEGER_LIST,
+    TYPE_NAME_FLOAT_LIST: TYPE_NAME_FLOAT_LIST,
+    TYPE_NAME_EMPTY_FLOAT_LIST: TYPE_NAME_FLOAT_LIST,
+    TYPE_NAME_NON_EMPTY_FLOAT_LIST: TYPE_NAME_FLOAT_LIST,
+    TYPE_NAME_STRING_LIST: TYPE_NAME_STRING_LIST,
+    TYPE_NAME_EMPTY_STRING_LIST: TYPE_NAME_STRING_LIST,
+    TYPE_NAME_NON_EMPTY_STRING_LIST: TYPE_NAME_STRING_LIST,
+}
 
 _validator_optional_string = validators.optional(validators.instance_of(str))
 
@@ -171,29 +197,59 @@ class View:
         """
         return self._indices
 
-    def add_annotation_to_index(self, annotation: FeatureStructure):
-        self._indices[annotation.type.name].add(annotation)
+    def add_fs_to_indexes(self, fs: FeatureStructure):
+        """Adds a feature structure to the indexes of this view."""
+        self._indices[fs.type.name].add(fs)
 
-    def get_all_annotations(self) -> List[FeatureStructure]:
-        """Gets all the annotations in this view.
+    @deprecation.deprecated(details="Use add_fs_to_indexes()")
+    def add_annotation_to_index(self, annotation: FeatureStructure):
+        """Adds a feature structure to the indexes of this view.
+
+        .. deprecated::
+            Use :meth:`add_fs_to_indexes`.
+        """
+        self.add_fs_to_indexes(annotation)
+
+    def get_all_fs(self) -> List[FeatureStructure]:
+        """Gets all indexed feature structures in this view.
 
         Returns:
-            A list of all annotations in this view.
+            A list of all indexed feature structures (annotations and non-annotations) in this view.
 
         """
         result = []
-        for annotations_by_type in self._indices.values():
-            result.extend(annotations_by_type)
+        for fs_by_type in self._indices.values():
+            result.extend(fs_by_type)
         return result
 
-    def remove_annotation_from_index(self, annotation: FeatureStructure):
-        """Removes an annotation from an index. This throws if the
-        annotation was not present.
+    @deprecation.deprecated(details="Use get_all_fs() for all indexed feature structures or filter with cassis.typesystem.is_annotation")
+    def get_all_annotations(self) -> List[FeatureStructure]:
+        """Gets all indexed annotations in this view.
+
+        .. deprecated::
+            Use :meth:`get_all_fs` for all indexed feature structures, or filter the result
+            with :func:`cassis.typesystem.is_annotation`.
+        """
+        return [fs for fs in self.get_all_fs() if is_annotation(fs)]
+
+    def remove_fs_from_indexes(self, fs: FeatureStructure):
+        """Removes a feature structure from the indexes of this view. Throws if the
+        feature structure was not present.
 
         Args:
-            annotation: The annotation to remove.
+            fs: The feature structure to remove.
         """
-        self._indices[annotation.type.name].remove(annotation)
+        self._indices[fs.type.name].remove(fs)
+
+    @deprecation.deprecated(details="Use remove_fs_from_indexes()")
+    def remove_annotation_from_index(self, annotation: FeatureStructure):
+        """Removes a feature structure from the indexes of this view. Throws if the
+        feature structure was not present.
+
+        .. deprecated::
+            Use :meth:`remove_fs_from_indexes`.
+        """
+        self.remove_fs_from_indexes(annotation)
 
 
 class Index:
@@ -313,29 +369,29 @@ class Cas:
         """
         return list(self._views.values())
 
-    def add(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
-        """Adds an annotation to this Cas.
+    def add(self, fs: FeatureStructure, keep_id: Optional[bool] = True):
+        """Adds a feature structure to this Cas.
 
         Args:
-            annotation: The annotation to add.
-            keep_id: Keep the XMI id of `annotation` if true, else generate a new one.
+            fs: The feature structure to add.
+            keep_id: Keep the XMI id of `fs` if true, else generate a new one.
 
         """
-        if not self._lenient and not self._typesystem.contains_type(annotation.type.name):
-            msg = f"Typesystem of CAS does not contain type [{annotation.type.name}]. "
+        if not self._lenient and not self._typesystem.contains_type(fs.type.name):
+            msg = f"Typesystem of CAS does not contain type [{fs.type.name}]. "
             msg += "Either add the type to the type system or specify `lenient=True` when creating the CAS."
             raise RuntimeError(msg)
 
-        if keep_id and annotation.xmiID is not None:
-            next_id = annotation.xmiID
+        if keep_id and fs.xmiID is not None:
+            next_id = fs.xmiID
         else:
             next_id = self._get_next_xmi_id()
 
-        annotation.xmiID = next_id
-        if hasattr(annotation, "sofa"):
-            annotation.sofa = self.get_sofa()
+        fs.xmiID = next_id
+        if hasattr(fs, "sofa"):
+            fs.sofa = self.get_sofa()
 
-        self._current_view.add_annotation_to_index(annotation)
+        self._current_view.add_fs_to_indexes(fs)
 
     @deprecation.deprecated(details="Use add()")
     def add_annotation(self, annotation: FeatureStructure, keep_id: Optional[bool] = True):
@@ -475,7 +531,7 @@ class Cas:
         Args:
             annotation: The annotation to remove.
         """
-        self._current_view.remove_annotation_from_index(annotation)
+        self._current_view.remove_fs_from_indexes(annotation)
 
     @deprecation.deprecated(details="Use remove()")
     def remove_annotation(self, annotation: FeatureStructure):
@@ -496,17 +552,13 @@ class Cas:
             type_: The type or name of the type name whose annotation instances are to be found
         Raises:
             ValueError: If range indices are invalid.
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
         """
 
-        # If no type is provided, operate on annotation-like feature
-        # structures only (those that have `begin` and `end`) to avoid
-        # AttributeError for arbitrary FS (e.g., instances of uima.cas.TOP).
         if type_ is None:
-            # Only operate on annotation-like feature structures to avoid
-            # AttributeError for non-annotation FS present in the view.
-            annotations = [a for a in self.select_all() if self.typesystem.is_instance_of(a.type, TYPE_NAME_ANNOTATION)]
+            annotations = self.select_all_annotations()
         else:
-            annotations = self.select(type_)
+            annotations = self.select(self._require_annotation_type(type_, "remove_annotations_in_range"))
         if self.sofa_string is None:
             raise ValueError("Cannot remove annotations by range: CAS has no sofa string for the current view")
 
@@ -520,7 +572,7 @@ class Cas:
             raise ValueError(f"Invalid indices for begin {begin} and end {end}")
 
     @deprecation.deprecated(details="Use annotation.get_covered_text()")
-    def get_covered_text(self, annotation: FeatureStructure) -> str:
+    def get_covered_text(self, annotation: Annotation) -> str:
         """Gets the text that is covered by `annotation`.
 
         Args:
@@ -546,7 +598,7 @@ class Cas:
         t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
         return self._get_feature_structures(t)
 
-    def select_covered(self, type_: Union[Type, str], covering_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covered(self, type_: Union[Type, str], covering_annotation: Annotation) -> List[Annotation]:
         """Returns a list of covered annotations.
 
         Return all annotations that are covered
@@ -561,8 +613,11 @@ class Cas:
         Returns:
             A list of covered annotations
 
+        Raises:
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
+
         """
-        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        t = self._require_annotation_type(type_, "select_covered")
         c_begin = covering_annotation.begin
         c_end = covering_annotation.end
 
@@ -572,7 +627,7 @@ class Cas:
                 result.append(annotation)
         return result
 
-    def select_covering(self, type_: Union[Type, str], covered_annotation: FeatureStructure) -> List[FeatureStructure]:
+    def select_covering(self, type_: Union[Type, str], covered_annotation: Annotation) -> List[Annotation]:
         """Returns a list of annotations that cover the given annotation.
 
         Return all annotations that are covering. This can be potentially be slow.
@@ -587,27 +642,64 @@ class Cas:
         Returns:
             A list of covering annotations
 
+        Raises:
+            TypeError: If ``type_`` is not a subtype of ``uima.tcas.Annotation``.
+
         """
-        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        t = self._require_annotation_type(type_, "select_covering")
         c_begin = covered_annotation.begin
         c_end = covered_annotation.end
 
-        # We iterate over all annotations and check whether the provided annotation
-        # is covered in the current annotation
+        result = []
         for annotation in self._get_feature_structures(t):
             if c_begin >= annotation.begin and c_end <= annotation.end:
-                yield annotation
+                result.append(annotation)
+        return result
 
-    def select_all(self) -> List[FeatureStructure]:
-        """Finds all feature structures in this Cas
+    def select_all_fs(self) -> List[FeatureStructure]:
+        """Returns all indexed feature structures (annotations and non-annotations) in the current view.
 
         Returns:
-            A list of all annotations in this Cas
-
+            A list of all indexed feature structures in the current view.
         """
-        return self._current_view.get_all_annotations()
+        return self._current_view.get_all_fs()
+
+    def select_all_annotations(self) -> List[Annotation]:
+        """Returns all indexed annotations in the current view.
+
+        Non-annotation feature structures present in the view are filtered out, so it is safe
+        to access ``begin``/``end`` on the returned items.
+
+        Returns:
+            A list of all indexed annotations in the current view.
+        """
+        return [fs for fs in self._current_view.get_all_fs() if is_annotation(fs)]
+
+    @deprecation.deprecated(details="Use select_all_annotations() for annotations only or select_all_fs() for all indexed feature structures")
+    def select_all(self) -> List[Annotation]:
+        """Finds all annotations in this Cas.
+
+        .. deprecated::
+            Use :meth:`select_all_annotations` for annotations only, or
+            :meth:`select_all_fs` for all indexed feature structures.
+        """
+        return self.select_all_annotations()
 
     # FS handling
+
+    def _require_annotation_type(self, type_: Union[Type, str], operation: str) -> Type:
+        """Resolves ``type_`` and validates it is a subtype of ``uima.tcas.Annotation``.
+
+        Raises:
+            TypeError: If the resolved type is not an annotation type.
+        """
+        t = type_ if isinstance(type_, Type) else self.typesystem.get_type(type_)
+        if not self.typesystem.is_instance_of(t, TYPE_NAME_ANNOTATION):
+            raise TypeError(
+                f"Type [{t.name}] is not a subtype of [{TYPE_NAME_ANNOTATION}]; "
+                f"{operation} only operates on annotation types"
+            )
+        return t
 
     def _get_feature_structures(self, type_: Type) -> List[FeatureStructure]:
         """Returns a list of all feature structures of type `type_name` and child types."""
@@ -866,7 +958,7 @@ class Cas:
         else:
             for sofa in self.sofas:
                 view = self.get_view(sofa.sofaID)
-                openlist.extend(view.select_all())
+                openlist.extend(view.select_all_fs())
 
         ts = self.typesystem
         while openlist:
@@ -931,9 +1023,8 @@ class Cas:
                     elif feature.rangeType.name == TYPE_NAME_FS_LIST and hasattr(feature_value, FEATURE_BASE_NAME_HEAD):
                         v = feature_value
                         while hasattr(v, FEATURE_BASE_NAME_HEAD):
-                            if not v.head or v.head.xmiID in all_fs:
-                                continue
-                            openlist.append(v.head)
+                            if v.head and v.head.xmiID not in all_fs:
+                                openlist.append(v.head)
                             v = v.tail
                     # For primitive arrays / lists, we do not need to handle the elements
                     continue
@@ -965,10 +1056,359 @@ class Cas:
         result._xmi_id_generator = self._xmi_id_generator
         return result
 
+    def deep_copy(self, copy_typesystem: bool = False) -> "Cas":
+        """
+        Create and return a deep copy of this CAS object.
+        All feature structures, views, and sofas are copied. If `copy_typesystem` is True, the typesystem is also deep-copied;
+        otherwise, the original typesystem is shared between the original and the copy.
+        Args:
+            copy_typesystem (bool): Whether to copy the original typesystem or not. If True, the typesystem is deep-copied.
+        Returns:
+            Cas: A deep copy of this CAS object.
+        """
+        ts = self.typesystem
+        if copy_typesystem:
+            ts = self.typesystem.to_xml()
+            ts = load_typesystem(ts)
+
+        cas_copy = Cas(ts, lenient=self._lenient)
+
+        cas_copy._views = {}
+        cas_copy._sofas = {}
+
+        def _collect_fs_list_references(fs_list: FeatureStructure) -> List[Optional[int]]:
+            referenced_list = []
+            current = fs_list
+
+            while hasattr(current, FEATURE_BASE_NAME_HEAD):
+                head = current.head
+                if head is None:
+                    referenced_list.append(None)
+                elif hasattr(head, "xmiID") and head.xmiID is not None:
+                    referenced_list.append(head.xmiID)
+                else:
+                    warnings.warn("FSList item without xmiID encountered during deep copy; preserving as None in copy.")
+                    referenced_list.append(None)
+
+                current = current.tail
+
+            return referenced_list
+
+        def _build_fs_list(referenced_list: List[Optional[int]]) -> FeatureStructure:
+            current = ts.get_type("uima.cas.EmptyFSList")()
+
+            for reference_id in reversed(referenced_list):
+                node = ts.get_type("uima.cas.NonEmptyFSList")()
+                node.tail = current
+                node.head = all_copied_fs.get(reference_id) if reference_id is not None else None
+                current = node
+
+            return current
+
+        for sofa in self.sofas:
+            sofa_copy = Sofa(
+                sofaID=sofa.sofaID,
+                sofaNum=sofa.sofaNum,
+                type=ts.get_type(sofa.type.name),
+                xmiID=sofa.xmiID,
+            )
+            sofa_copy.mimeType = sofa.mimeType
+            sofa_copy.sofaArray = sofa.sofaArray
+            sofa_copy.sofaString = sofa.sofaString
+            sofa_copy.sofaURI = sofa.sofaURI
+
+            cas_copy._sofas[sofa_copy.sofaID] = sofa_copy
+            cas_copy._views[sofa_copy.sofaID] = View(sofa=sofa_copy)
+
+        # Set the current view to the `_InitialView` entry in the copied CAS.
+        # (`Cas.__init__` creates an `_InitialView`; here we point the current
+        # view at that entry in the `cas_copy._views` mapping so subsequent
+        # `add()` calls index into the initial view by default.)
+        cas_copy._current_view = cas_copy._views["_InitialView"]
+
+        references = dict()
+        referenced_arrays = dict()
+        referenced_fs_arrays = dict()
+        referenced_primitive_arrays = dict()
+        referenced_lists = dict()
+        # for primitive lists (e.g. IntegerList) we collect primitive head values
+        referenced_primitive_lists = dict()
+
+        all_copied_fs = dict()
+        referenced_view = defaultdict(list)
+
+        for view in self.views:
+            for member in view.get_all_fs():
+                if hasattr(member, "xmiID") and member.xmiID is not None:
+                    if view.sofa.sofaID not in referenced_view[member.xmiID]:
+                        referenced_view[member.xmiID].append(view.sofa.sofaID)
+
+        # Ensure sofa.sofaArray feature structures are discovered even when they
+        # are not indexed in any view. `_find_all_fs(seeds=...)` replaces the
+        # default traversal roots, so we include both the original indexed view
+        # members and any sofaArray roots here.
+        traversal_seeds = []
+        for sofa in self.sofas:
+            traversal_seeds.extend(self.get_view(sofa.sofaID).select_all_fs())
+            if getattr(sofa, "sofaArray", None) is not None:
+                traversal_seeds.append(sofa.sofaArray)
+
+        for fs in self._find_all_fs(seeds=traversal_seeds):
+            try:
+                t = ts.get_type(fs.type.name)
+            except TypeNotFoundError as e:
+                raise TypeNotFoundError(
+                    f"deep_copy() cannot copy feature structure of type '{fs.type.name}': "
+                    f"the type is not present in the target typesystem. This can happen when "
+                    f"the source CAS was loaded leniently against an incomplete typesystem and "
+                    f"contains feature structures whose types were not declared. deep_copy() "
+                    f"requires every feature structure's type to be present in the typesystem."
+                ) from e
+            fs_copy = t()
+
+            if t.name == TYPE_NAME_FS_ARRAY and fs.elements is not None:
+                standalone_fs_array_member_ids = []
+                for item in fs.elements:
+                    if item is None:
+                        standalone_fs_array_member_ids.append(None)
+                    elif hasattr(item, "xmiID") and item.xmiID is not None:
+                        standalone_fs_array_member_ids.append(item.xmiID)
+                    else:
+                        warnings.warn(
+                            f"Standalone FSArray {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
+                        )
+                        standalone_fs_array_member_ids.append(None)
+
+                referenced_fs_arrays[fs.xmiID] = standalone_fs_array_member_ids
+            elif t.supertype.name == TYPE_NAME_ARRAY_BASE and fs.elements is not None:
+                referenced_primitive_arrays[fs.xmiID] = list(fs.elements)
+
+            for feature in t.all_features:
+                if t.supertype.name == TYPE_NAME_ARRAY_BASE and feature.name == "elements":
+                    continue
+
+                if ts.is_primitive(feature.rangeType):
+                    fs_copy[feature.name] = fs.get(feature.name)
+                elif ts.is_primitive_collection(feature.rangeType):
+                    val = fs.get(feature.name)
+                    if val is None:
+                        continue
+
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                        continue
+
+                    # Distinguish primitive arrays (have `elements`) from primitive lists (use head/tail).
+                    # Lists may be declared with the abstract base type (e.g. IntegerList) or with a
+                    # concrete subtype (e.g. NonEmptyIntegerList); the lookup handles both.
+                    abstract_list_name = _PRIMITIVE_LIST_BASE_TYPE.get(feature.rangeType.name)
+                    if ts.is_array(feature.rangeType):
+                        fs_copy[feature.name] = ts.get_type(feature.rangeType.name)()
+                        # shallow-copy the elements list to avoid sharing the same list object
+                        fs_copy[feature.name].elements = list(val.elements)
+                    elif abstract_list_name is not None:
+                        # collect primitive values from head/tail style lists
+                        current = val
+                        prim_list = []
+                        while hasattr(current, FEATURE_BASE_NAME_HEAD):
+                            head = getattr(current, FEATURE_BASE_NAME_HEAD)
+                            prim_list.append(head)
+                            current = current.tail
+
+                        # store the primitive list values along with the abstract list base name
+                        # so the rebuild step can derive Empty*/NonEmpty* concrete type names.
+                        referenced_primitive_lists.setdefault(fs.xmiID, {})
+                        referenced_primitive_lists[fs.xmiID][feature.name] = (
+                            abstract_list_name,
+                            prim_list,
+                        )
+                    else:
+                        warnings.warn(
+                            f"Primitive collection feature '{feature.name}' on FS {fs.xmiID} has range type "
+                            f"'{feature.rangeType.name}' which is neither a primitive array nor a primitive list; "
+                            "value not copied."
+                        )
+                elif ts.is_array(feature.rangeType):
+                    val = fs[feature.name]
+                    if val is None:
+                        continue
+
+                    # If the array itself may be shared (multipleReferencesAllowed), preserve
+                    # its identity by treating it like any other FS reference and wiring it
+                    # up later via `references`. Only inline-copy arrays when they are not
+                    # declared shareable.
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                    else:
+                        fs_copy[feature.name] = ts.get_type(TYPE_NAME_FS_ARRAY)()
+                        # collect referenced xmiIDs for mapping later and preserve None placeholders
+                        array_feature_member_ids = []
+                        for item in val.elements:
+                            if item is None:
+                                array_feature_member_ids.append(None)
+                            elif hasattr(item, "xmiID") and item.xmiID is not None:
+                                array_feature_member_ids.append(item.xmiID)
+                            else:
+                                warnings.warn(
+                                    f"Array feature '{feature.name}' of FS {fs.xmiID} contains an unidentifiable item; preserving as None in copy."
+                                )
+                                array_feature_member_ids.append(None)
+                        referenced_arrays.setdefault(fs.xmiID, {})
+                        referenced_arrays[fs.xmiID][feature.name] = array_feature_member_ids
+                elif ts.is_list(feature.rangeType):
+                    val = fs[feature.name]
+                    if val is None:
+                        continue
+
+                    if feature.multipleReferencesAllowed and hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                    else:
+                        referenced_lists.setdefault(fs.xmiID, {})
+                        referenced_lists[fs.xmiID][feature.name] = _collect_fs_list_references(val)
+                elif feature.rangeType.name == TYPE_NAME_SOFA:
+                    # ignore sofa references
+                    pass
+                else:
+                    val = fs[feature.name]
+                    # If the original feature value is None, preserve it without warning
+                    if val is None:
+                        continue
+                    if hasattr(val, "xmiID") and val.xmiID is not None:
+                        references.setdefault(feature.name, [])
+                        references[feature.name].append((fs.xmiID, val.xmiID))
+                    else:
+                        warnings.warn(
+                            f'Original non-primitive feature "{feature.name}" was not copied from feature structure {fs.xmiID}.'
+                        )
+
+            fs_copy.xmiID = fs.xmiID
+            all_copied_fs[fs_copy.xmiID] = fs_copy
+
+        # set references to single objects
+        for feature, pairs in references.items():
+            for current_ID, reference_ID in pairs:
+                try:
+                    all_copied_fs[current_ID][feature] = all_copied_fs[reference_ID]
+                except KeyError:
+                    warnings.warn(
+                        f"Reference {reference_ID} not found for feature '{feature}' of feature structure {current_ID}"
+                    )
+
+        # set references for objects in arrays
+        for current_ID, arrays in referenced_arrays.items():
+            for feature, array_member_ids in arrays.items():
+                elements = []
+                for reference_ID in array_member_ids:
+                    if reference_ID is None:
+                        elements.append(None)
+                        continue
+                    try:
+                        elements.append(all_copied_fs[reference_ID])
+                    except KeyError:
+                        warnings.warn(
+                            f"Reference {reference_ID} not found for array feature '{feature}' of feature structure {current_ID}; inserting None."
+                        )
+                        elements.append(None)
+                all_copied_fs[current_ID][feature].elements = elements
+
+        for current_ID, fs_array_member_ids in referenced_fs_arrays.items():
+            elements = []
+            for reference_ID in fs_array_member_ids:
+                if reference_ID is None:
+                    elements.append(None)
+                    continue
+                try:
+                    elements.append(all_copied_fs[reference_ID])
+                except KeyError:
+                    warnings.warn(
+                        f"Reference {reference_ID} not found for standalone FSArray {current_ID}; inserting None."
+                    )
+                    elements.append(None)
+            all_copied_fs[current_ID].elements = elements
+
+        for current_ID, elements in referenced_primitive_arrays.items():
+            all_copied_fs[current_ID].elements = list(elements)
+
+        # rebuild FSList features from copied members
+        for current_ID, lists in referenced_lists.items():
+            for feature, fs_list_member_ids in lists.items():
+                all_copied_fs[current_ID][feature] = _build_fs_list(fs_list_member_ids)
+
+        # rebuild primitive head/tail lists (e.g. IntegerList, FloatList, StringList)
+        for current_ID, lists in referenced_primitive_lists.items():
+            for feature, (list_type_name, primitive_values) in lists.items():
+                # derive Empty/NonEmpty concrete type names from the abstract list type
+                suffix = list_type_name.split(".")[-1]
+                empty_name = f"uima.cas.Empty{suffix}"
+                nonempty_name = f"uima.cas.NonEmpty{suffix}"
+
+                current = ts.get_type(empty_name)()
+                for value in reversed(primitive_values):
+                    node = ts.get_type(nonempty_name)()
+                    node.tail = current
+                    node.head = value
+                    current = node
+
+                all_copied_fs[current_ID][feature] = current
+
+        # ensure Sofa.sofaArray references point to the copied feature structures
+        # Use the original CAS's sofas to locate the original sofaArray objects
+        # (safer than relying on sofa_copy.sofaArray pointing back to the original
+        # object in all cases) and remap them to the copied FS when available.
+        for orig_sofa in self.sofas:
+            sofa_copy = cas_copy._sofas.get(orig_sofa.sofaID)
+            if sofa_copy is None:
+                continue
+            orig_sofa_array = getattr(orig_sofa, "sofaArray", None)
+            if hasattr(orig_sofa_array, "xmiID") and orig_sofa_array.xmiID in all_copied_fs:
+                sofa_copy.sofaArray = all_copied_fs[orig_sofa_array.xmiID]
+
+        # Add only original view members back to the copied indices. Referenced
+        # feature structures that were not indexed in any original view remain
+        # reachable transitively and will still be serialized by `_find_all_fs()`.
+        feature_structures = sorted(all_copied_fs.values(), key=lambda f: f.xmiID, reverse=False)
+        for item in feature_structures:
+            if not hasattr(item, "xmiID") or item.xmiID is None:
+                continue
+
+            view_names = referenced_view.get(item.xmiID)
+            if not view_names:
+                continue
+
+            # Use the normal add-path once so FS with a `sofa` feature are rebound
+            # to the copied sofa in their primary view. Any additional view
+            # memberships are restored by indexing the same FS directly to avoid
+            # mutating its `sofa` repeatedly.
+            cas_copy._current_view = cas_copy._views[view_names[0]]
+            cas_copy.add(item, keep_id=True)
+
+            for view_name in view_names[1:]:
+                cas_copy._views[view_name].add_annotation_to_index(item)
+
+        cas_copy._xmi_id_generator = IdGenerator(initial_id=self._xmi_id_generator._next_id)
+        cas_copy._sofa_num_generator = IdGenerator(initial_id=self._sofa_num_generator._next_id)
+
+        # Restore the active view on the copy to match the source CAS' current view.
+        # During re-indexing we may have set `cas_copy._current_view` multiple
+        # times; ensure the returned copy has the same active sofa as `self`.
+        try:
+            active_sofa_id = self.get_sofa().sofaID
+        except Exception:
+            active_sofa_id = "_InitialView"
+
+        if active_sofa_id in cas_copy._views:
+            cas_copy._current_view = cas_copy._views[active_sofa_id]
+
+        return cas_copy
+
 
 def _sort_func(a: FeatureStructure) -> Tuple[int, int, int]:
-    d = a.__slots__
-    if "begin" in d and "end" in d:
-        return a.begin, a.end, id(a)
-    else:
-        return sys.maxsize, sys.maxsize, id(a)
+    xmi_id = getattr(a, "xmiID", None)
+    tiebreaker = xmi_id if xmi_id is not None else id(a)
+    if is_annotation(a):
+        return a.begin, a.end, tiebreaker
+    # Non-annotation feature structures sort after annotations.
+    return sys.maxsize, sys.maxsize, tiebreaker

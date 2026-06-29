@@ -1075,7 +1075,9 @@ def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
     end = 20
 
     expected_leftover_annotations = [
-        annotation for annotation in cas.select_all_annotations() if not (begin <= annotation.begin < annotation.end <= end)
+        annotation
+        for annotation in cas.select_all_annotations()
+        if not (begin <= annotation.begin < annotation.end <= end)
     ]
 
     cas.remove_annotations_in_range(begin, end)
@@ -1405,8 +1407,8 @@ def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
     # Create a non-annotation type (inheriting from TOP)
     AtypicalAnnotation = typesystem.create_type("test.AtypicalAnnotation", supertypeName=TYPE_NAME_ANNOTATION)
     typesystem.create_feature("test.AtypicalAnnotation", "name", TYPE_NAME_STRING)
-    ann_wo_begin = AtypicalAnnotation(name="wo_begin", end=15) # inside crop range
-    ann_wo_begin2 = AtypicalAnnotation(name="wo_begin2", end=5) # outside crop range
+    ann_wo_begin = AtypicalAnnotation(name="wo_begin", end=15)  # inside crop range
+    ann_wo_begin2 = AtypicalAnnotation(name="wo_begin2", end=5)  # outside crop range
 
     cas = Cas(typesystem=typesystem)
     cas.add(ann)
@@ -1430,11 +1432,8 @@ def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
     assert ann_wo_begin.end == 5
     assert ann_wo_begin.begin == 0
 
-
     # Atypical annotation outside of crop range is removed
     assert ann_wo_begin2 in cas.select_all()
-
-
 
 
 def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
@@ -1449,8 +1448,8 @@ def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
     # Create an annotation and atypical annotations
     Annotation = typesystem.get_type(TYPE_NAME_ANNOTATION)
     ann = Annotation(begin=12, end=15)
-    ann_wo_end = AtypicalAnnotation(name="wo_end", begin=12)# inside crop range
-    ann_wo_end2 = AtypicalAnnotation(name="wo_end2", begin=22) # outside crop range
+    ann_wo_end = AtypicalAnnotation(name="wo_end", begin=12)  # inside crop range
+    ann_wo_end2 = AtypicalAnnotation(name="wo_end2", begin=22)  # outside crop range
 
     cas.add(ann)
     cas.add(ann_wo_end)
@@ -1473,9 +1472,10 @@ def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
     assert ann_wo_end.begin == 2
     assert ann_wo_end.end == 0
 
-
     # Atypical annotation outside of crop range is removed
     assert ann_wo_end2 in cas.select_all()
+
+
 def test_deep_copy_array_with_none_entries():
     """Ensure FSArray with None entries preserves positions and references are decoupled."""
     typesystem = TypeSystem()

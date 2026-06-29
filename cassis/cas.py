@@ -222,7 +222,9 @@ class View:
             result.extend(fs_by_type)
         return result
 
-    @deprecation.deprecated(details="Use get_all_fs() for all indexed feature structures or filter with cassis.typesystem.is_annotation")
+    @deprecation.deprecated(
+        details="Use get_all_fs() for all indexed feature structures or filter with cassis.typesystem.is_annotation"
+    )
     def get_all_annotations(self) -> List[FeatureStructure]:
         """Gets all indexed annotations in this view.
 
@@ -488,9 +490,9 @@ class Cas:
                     #             [---------- ann --] (is_overlapping)
                     is_inside = sofa_begin <= annotation.begin and annotation.end <= sofa_end
                     is_overlapping = overlap and (
-                        (sofa_begin < annotation.end <= sofa_end) or
-                        (sofa_begin <= annotation.begin < sofa_end) or
-                        (annotation.begin <= sofa_begin and sofa_end <= annotation.end)
+                        (sofa_begin < annotation.end <= sofa_end)
+                        or (sofa_begin <= annotation.begin < sofa_end)
+                        or (annotation.begin <= sofa_begin and sofa_end <= annotation.end)
                     )
                     keep = is_inside or is_overlapping
                 elif has_begin:
@@ -510,7 +512,7 @@ class Cas:
                     #  --]                 (keep = False)
                     keep = annotation.end >= sofa_begin
                 else:
-                    keep = True # Non-anchored FS are always kept
+                    keep = True  # Non-anchored FS are always kept
 
                 if keep:
                     self._current_view.remove_annotation_from_index(annotation)
@@ -675,7 +677,9 @@ class Cas:
         """
         return [fs for fs in self._current_view.get_all_fs() if is_annotation(fs)]
 
-    @deprecation.deprecated(details="Use select_all_annotations() for annotations only or select_all_fs() for all indexed feature structures")
+    @deprecation.deprecated(
+        details="Use select_all_annotations() for annotations only or select_all_fs() for all indexed feature structures"
+    )
     def select_all(self) -> List[Annotation]:
         """Finds all annotations in this Cas.
 

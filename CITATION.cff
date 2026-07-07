@@ -10,4 +10,11 @@ authors:
 - family-names: "Klie"
   given-names: "Jan-Christoph"
   orcid: "https://orcid.org/0000-0003-0181-6450"
+- family-names: "Zesch"
+  given-names: "Torsten"
+  orcid: "https://orcid.org/0000-0002-9678-3825"
 - name : "cassis contributors"
+contact:
+- family-names: "Eckart de Castilho"
+  given-names: "Richard"
+  orcid: "https://orcid.org/0000-0003-0991-7045"

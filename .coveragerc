@@ -1,6 +1,6 @@
 [run]
 source=cassis
 omit=
-    cassis/__init__.py
+    src/cassis/__init__.py
     tests/*
     docs/*

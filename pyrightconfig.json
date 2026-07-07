@@ -2,7 +2,7 @@
   "venvPath": ".",
   "venv": ".venv",
   "include": [
-    "cassis",
+    "src/cassis",
     "tests"
   ],
   "exclude": [

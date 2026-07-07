@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cassis"
 
 [project]
 name = "dkpro-cassis"
@@ -63,10 +66,10 @@ Repository = "https://github.com/dkpro/dkpro-cassis"
 [tool.taskipy.tasks]
 test = "pytest -m 'not performance' tests/"
 test-cov = "pytest -m 'not performance' --cov=./ --cov-report=xml tests/"
-format = "ruff format cassis/ tests/"
-lint = "ruff check cassis/ tests/"
-typecheck = "pyright cassis/ tests/"
-fix = "ruff check --fix cassis/ tests/"
+format = "ruff format src/cassis/ tests/"
+lint = "ruff check src/cassis/ tests/"
+typecheck = "pyright src/cassis/ tests/"
+fix = "ruff check --fix src/cassis/ tests/"
 
 [tool.ruff]
 line-length = 120

@@ -405,7 +405,7 @@ class FeatureStructure:
         """Returns the value of the feature `name`."""
         return getattr(self, name)
 
-    def get_covered_text(self) -> str:
+    def get_covered_text(self) -> Optional[str]:
         """Gets the text that is covered by this feature structure iff it is associated with a sofa and has a begin/end.
 
         Returns:
@@ -994,7 +994,7 @@ class TypeSystem:
 
         """
         if built_in:
-            return self._types.values()
+            return iter(self._types.values())
 
         return filterfalse(lambda x: x.name in _PREDEFINED_TYPES, self._types.values())
 

@@ -159,7 +159,7 @@ class Sofa:
     _offset_converter = attr.ib(factory=Utf16CodepointOffsetConverter, eq=False, hash=False, repr=False)
 
     @property
-    def sofaString(self) -> str:
+    def sofaString(self) -> Optional[str]:
         return self._sofaString
 
     @sofaString.setter
@@ -788,7 +788,7 @@ class Cas:
         self.get_sofa().sofaString = value
 
     @property
-    def sofa_mime(self) -> str:
+    def sofa_mime(self) -> Optional[str]:
         """The sofa mime contains the MIME type of the document text.
 
         Returns: The sofa MIME type.
@@ -807,7 +807,7 @@ class Cas:
         self.get_sofa().mimeType = value
 
     @property
-    def sofa_uri(self) -> str:
+    def sofa_uri(self) -> Optional[str]:
         """The sofa URI references external sofa data.
 
         Returns: The sofa URI.
@@ -845,7 +845,7 @@ class Cas:
         self.get_sofa().sofaArray = value
 
     @property
-    def document_language(self) -> str:
+    def document_language(self) -> Optional[str]:
         """The document language contains the language code for the document.
 
         Returns: The document language.
@@ -854,7 +854,7 @@ class Cas:
         return self.get_document_annotation().get(FEATURE_BASE_NAME_LANGUAGE)
 
     @document_language.setter
-    def document_language(self, value) -> str:
+    def document_language(self, value):
         """Sets document language.
 
         Args:

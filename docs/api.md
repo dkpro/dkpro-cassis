@@ -1,8 +1,8 @@
-.. _api:
+(api)=
 
-API Reference
-=============
+# API Reference
 
+```{eval-rst}
 .. automodule:: cassis
     :members:
     :undoc-members:
@@ -14,3 +14,4 @@ API Reference
    :members:
    :inherited-members:
    :exclude-members: __init__
+```

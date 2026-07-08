@@ -1,16 +1,25 @@
 import pathlib
 
-from rstcheck_core import checker
+# The marker that ``docs/index.md`` uses in its ``{include} ../README.md``
+# directive via ``:start-after:``. If the README heading changes, the Sphinx
+# include silently breaks, so we guard the contract here.
+README_START_AFTER_MARKER = "# dkpro-cassis"
 
 
-def test_readme_is_proper_rst():
+def test_readme_exists_and_is_non_empty():
     parent = pathlib.Path(__file__).parent.resolve().parent
-    path_to_readme = parent / "README.rst"
+    readme = parent / "README.md"
 
-    with path_to_readme.open() as f:
-        rst = f.read()
+    assert readme.is_file(), "README.md is missing"
+    assert readme.read_text(encoding="utf-8").strip(), "README.md is empty"
 
-    errors = [str(e) for e in list(checker.check_source(rst))]
-    # https://github.com/rstcheck/rstcheck-core/issues/4
-    errors = [s for s in errors if not ("Hyperlink target" in s and "is not referenced." in s)]
-    assert len(errors) == 0, "; ".join(errors)
+
+def test_readme_contains_docs_include_marker():
+    parent = pathlib.Path(__file__).parent.resolve().parent
+    readme = parent / "README.md"
+
+    content = readme.read_text(encoding="utf-8")
+    assert README_START_AFTER_MARKER in content, (
+        f"README.md must contain the marker '{README_START_AFTER_MARKER}' that "
+        "docs/index.md relies on for its include directive"
+    )

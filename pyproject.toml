@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 authors = [ { name = "The DKPro cassis team" } ]
 maintainers = [ { name = "Richard Eckart de Castilho" } ]
 description = "UIMA CAS processing library in Python"
-readme = "README.rst"
+readme = "README.md"
 license = {file = "LICENSE"}
 keywords = []
 classifiers = [
@@ -45,8 +45,6 @@ dev = [
     "pytest-lazy-fixtures~=1.4.0",
     "pytest-cov~=7.1.0",
     "lxml-asserts~=0.1.2",
-    "rstcheck~=6.2.5",
-    "docutils~=0.22.0",
     "ruff~=0.15.12",
     "taskipy",
     "pyright"
@@ -55,7 +53,7 @@ doc = [
     "sphinx",
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
-    "docutils~=0.22.0"
+    "myst-parser"
 ]
 
 [project.urls]

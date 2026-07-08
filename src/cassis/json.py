@@ -4,7 +4,7 @@ import math
 from collections import OrderedDict, defaultdict
 from io import TextIOBase, TextIOWrapper
 from math import isnan
-from typing import Any, Union, IO, Optional, Dict
+from typing import Any, Union, IO, Optional, Dict, cast
 from toposort import toposort_flatten
 
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
@@ -36,6 +36,7 @@ from cassis.typesystem import (
     element_type_name_for_array_type,
     is_primitive,
     is_array,
+    AnnotationBase,
 )
 
 RESERVED_FIELD_PREFIX = "%"
@@ -305,7 +306,7 @@ class CasJsonDeserializer:
 
         # Map from offsets in UIMA UTF-16 based offsets to Unicode codepoints
         if typesystem.is_instance_of(fs.type, TYPE_NAME_ANNOTATION):
-            sofa = fs.sofa
+            sofa = cast(Sofa, cast(AnnotationBase, fs).sofa)
             fs.begin = sofa._offset_converter.external_to_python(fs.begin)
             fs.end = sofa._offset_converter.external_to_python(fs.end)
 

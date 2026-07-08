@@ -6,13 +6,16 @@ from enum import Enum, auto
 from io import BytesIO
 from itertools import chain, filterfalse
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, TypeGuard, Union
+from typing import IO, TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Set, TypeGuard, Union, cast
 
 import attr
 from deprecation import deprecated
 from lxml import etree
 from more_itertools import unique_everseen
 from toposort import toposort_flatten
+
+if TYPE_CHECKING:
+    from cassis.cas import Sofa
 
 TOP_TYPE_NAME = "uima.cas.TOP"
 
@@ -413,13 +416,14 @@ class FeatureStructure:
 
         """
         if hasattr(self, "sofa") and hasattr(self, "begin") and hasattr(self, "end"):
-            if self.sofa is None:
+            this = cast("Annotation", self)
+            if this.sofa is None:
                 raise AnnotationHasNoSofa(
                     "Annotations must have a SofA (be added to a CAS) before get_covered_text() can be called"
                 )
-            if self.sofa.sofaString is None:
+            if this.sofa.sofaString is None:
                 return None
-            return self.sofa.sofaString[self.begin : self.end]
+            return this.sofa.sofaString[this.begin : this.end]
         else:
             raise NotImplementedError()
 
@@ -501,7 +505,26 @@ class FeatureStructure:
 
 
 @attr.s(slots=True, eq=False, order=False, repr=False)
-class Annotation(FeatureStructure):
+class AnnotationBase(FeatureStructure):
+    """Concrete base class for `uima.cas.AnnotationBase` feature structures.
+
+    Generated types that are (transitively) subtypes of `uima.cas.AnnotationBase`
+    inherit from this class so that static typing can rely on a nominal base
+    providing `sofa`. The `sofa` is conceptually mandatory for an annotation that
+    lives in a committed CAS, but is `None` during the window between constructing
+    the feature structure and adding it to a view (see `View.add`), so it is typed
+    as Optional.
+    """
+
+    sofa: Optional["Sofa"] = attr.ib(default=None, repr=False)
+
+
+def is_annotation_base(fs: FeatureStructure) -> TypeGuard[AnnotationBase]:
+    return isinstance(fs, AnnotationBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
+class Annotation(AnnotationBase):
     """Concrete base class for annotation instances.
 
     Generated types that represent (subtypes of) `uima.tcas.Annotation` will
@@ -590,23 +613,32 @@ class Type:
         """Build the constructor that can create feature structures of this type"""
         name = _string_to_valid_classname(self.name)
 
-        # Determine whether this type is (transitively) a subtype of uima.tcas.Annotation
-        def _is_annotation_type(t: "Type") -> bool:
+        # Determine whether this type is (transitively) a subtype of a given type name
+        def _is_subtype_of(t: "Type", type_name: str) -> bool:
             cur = t
             while cur is not None:
-                if cur.name == TYPE_NAME_ANNOTATION:
+                if cur.name == type_name:
                     return True
                 cur = cur.supertype
             return False
 
-        is_annotation_type = _is_annotation_type(self)
+        # Select the static base class and the set of features already provided by
+        # that base (so they are not redeclared as dynamic fields).
+        if _is_subtype_of(self, TYPE_NAME_ANNOTATION):
+            base = Annotation
+            inherited_features = {"sofa", "begin", "end"}
+        elif _is_subtype_of(self, TYPE_NAME_ANNOTATION_BASE):
+            base = AnnotationBase
+            inherited_features = {"sofa"}
+        else:
+            base = FeatureStructure
+            inherited_features = set()
 
-        # When inheriting from our concrete Annotation base, do not redeclare
-        # the 'begin' and 'end' features as fields; they are already present.
+        # Features provided by the static base class are not redeclared as fields.
         fields = {}
         for feature in self.all_features:
-            if feature.name in {"begin", "end"} and is_annotation_type:
-                # skip - Annotation base provides these
+            if feature.name in inherited_features:
+                # skip - the static base class provides this feature
                 continue
             fields[feature.name] = attr.ib(default=None, repr=(feature.name != "sofa"))
         fields["type"] = attr.ib(default=self)
@@ -614,7 +646,7 @@ class Type:
         # We assign this to a lambda to make it lazy
         # When creating large type systems, almost no types are used so
         # creating them on the fly is on average better
-        bases = (Annotation,) if is_annotation_type else (FeatureStructure,)
+        bases = (base,)
 
         def _make_fs_class():
             cls = attr.make_class(name, fields, bases=bases, slots=True, eq=False, order=False)

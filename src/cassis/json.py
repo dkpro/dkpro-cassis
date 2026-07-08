@@ -4,7 +4,7 @@ import math
 from collections import OrderedDict, defaultdict
 from io import TextIOBase, TextIOWrapper
 from math import isnan
-from typing import Union, IO, Optional, Dict, List
+from typing import Any, Union, IO, Optional, Dict
 from toposort import toposort_flatten
 
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
@@ -166,7 +166,7 @@ class CasJsonDeserializer:
 
         if isinstance(json_feature_structures, dict):
 
-            def parse_and_add(fs_id_, json_fs_):
+            def parse_and_add_entry(fs_id_, json_fs_):
                 parsed = self._parse_feature_structure(typesystem, int(fs_id_), json_fs_, feature_structures)
                 feature_structures[parsed.xmiID] = parsed
 
@@ -178,13 +178,13 @@ class CasJsonDeserializer:
                     # In case the Sofa references a byte array that has not been parsed yet, we need to fetch it
                     sofa_byte_array_ref = json_fs.get(REF_FEATURE_PREFIX + FEATURE_BASE_NAME_SOFAARRAY)
                     if sofa_byte_array_ref and not feature_structures.get(sofa_byte_array_ref):
-                        parse_and_add(sofa_byte_array_ref, json_feature_structures.get(sofa_byte_array_ref))
+                        parse_and_add_entry(sofa_byte_array_ref, json_feature_structures.get(sofa_byte_array_ref))
                     fs_id = int(fs_id)
                     fs = self._parse_sofa(cas, fs_id, json_fs, feature_structures)
                     feature_structures[fs.xmiID] = fs
             for fs_id, json_fs in json_feature_structures.items():
                 if json_fs.get(TYPE_FIELD) != TYPE_NAME_SOFA:
-                    parse_and_add(fs_id, json_fs)
+                    parse_and_add_entry(fs_id, json_fs)
 
         for post_processor in self._post_processors:
             post_processor()
@@ -201,12 +201,12 @@ class CasJsonDeserializer:
 
         return cas
 
-    def _parse_type(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, any]):
+    def _parse_type(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, Any]):
         super_type_name = json_type[SUPER_TYPE_FIELD]
         description = json_type.get(DESCRIPTION_FIELD)
         typesystem.create_type(type_name, super_type_name, description=description)
 
-    def _parse_features(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, any]):
+    def _parse_features(self, typesystem: TypeSystem, type_name: str, json_type: Dict[str, Any]):
         new_type = typesystem.get_type(type_name)
         for key, json_feature in json_type.items():
             if key.startswith(RESERVED_FIELD_PREFIX):
@@ -240,13 +240,13 @@ class CasJsonDeserializer:
         else:
             return cas.create_view(view_name, xmiID=fs_id, sofaNum=sofa_num)
 
-    def _parse_view(self, cas: Cas, view_name: str, json_view: Dict[str, any], feature_structures: Dict[str, any]):
+    def _parse_view(self, cas: Cas, view_name: str, json_view: Dict[str, Any], feature_structures: Dict[str, Any]):
         view = self._get_or_create_view(cas, view_name)
         for member_id in json_view[VIEW_MEMBERS_FIELD]:
             fs = feature_structures[member_id]
             view.add(fs, keep_id=True)
 
-    def _parse_sofa(self, cas: Cas, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]) -> Sofa:
+    def _parse_sofa(self, cas: Cas, fs_id: int, json_fs: Dict[str, Any], feature_structures: Dict[int, Any]) -> Sofa:
         view = self._get_or_create_view(
             cas, json_fs.get(FEATURE_BASE_NAME_SOFAID), fs_id, json_fs.get(FEATURE_BASE_NAME_SOFANUM)
         )
@@ -259,7 +259,7 @@ class CasJsonDeserializer:
         return view.get_sofa()
 
     def _parse_feature_structure(
-        self, typesystem: TypeSystem, fs_id: int, json_fs: Dict[str, any], feature_structures: Dict[int, any]
+        self, typesystem: TypeSystem, fs_id: int, json_fs: Dict[str, Any], feature_structures: Dict[int, Any]
     ):
         type_name = json_fs.get(TYPE_FIELD)
         if type_name.endswith("[]"):
@@ -327,7 +327,7 @@ class CasJsonDeserializer:
             f"{NEGATIVE_INFINITE_VALUE_ABBR}"
         )
 
-    def _parse_primitive_array(self, type_name: str, elements: [list, str]) -> List:
+    def _parse_primitive_array(self, type_name: str, elements: Union[list, str]) -> Union[list, bytes]:
         if elements and type_name == TYPE_NAME_BYTE_ARRAY:
             return base64.b64decode(elements)
         if elements and (type_name == TYPE_NAME_FLOAT_ARRAY or type_name == TYPE_NAME_DOUBLE_ARRAY):
@@ -335,7 +335,7 @@ class CasJsonDeserializer:
         else:
             return elements
 
-    def _resolve_references(self, fs, ref_features: Dict[str, any], feature_structures: Dict[int, any]):
+    def _resolve_references(self, fs, ref_features: Dict[str, Any], feature_structures: Dict[int, Any]):
         for key, value in ref_features.items():
             target_fs = feature_structures.get(value)
             if target_fs:
@@ -350,7 +350,7 @@ class CasJsonDeserializer:
 
     def _strip_reserved_json_keys(
         self,
-        attributes: Dict[str, any],
+        attributes: Dict[str, Any],
     ):
         for key in list(attributes):
             if key.startswith(RESERVED_FIELD_PREFIX):
@@ -556,7 +556,7 @@ class CasJsonSerializer:
                 return NEGATIVE_INFINITE_VALUE
         return value
 
-    def _serialize_ref(self, fs) -> int:
+    def _serialize_ref(self, fs) -> Optional[int]:
         if not fs:
             return None
 

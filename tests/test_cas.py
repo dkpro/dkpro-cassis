@@ -122,9 +122,9 @@ def test_sofa_mime_can_be_set_and_read():
 def test_sofa_uri_can_be_set_and_read():
     cas = Cas()
 
-    cas.sofa_uri = "https://raw.githubusercontent.com/dkpro/dkpro-cassis/main/README.md"
+    cas.sofa_uri = "https://raw.githubusercontent.com/dkpro/dkpro-cassis/master/README.rst"
 
-    assert cas.sofa_uri == "https://raw.githubusercontent.com/dkpro/dkpro-cassis/main/README.md"
+    assert cas.sofa_uri == "https://raw.githubusercontent.com/dkpro/dkpro-cassis/master/README.rst"
 
 
 def test_sofa_string_can_be_set_using_constructor():

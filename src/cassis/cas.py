@@ -4,7 +4,7 @@ import warnings
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import attr
 import deprecation
@@ -29,6 +29,7 @@ from cassis.typesystem import (
     TYPE_NAME_NON_EMPTY_STRING_LIST,
     TYPE_NAME_SOFA,
     TYPE_NAME_STRING_LIST,
+    AnnotationBase,
     FeatureStructure,
     Annotation,
     Type,
@@ -391,7 +392,7 @@ class Cas:
 
         fs.xmiID = next_id
         if hasattr(fs, "sofa"):
-            fs.sofa = self.get_sofa()
+            cast(AnnotationBase, fs).sofa = self.get_sofa()
 
         self._current_view.add_fs_to_indexes(fs)
 

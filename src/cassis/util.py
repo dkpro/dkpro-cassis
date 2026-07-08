@@ -5,9 +5,10 @@ import struct
 from collections import defaultdict
 from functools import cmp_to_key
 from io import IOBase, StringIO
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, cast
 
 from cassis import Cas
+from cassis.cas import Sofa
 from cassis.typesystem import (
     FEATURE_BASE_NAME_BEGIN,
     FEATURE_BASE_NAME_END,
@@ -24,6 +25,7 @@ from cassis.typesystem import (
     TYPE_NAME_LONG_ARRAY,
     TYPE_NAME_SHORT_ARRAY,
     TYPE_NAME_STRING_ARRAY,
+    AnnotationBase,
     FeatureStructure,
     Type,
     is_annotation,
@@ -362,7 +364,7 @@ def _generate_anchor(
         anchor += "*"
 
     if mark_view and hasattr(fs, FEATURE_BASE_NAME_SOFA):
-        anchor += f"@{fs.sofa.sofaID}"
+        anchor += f"@{cast(Sofa, cast(AnnotationBase, fs).sofa).sofaID}"
 
     return anchor
 

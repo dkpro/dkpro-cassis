@@ -17,6 +17,11 @@ from toposort import toposort_flatten
 if TYPE_CHECKING:
     from cassis.cas import Sofa
 
+# `etree.Element` is a factory function, not a class - the actual element class is the
+# nominally private `etree._Element`. Alias it so annotations can refer to the type
+# without tripping private-usage checks at every use site.
+Element = etree._Element  # pyright: ignore[reportPrivateUsage]
+
 TOP_TYPE_NAME = "uima.cas.TOP"
 
 NAMESPACE_SEPARATOR = "."
@@ -1469,13 +1474,13 @@ class TypeSystemDeserializer:
 
         return ts
 
-    def _get_elem_as_str(self, elem: etree.Element) -> Optional[str]:
+    def _get_elem_as_str(self, elem: Optional[Element]) -> Optional[str]:
         if elem is not None:
             return elem.text if elem.text is None else elem.text.strip()
         else:
             return None
 
-    def _get_elem_as_bool(self, elem: etree.Element) -> Optional[bool]:
+    def _get_elem_as_bool(self, elem: Optional[Element]) -> Optional[bool]:
         if elem is not None:
             text = elem.text
             if text == "true":
@@ -1535,7 +1540,7 @@ class TypeSystemSerializer:
 
         xf.write(typeDescription)
 
-    def _serialize_feature(self, features: etree.Element, feature: Feature):
+    def _serialize_feature(self, features: Element, feature: Feature):
         featureDescription = etree.SubElement(features, "featureDescription")
 
         name = etree.SubElement(featureDescription, "name")

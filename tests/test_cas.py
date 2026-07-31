@@ -1,4 +1,6 @@
 import random
+from typing import List, Optional
+
 import pytest
 
 import attr
@@ -20,6 +22,8 @@ from cassis.typesystem import (
     TYPE_NAME_TOP,
     AnnotationHasNoSofa,
     FeatureStructure,
+    TypeSystem,
+    is_non_empty_list_fs,
 )
 from tests.fixtures import *
 from tests.test_files.test_cas_generators import MultiFeatureRandomCasGenerator, MultiTypeRandomCasGenerator
@@ -869,7 +873,7 @@ def test_covered_text_on_annotation_without_sofa():
         ann.get_covered_text()
 
 
-def test_deep_copy_without_typesystem(small_xmi, small_typesystem_xml):
+def test_deep_copy_without_typesystem(small_xmi: str, small_typesystem_xml: str):
     org = load_cas_from_xmi(small_xmi, typesystem=load_typesystem(small_typesystem_xml))
     copy = org.deep_copy(copy_typesystem=False)
 
@@ -880,7 +884,7 @@ def test_deep_copy_without_typesystem(small_xmi, small_typesystem_xml):
     assert org.typesystem == copy.typesystem
 
 
-def test_deep_copy_with_typesystem(small_xmi, small_typesystem_xml):
+def test_deep_copy_with_typesystem(small_xmi: str, small_typesystem_xml: str):
     org = load_cas_from_xmi(small_xmi, typesystem=load_typesystem(small_typesystem_xml))
     copy = org.deep_copy(copy_typesystem=True)
 
@@ -927,7 +931,7 @@ def test_random_multi_feature_deep_copy():
         assert org_text == copy_text
 
 
-def _make_fs_list(typesystem, *elements):
+def _make_fs_list(typesystem: TypeSystem, *elements: Optional[FeatureStructure]) -> FeatureStructure:
     empty_fs_list_type = typesystem.get_type("uima.cas.EmptyFSList")
     non_empty_fs_list_type = typesystem.get_type("uima.cas.NonEmptyFSList")
 
@@ -941,11 +945,11 @@ def _make_fs_list(typesystem, *elements):
     return current
 
 
-def _fs_list_elements(fs_list):
-    elements = []
+def _fs_list_elements(fs_list: Optional[FeatureStructure]) -> List[Optional[FeatureStructure]]:
+    elements: List[Optional[FeatureStructure]] = []
     current = fs_list
 
-    while hasattr(current, "head"):
+    while is_non_empty_list_fs(current):
         elements.append(current.head)
         current = current.tail
 
@@ -1020,7 +1024,7 @@ def test_deep_copy_preserves_referenced_fslist_feature():
     assert copied_items[1] is not second
 
 
-def test_deep_copy_fully_decoupled(small_xmi, small_typesystem_xml):
+def test_deep_copy_fully_decoupled(small_xmi: str, small_typesystem_xml: str):
     """Ensure deep copies do not share feature structure instances with the original.
 
     We create copies with and without copying the typesystem and assert that
@@ -1067,7 +1071,7 @@ def test_runtime_generated_annotation_is_detected_and_shown_in_anchor():
     assert "MyAnnotation[5-10]" in text
 
 
-def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
+def test_remove_annotations_in_range(small_typesystem_xml: str, small_xmi: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -1090,7 +1094,7 @@ def test_remove_annotations_in_range(small_typesystem_xml, small_xmi):
         assert any(a is expected for a in result_leftover_annotations)
 
 
-def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
+def test_remove_annotations_in_range_with_type(small_typesystem_xml: str, small_xmi: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -1115,7 +1119,7 @@ def test_remove_annotations_in_range_with_type(small_typesystem_xml, small_xmi):
             assert expected.type.name != type_
 
 
-def test_crop_sofa_string(small_typesystem_xml, small_xmi):
+def test_crop_sofa_string(small_typesystem_xml: str, small_xmi: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -1159,7 +1163,7 @@ def test_crop_sofa_string(small_typesystem_xml, small_xmi):
         assert sorted(covered_by_ref, key=sort_key) == sorted(expected_covered, key=sort_key)
 
 
-def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
+def test_crop_sofa_string_no_overlap(small_typesystem_xml: str, small_xmi: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -1203,7 +1207,7 @@ def test_crop_sofa_string_no_overlap(small_typesystem_xml, small_xmi):
         assert sorted(covered_by_ref, key=sort_key) == sorted(expected_covered, key=sort_key)
 
 
-def test_crop_sofa_string_left_overlap(small_typesystem_xml):
+def test_crop_sofa_string_left_overlap(small_typesystem_xml: str):
     """Ensure annotations that start before the cut and end inside it are kept and adjusted."""
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=typesystem)
@@ -1257,7 +1261,13 @@ def test_crop_sofa_string_left_overlap(small_typesystem_xml):
     ],
 )
 def test_crop_sofa_string_various_overlap_cases(
-    small_typesystem_xml, ann_begin, ann_end, overlap, expect_kept, expect_begin, expect_end
+    small_typesystem_xml: str,
+    ann_begin: int,
+    ann_end: int,
+    overlap: bool,
+    expect_kept: bool,
+    expect_begin: Optional[int],
+    expect_end: Optional[int],
 ):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=typesystem)
@@ -1286,7 +1296,7 @@ def test_crop_sofa_string_various_overlap_cases(
         assert ann not in cas.select_all_annotations()
 
 
-def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
+def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml: str):
     """Annotations outside the cut that are referenced from kept annotations remain discoverable."""
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=typesystem)
@@ -1320,7 +1330,7 @@ def test_crop_sofa_string_transitive_references_remain(small_typesystem_xml):
     assert child in all_fs
 
 
-def test_crop_sofa_string_serialization_roundtrip_transitive_refs(small_typesystem_xml):
+def test_crop_sofa_string_serialization_roundtrip_transitive_refs(small_typesystem_xml: str):
     """Cut the sofa, serialize to JSON and back; ensure transitively referenced
     FS outside the cut are serialized and re-loaded without exceptions."""
     from cassis.json import load_cas_from_json
@@ -1355,7 +1365,7 @@ def test_crop_sofa_string_serialization_roundtrip_transitive_refs(small_typesyst
     assert any(fs.type.name == "test.Child" and getattr(fs, "begin", None) == 0 for fs in all_fs)
 
 
-def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(small_typesystem_xml):
+def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(small_typesystem_xml: str):
     """Place the transitively referenced FS beyond the new sofa length and
     ensure serialization/deserialization does not raise an exception but
     emits warnings during offset transcoding."""
@@ -1396,7 +1406,7 @@ def test_crop_sofa_string_serialization_roundtrip_transitive_refs_beyond_end(sma
     assert any(fs.type.name == "test.Child" for fs in all_fs)
 
 
-def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
+def test_crop_sofa_string_with_missing_begin(small_typesystem_xml: str):
     """Ensure crop_sofa_string works with non-annotation feature structures (no begin/end)."""
     typesystem = load_typesystem(small_typesystem_xml)
 
@@ -1436,7 +1446,7 @@ def test_crop_sofa_string_with_missing_begin(small_typesystem_xml):
     assert ann_wo_begin2 in cas.select_all()
 
 
-def test_crop_sofa_string_with_missing_end(small_typesystem_xml):
+def test_crop_sofa_string_with_missing_end(small_typesystem_xml: str):
     """Ensure crop_sofa_string works with non-annotation feature structures (no begin/end)."""
     typesystem = load_typesystem(small_typesystem_xml)
     cas = Cas(typesystem=typesystem)

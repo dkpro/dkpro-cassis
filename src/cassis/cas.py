@@ -89,7 +89,7 @@ class Utf16CodepointOffsetConverter:
         self._external_to_python: Union[Dict[int, int], None] = None
         self._python_to_external: Union[Dict[int, int], None] = None
 
-    def create_offset_mapping(self, sofa_string: str) -> None:
+    def create_offset_mapping(self, sofa_string: Optional[str]) -> None:
         if sofa_string is None:
             return
 
@@ -134,39 +134,41 @@ class Utf16CodepointOffsetConverter:
 class Sofa:
     """Each CAS has one or more Subject of Analysis (SofA)"""
 
-    #: "Type": The type
-    type = attr.ib(repr=False)
+    #: The type
+    type: Type = attr.ib(repr=False)
 
-    #: int: The sofaNum
-    sofaNum = attr.ib(validator=validators.instance_of(int))
+    #: The sofaNum
+    sofaNum: int = attr.ib(validator=validators.instance_of(int))
 
-    #: int: The XMI id
-    xmiID = attr.ib(validator=validators.instance_of(int))
+    #: The XMI id
+    xmiID: int = attr.ib(validator=validators.instance_of(int))
 
-    #: str: The name of the sofa, i.e. the sofa ID
-    sofaID = attr.ib(validator=validators.instance_of(str))
+    #: The name of the sofa, i.e. the sofa ID
+    sofaID: str = attr.ib(validator=validators.instance_of(str))
 
-    #: str: The text corresponding to this sofa
-    _sofaString = attr.ib(default=None, validator=_validator_optional_string)
+    #: The text corresponding to this sofa
+    _sofaString: Optional[str] = attr.ib(default=None, validator=_validator_optional_string)
 
-    #: str: The mime type of `sofaString`
-    mimeType = attr.ib(default=None, validator=_validator_optional_string)
+    #: The mime type of `sofaString`
+    mimeType: Optional[str] = attr.ib(default=None, validator=_validator_optional_string)
 
-    #: str: The sofa URI, it references remote sofa data
-    sofaURI = attr.ib(default=None, validator=_validator_optional_string)
+    #: The sofa URI, it references remote sofa data
+    sofaURI: Optional[str] = attr.ib(default=None, validator=_validator_optional_string)
 
-    #: str: The sofa data byte array
-    sofaArray = attr.ib(default=None)
+    #: The sofa data byte array
+    sofaArray: Optional[FeatureStructure] = attr.ib(default=None)
 
-    #: Utf16CodepointOffsetConverter: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
-    _offset_converter = attr.ib(factory=Utf16CodepointOffsetConverter, eq=False, hash=False, repr=False)
+    #: Converts from UIMA UTF-16 based offsets to Unicode codepoint offsets and back
+    _offset_converter: Utf16CodepointOffsetConverter = attr.ib(
+        factory=Utf16CodepointOffsetConverter, eq=False, hash=False, repr=False
+    )
 
     @property
     def sofaString(self) -> Optional[str]:
         return self._sofaString
 
     @sofaString.setter
-    def sofaString(self, value: str):
+    def sofaString(self, value: Optional[str]):
         self._sofaString = value
         self._offset_converter.create_offset_mapping(value)
 
@@ -287,7 +289,7 @@ class Cas:
         # relies on the fact that all the members of the Cas are mutable references. It is not
         # possible right now to add not-mutable references because the view functionality heavily
         # relies on this functionality.
-        self._sofas = {}
+        self._sofas: dict[str, Sofa] = {}
         self._views: dict[str, View] = {}
 
         self._xmi_id_generator = IdGenerator()
@@ -772,7 +774,7 @@ class Cas:
         return list(self._sofas.values())
 
     @property
-    def sofa_string(self) -> str:
+    def sofa_string(self) -> Optional[str]:
         """The sofa string contains the document text.
 
         Returns: The sofa string.
@@ -781,7 +783,7 @@ class Cas:
         return self.get_sofa().sofaString
 
     @sofa_string.setter
-    def sofa_string(self, value: str):
+    def sofa_string(self, value: Optional[str]):
         """Sets the sofa string to `value`.
 
         Args:
@@ -800,7 +802,7 @@ class Cas:
         return self.get_sofa().mimeType
 
     @sofa_mime.setter
-    def sofa_mime(self, value: str):
+    def sofa_mime(self, value: Optional[str]):
         """Sets the sofa MIME type to `value`.
 
         Args:
@@ -819,7 +821,7 @@ class Cas:
         return self.get_sofa().sofaURI
 
     @sofa_uri.setter
-    def sofa_uri(self, value: str):
+    def sofa_uri(self, value: Optional[str]):
         """Sets the sofa URI to `value`.
 
         Args:
@@ -829,7 +831,7 @@ class Cas:
         self.get_sofa().sofaURI = value
 
     @property
-    def sofa_array(self) -> str:
+    def sofa_array(self) -> Optional[FeatureStructure]:
         """The sofa byte array references a uima.cas.ByteArray feature structure
 
         Returns: The sofa data byte array.
@@ -838,7 +840,7 @@ class Cas:
         return self.get_sofa().sofaArray
 
     @sofa_array.setter
-    def sofa_array(self, value):
+    def sofa_array(self, value: Optional[FeatureStructure]):
         """Sets the sofa byte array to the given uima.cas.ByteArray feature structure.
 
         Args:

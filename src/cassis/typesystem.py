@@ -39,6 +39,7 @@ TYPE_NAME_LONG = UIMA_CAS_PREFIX + "Long"
 TYPE_NAME_DOUBLE = UIMA_CAS_PREFIX + "Double"
 TYPE_NAME_ARRAY_BASE = UIMA_CAS_PREFIX + "ArrayBase"
 TYPE_NAME_FS_ARRAY = UIMA_CAS_PREFIX + "FSArray"
+TYPE_NAME_LIST_BASE = UIMA_CAS_PREFIX + "ListBase"
 TYPE_NAME_FS_LIST = UIMA_CAS_PREFIX + "FSList"
 TYPE_NAME_EMPTY_FS_LIST = UIMA_CAS_PREFIX + "EmptyFSList"
 TYPE_NAME_NON_EMPTY_FS_LIST = UIMA_CAS_PREFIX + "NonEmptyFSList"
@@ -191,6 +192,12 @@ _PRIMITIVE_ARRAY_TYPES = {
 }
 
 _PRIMITIVE_LIST_TYPES = {TYPE_NAME_INTEGER_LIST, TYPE_NAME_FLOAT_LIST, TYPE_NAME_STRING_LIST}
+
+_NON_EMPTY_PRIMITIVE_LIST_TYPES = {
+    TYPE_NAME_NON_EMPTY_INTEGER_LIST,
+    TYPE_NAME_NON_EMPTY_FLOAT_LIST,
+    TYPE_NAME_NON_EMPTY_STRING_LIST,
+}
 
 _INHERITANCE_FINAL_TYPES = _PRIMITIVE_ARRAY_TYPES
 
@@ -583,6 +590,61 @@ def is_fs_array(fs: FeatureStructure) -> TypeGuard[FSArrayBase]:
 
 
 @attr.s(slots=True, eq=False, order=False, repr=False)
+class ListBase(FeatureStructure):
+    """Concrete base class for `uima.cas.ListBase` feature structures.
+
+    Generated types that are (transitively) subtypes of `uima.cas.ListBase`
+    inherit from this class so that static typing can rely on a nominal base for
+    list feature structures.
+
+    Like the corresponding UIMA type, this class declares no features of its own:
+    UIMA models lists as linked nodes where only the `NonEmpty*` types declare
+    `head` and `tail`, while the `Empty*` types terminate a list and declare
+    neither. `NonEmptyListBase` adds those features, so the mere presence of them
+    distinguishes a list node from a list terminator - code walking a list relies
+    on that (see the `hasattr` checks in the serializers and in `Cas.deep_copy`).
+    """
+
+
+def is_list_fs(fs: FeatureStructure) -> TypeGuard[ListBase]:
+    return isinstance(fs, ListBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
+class NonEmptyListBase(ListBase):
+    """Concrete base class for non-empty list node feature structures.
+
+    Adds the `head` and `tail` features that the `NonEmpty*` list types declare.
+    The `head` element type differs per concrete list type (e.g. `int` for
+    `uima.cas.NonEmptyIntegerList`, `str` for `uima.cas.NonEmptyStringList`), so
+    it is typed loosely here; `NonEmptyFSListBase` narrows it for
+    `uima.cas.NonEmptyFSList`.
+    """
+
+    head: Optional[Any] = attr.ib(default=None)
+    tail: Optional[ListBase] = attr.ib(default=None)
+
+
+def is_non_empty_list_fs(fs: Optional[FeatureStructure]) -> TypeGuard[NonEmptyListBase]:
+    return isinstance(fs, NonEmptyListBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
+class NonEmptyFSListBase(NonEmptyListBase):
+    """Concrete base class for `uima.cas.NonEmptyFSList` feature structures.
+
+    Narrows `head` to a feature structure reference. It may be `None`, as an
+    FSList can contain null references.
+    """
+
+    head: Optional[FeatureStructure] = attr.ib(default=None)
+
+
+def is_non_empty_fs_list(fs: FeatureStructure) -> TypeGuard[NonEmptyFSListBase]:
+    return isinstance(fs, NonEmptyFSListBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
@@ -681,6 +743,15 @@ class Type:
         elif _is_subtype_of(self, TYPE_NAME_ARRAY_BASE):
             base = ArrayBase
             inherited_features = {"elements"}
+        elif _is_subtype_of(self, TYPE_NAME_NON_EMPTY_FS_LIST):
+            base = NonEmptyFSListBase
+            inherited_features = {"head", "tail"}
+        elif any(_is_subtype_of(self, t) for t in _NON_EMPTY_PRIMITIVE_LIST_TYPES):
+            base = NonEmptyListBase
+            inherited_features = {"head", "tail"}
+        elif _is_subtype_of(self, TYPE_NAME_LIST_BASE):
+            base = ListBase
+            inherited_features = set()
         else:
             base = FeatureStructure
             inherited_features = set()

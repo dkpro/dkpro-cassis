@@ -3,7 +3,7 @@ from collections import defaultdict
 from io import BytesIO
 from math import isinf, isnan
 from pathlib import Path
-from typing import IO, Dict, List, Union, cast
+from typing import IO, Any, Dict, List, Union, cast
 
 import attr
 from lxml import etree
@@ -333,7 +333,7 @@ class CasXmiDeserializer:
         return cas
 
     def _parse_sofa(self, typesystem: TypeSystem, elem) -> Sofa:
-        attributes = dict(elem.attrib)
+        attributes: Dict[str, Any] = dict(elem.attrib)
         attributes["xmiID"] = int(attributes.pop("{http://www.omg.org/XMI}id"))
         attributes["sofaNum"] = int(attributes["sofaNum"])
         attributes["type"] = typesystem.get_type(TYPE_NAME_SOFA)

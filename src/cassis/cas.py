@@ -38,6 +38,8 @@ from cassis.typesystem import (
     TypeSystem,
     TypeSystemMode,
     is_annotation,
+    is_array_fs,
+    is_fs_array,
     load_typesystem,
 )
 
@@ -993,7 +995,7 @@ class Cas:
 
             # Arrays contents are handled separately - they only have one "virtual" feature: elements
             if t.supertype.name == "uima.cas.ArrayBase":
-                if t.name == "uima.cas.FSArray" and fs.elements:
+                if t.name == "uima.cas.FSArray" and is_fs_array(fs) and fs.elements:
                     for ref in fs.elements:
                         if not ref or ref.xmiID in all_fs:
                             continue
@@ -1171,7 +1173,7 @@ class Cas:
                 ) from e
             fs_copy = t()
 
-            if t.name == TYPE_NAME_FS_ARRAY and fs.elements is not None:
+            if t.name == TYPE_NAME_FS_ARRAY and is_fs_array(fs) and fs.elements is not None:
                 standalone_fs_array_member_ids = []
                 for item in fs.elements:
                     if item is None:
@@ -1185,7 +1187,7 @@ class Cas:
                         standalone_fs_array_member_ids.append(None)
 
                 referenced_fs_arrays[fs.xmiID] = standalone_fs_array_member_ids
-            elif t.supertype.name == TYPE_NAME_ARRAY_BASE and fs.elements is not None:
+            elif t.supertype.name == TYPE_NAME_ARRAY_BASE and is_array_fs(fs) and fs.elements is not None:
                 referenced_primitive_arrays[fs.xmiID] = list(fs.elements)
 
             for feature in t.all_features:

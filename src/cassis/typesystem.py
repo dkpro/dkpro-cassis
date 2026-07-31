@@ -546,6 +546,43 @@ def is_annotation(fs: FeatureStructure) -> TypeGuard[Annotation]:
 
 
 @attr.s(slots=True, eq=False, order=False, repr=False)
+class ArrayBase(FeatureStructure):
+    """Concrete base class for `uima.cas.ArrayBase` feature structures.
+
+    Generated types that are (transitively) subtypes of `uima.cas.ArrayBase`
+    inherit from this class so that static typing can rely on a nominal base
+    providing `elements`.
+
+    The element type differs per concrete array type (e.g. `int` for
+    `uima.cas.IntegerArray`, `str` for `uima.cas.StringArray`), so it is typed
+    loosely here; `FSArrayBase` narrows it for `uima.cas.FSArray`. Note that
+    `elements` is `None` for an array whose contents have not been set, which is
+    distinct from an empty array - both serializers rely on that distinction.
+    """
+
+    elements: Optional[List[Any]] = attr.ib(default=None)
+
+
+def is_array_fs(fs: FeatureStructure) -> TypeGuard[ArrayBase]:
+    return isinstance(fs, ArrayBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
+class FSArrayBase(ArrayBase):
+    """Concrete base class for `uima.cas.FSArray` feature structures.
+
+    Narrows `elements` to feature structure references. Individual slots may be
+    `None`, as an FSArray can contain null references.
+    """
+
+    elements: Optional[List[Optional[FeatureStructure]]] = attr.ib(default=None)
+
+
+def is_fs_array(fs: FeatureStructure) -> TypeGuard[FSArrayBase]:
+    return isinstance(fs, FSArrayBase)
+
+
+@attr.s(slots=True, eq=False, order=False, repr=False)
 class Feature:
     """A feature defines one attribute of a feature structure"""
 
@@ -629,12 +666,21 @@ class Type:
 
         # Select the static base class and the set of features already provided by
         # that base (so they are not redeclared as dynamic fields).
+        # Note: the checks go from most to least specific, as the more specific types are
+        # subtypes of the less specific ones.
+        base: type
         if _is_subtype_of(self, TYPE_NAME_ANNOTATION):
             base = Annotation
             inherited_features = {"sofa", "begin", "end"}
         elif _is_subtype_of(self, TYPE_NAME_ANNOTATION_BASE):
             base = AnnotationBase
             inherited_features = {"sofa"}
+        elif _is_subtype_of(self, TYPE_NAME_FS_ARRAY):
+            base = FSArrayBase
+            inherited_features = {"elements"}
+        elif _is_subtype_of(self, TYPE_NAME_ARRAY_BASE):
+            base = ArrayBase
+            inherited_features = {"elements"}
         else:
             base = FeatureStructure
             inherited_features = set()

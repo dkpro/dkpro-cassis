@@ -3,7 +3,7 @@ from collections import defaultdict
 from io import BytesIO
 from math import isinf, isnan
 from pathlib import Path
-from typing import IO, Any, Dict, List, Union, cast
+from typing import IO, Any, Dict, List, Optional, Union, cast
 
 import attr
 from lxml import etree
@@ -53,6 +53,7 @@ from cassis.typesystem import (
     Type,
     TypeNotFoundError,
     TypeSystem,
+    is_non_empty_list_fs,
 )
 
 NAN_VALUE = "NaN"
@@ -502,7 +503,7 @@ class CasXmiSerializer:
         self._urls_to_prefixes = {}
         self._duplicate_namespaces = defaultdict(int)
 
-    def serialize(self, sink: Union[IO, str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
+    def serialize(self, sink: Union[IO[bytes], str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
         xmi_attrs = {"{http://www.omg.org/XMI}version": "2.0"}
 
         root = etree.Element(etree.QName(self._nsmap["xmi"], "XMI"), attrib=xmi_attrs, nsmap=self._nsmap)
@@ -522,14 +523,13 @@ class CasXmiSerializer:
         doc = etree.ElementTree(root)
         etree.cleanup_namespaces(doc, top_nsmap=self._nsmap)
 
-        return_str = sink is None
-        if return_str:
-            sink = BytesIO()
+        buffer = BytesIO() if sink is None else None
+        target = buffer if buffer is not None else sink
 
-        doc.write(sink, xml_declaration=True, pretty_print=pretty_print, encoding="UTF-8")
+        doc.write(target, xml_declaration=True, pretty_print=pretty_print, encoding="UTF-8")
 
-        if return_str:
-            return sink.getvalue().decode("utf-8")
+        if buffer is not None:
+            return buffer.getvalue().decode("utf-8")
 
         return None
 
@@ -699,13 +699,19 @@ class CasXmiSerializer:
         elem.attrib["sofa"] = str(view.sofa.xmiID)
         elem.attrib["members"] = " ".join(sorted((str(x.xmiID) for x in view.get_all_fs()), key=int))
 
-    def _collect_list_elements(self, type_name: str, value) -> List[str]:
+    def _collect_list_elements(self, type_name: str, value: Optional[FeatureStructure]) -> List[Any]:
+        """Collects the `head` values of a linked list of list node feature structures.
+
+        The element type depends on the list type, so the elements are returned
+        loosely typed: primitive lists yield `int`/`float`/`str`, an FSList yields
+        feature structures (possibly `None`, as an FSList may hold null references).
+        """
         if type_name not in _LIST_TYPES:
             raise ValueError(f"Not a primitive list: {type_name}")
 
-        elements = []
-        current = value
-        while hasattr(current, "head"):
+        elements: List[Any] = []
+        current: Optional[FeatureStructure] = value
+        while is_non_empty_list_fs(current):
             elements.append(current.head)
             current = current.tail
         return elements

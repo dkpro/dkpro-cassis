@@ -774,7 +774,7 @@ class Cas:
         return list(self._sofas.values())
 
     @property
-    def sofa_string(self) -> str:
+    def sofa_string(self) -> Optional[str]:
         """The sofa string contains the document text.
 
         Returns: The sofa string.
@@ -783,7 +783,7 @@ class Cas:
         return self.get_sofa().sofaString
 
     @sofa_string.setter
-    def sofa_string(self, value: str):
+    def sofa_string(self, value: Optional[str]):
         """Sets the sofa string to `value`.
 
         Args:
@@ -802,7 +802,7 @@ class Cas:
         return self.get_sofa().mimeType
 
     @sofa_mime.setter
-    def sofa_mime(self, value: str):
+    def sofa_mime(self, value: Optional[str]):
         """Sets the sofa MIME type to `value`.
 
         Args:
@@ -821,7 +821,7 @@ class Cas:
         return self.get_sofa().sofaURI
 
     @sofa_uri.setter
-    def sofa_uri(self, value: str):
+    def sofa_uri(self, value: Optional[str]):
         """Sets the sofa URI to `value`.
 
         Args:
@@ -831,7 +831,7 @@ class Cas:
         self.get_sofa().sofaURI = value
 
     @property
-    def sofa_array(self) -> str:
+    def sofa_array(self) -> Optional[FeatureStructure]:
         """The sofa byte array references a uima.cas.ByteArray feature structure
 
         Returns: The sofa data byte array.
@@ -840,7 +840,7 @@ class Cas:
         return self.get_sofa().sofaArray
 
     @sofa_array.setter
-    def sofa_array(self, value):
+    def sofa_array(self, value: Optional[FeatureStructure]):
         """Sets the sofa byte array to the given uima.cas.ByteArray feature structure.
 
         Args:

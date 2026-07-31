@@ -58,6 +58,11 @@ NAN_VALUE = "NaN"
 POSITIVE_INFINITE_VALUE = "Infinity"
 NEGATIVE_INFINITE_VALUE = "-Infinity"
 
+# `etree.Element` is a factory function, not a class - the actual element class is the
+# nominally private `etree._Element`. Alias it so annotations can refer to the type
+# without tripping private-usage checks at every use site.
+Element = etree._Element  # pyright: ignore[reportPrivateUsage]
+
 
 @attr.s
 class ProtoView:
@@ -499,7 +504,7 @@ class CasXmiSerializer:
     def serialize(self, sink: Union[IO, str, None], cas: Cas, pretty_print=True) -> Union[str, None]:
         xmi_attrs = {"{http://www.omg.org/XMI}version": "2.0"}
 
-        root = etree.Element(etree.QName(self._nsmap["xmi"], "XMI"), nsmap=self._nsmap, **xmi_attrs)
+        root = etree.Element(etree.QName(self._nsmap["xmi"], "XMI"), attrib=xmi_attrs, nsmap=self._nsmap)
 
         self._serialize_cas_null(root)
 
@@ -527,13 +532,13 @@ class CasXmiSerializer:
 
         return None
 
-    def _serialize_cas_null(self, root: etree.Element):
+    def _serialize_cas_null(self, root: Element):
         name = etree.QName(self._nsmap["cas"], "NULL")
         elem = etree.SubElement(root, name)
 
         elem.attrib["{http://www.omg.org/XMI}id"] = "0"
 
-    def _serialize_feature_structure(self, cas: Cas, root: etree.Element, fs: FeatureStructure):
+    def _serialize_feature_structure(self, cas: Cas, root: Element, fs: FeatureStructure):
         ts = cas.typesystem
 
         type_name = fs.type.name
@@ -672,7 +677,7 @@ class CasXmiSerializer:
                 # We need to encode non-primitive features as a reference
                 elem.attrib[feature_name] = str(value.xmiID)
 
-    def _serialize_sofa(self, root: etree.Element, sofa: Sofa):
+    def _serialize_sofa(self, root: Element, sofa: Sofa):
         name = etree.QName(self._nsmap["cas"], "Sofa")
         elem = etree.SubElement(root, name)
 
@@ -684,7 +689,7 @@ class CasXmiSerializer:
         if sofa.sofaString is not None:
             elem.attrib["sofaString"] = str(sofa.sofaString)
 
-    def _serialize_view(self, root: etree.Element, view: View):
+    def _serialize_view(self, root: Element, view: View):
         name = etree.QName(self._nsmap["cas"], "View")
         elem = etree.SubElement(root, name)
 
@@ -727,7 +732,7 @@ class CasXmiSerializer:
         else:
             return " ".join(str(e) for e in values)
 
-    def _serialize_float_value(self, value) -> Union[float, str]:
+    def _serialize_float_value(self, value: float) -> str:
         if isnan(value):
             return NAN_VALUE
         elif isinf(value):

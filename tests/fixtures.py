@@ -1,8 +1,10 @@
 import os
+from typing import List
 
 import pytest
 
 from cassis import *
+from cassis.typesystem import FeatureStructure
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_files")
 
@@ -24,7 +26,7 @@ def empty_cas_xmi(empty_cas_path: str) -> str:
 
 
 @pytest.fixture
-def small_xmi_path():
+def small_xmi_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "small_cas.xmi")
 
 
@@ -38,7 +40,7 @@ def small_xmi(small_xmi_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_inheritance_path():
+def cas_with_inheritance_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_inheritance.xmi")
 
 
@@ -52,7 +54,7 @@ def cas_with_inheritance_xmi(cas_with_inheritance_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_collections_path():
+def cas_with_collections_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_collections.xmi")
 
 
@@ -66,7 +68,7 @@ def cas_with_collections_xmi(cas_with_collections_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_list_features_path():
+def cas_with_list_features_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_list_features.xmi")
 
 
@@ -80,7 +82,7 @@ def cas_with_list_features_xmi(cas_with_list_features_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_array_features_path():
+def cas_with_array_features_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_array_features.xmi")
 
 
@@ -94,7 +96,7 @@ def cas_with_array_features_xmi(cas_with_array_features_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_references_path():
+def cas_with_references_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_references.xmi")
 
 
@@ -108,7 +110,7 @@ def cas_with_references_xmi(cas_with_references_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_nonindexed_fs_path():
+def cas_with_nonindexed_fs_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_nonindexed_fs.xmi")
 
 
@@ -122,7 +124,7 @@ def cas_with_nonindexed_fs_xmi(cas_with_nonindexed_fs_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_empty_array_references_path():
+def cas_with_empty_array_references_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_empty_array_reference.xmi")
 
 
@@ -136,7 +138,7 @@ def cas_with_empty_array_references_xmi(cas_with_empty_array_references_path: st
 
 
 @pytest.fixture
-def cas_with_multiple_references_allowed_string_array_path():
+def cas_with_multiple_references_allowed_string_array_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_multiple_references_allowed_string_array.xmi")
 
 
@@ -152,7 +154,7 @@ def cas_with_multiple_references_allowed_string_array_xmi(
 
 
 @pytest.fixture
-def cas_with_reserved_names_path():
+def cas_with_reserved_names_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_reserved_names.xmi")
 
 
@@ -166,7 +168,7 @@ def cas_with_reserved_names_xmi(cas_with_reserved_names_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_two_sofas_path():
+def cas_with_two_sofas_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_two_sofas.xmi")
 
 
@@ -180,7 +182,7 @@ def cas_with_two_sofas_xmi(cas_with_two_sofas_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_smileys_path():
+def cas_with_smileys_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_smileys.xmi")
 
 
@@ -194,7 +196,7 @@ def cas_with_smileys_xmi(cas_with_smileys_path: str) -> str:
 
 
 @pytest.fixture
-def cas_with_leniency_path():
+def cas_with_leniency_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "lenient_cas.xmi")
 
 
@@ -208,7 +210,7 @@ def cas_with_leniency_xmi(cas_with_leniency_path: str) -> str:
 
 
 @pytest.fixture
-def cas_has_fs_with_no_namespace_path():
+def cas_has_fs_with_no_namespace_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_has_fs_with_no_namespace.xmi")
 
 
@@ -222,7 +224,7 @@ def cas_has_fs_with_no_namespace_xmi(cas_has_fs_with_no_namespace_path: str) -> 
 
 
 @pytest.fixture
-def cas_with_floating_point_special_values_path():
+def cas_with_floating_point_special_values_path() -> str:
     return os.path.join(FIXTURE_DIR, "xmi", "cas_with_floating_point_special_values.xmi")
 
 
@@ -236,7 +238,7 @@ def cas_with_floating_point_special_values_xmi(cas_with_floating_point_special_v
 
 
 @pytest.fixture
-def small_typesystem_path():
+def small_typesystem_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "small_typesystem.xml")
 
 
@@ -250,7 +252,7 @@ def small_typesystem_xml(small_typesystem_path: str) -> str:
 
 
 @pytest.fixture
-def small_typesystem_with_predefined_types_path():
+def small_typesystem_with_predefined_types_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "small_typesystem_with_predefined_types.xml")
 
 
@@ -265,7 +267,7 @@ def small_typesystem_with_predefined_types_xml(small_typesystem_with_predefined_
 
 
 @pytest.fixture
-def typesystem_has_types_with_no_namespace_path():
+def typesystem_has_types_with_no_namespace_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_has_types_with_no_namespace.xml")
 
 
@@ -279,7 +281,7 @@ def typesystem_has_types_with_no_namespace_xml(typesystem_has_types_with_no_name
 
 
 @pytest.fixture
-def typesystem_with_inheritance_path():
+def typesystem_with_inheritance_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_inheritance.xml")
 
 
@@ -293,7 +295,7 @@ def typesystem_with_inheritance_xml(typesystem_with_inheritance_path: str) -> st
 
 
 @pytest.fixture
-def typesystem_with_redefined_documentannotation_path():
+def typesystem_with_redefined_documentannotation_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_redefined_documentannotation.xml")
 
 
@@ -307,7 +309,7 @@ def typesystem_with_redefined_documentannotation_xml(typesystem_with_redefined_d
 
 
 @pytest.fixture
-def typesystem_with_reserved_names_path():
+def typesystem_with_reserved_names_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_reserved_names.xml")
 
 
@@ -321,7 +323,7 @@ def typesystem_with_reserved_names_xml(typesystem_with_reserved_names_path: str)
 
 
 @pytest.fixture
-def typesystem_with_collections_path():
+def typesystem_with_collections_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_collections.xml")
 
 
@@ -335,7 +337,7 @@ def typesystem_with_collections_xml(typesystem_with_collections_path: str) -> st
 
 
 @pytest.fixture
-def typesystem_with_multiple_references_allowed_path():
+def typesystem_with_multiple_references_allowed_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_multiple_references_allowed.xml")
 
 
@@ -349,7 +351,7 @@ def typesystem_with_multiple_references_allowed_xml(typesystem_with_multiple_ref
 
 
 @pytest.fixture
-def dkpro_typesystem_path():
+def dkpro_typesystem_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "important_dkpro_types.xml")
 
 
@@ -363,7 +365,7 @@ def dkpro_typesystem_xml(dkpro_typesystem_path: str) -> str:
 
 
 @pytest.fixture
-def webanno_typesystem_path():
+def webanno_typesystem_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "webanno_types.xml")
 
 
@@ -377,7 +379,7 @@ def webanno_typesystem_xml(webanno_typesystem_path: str) -> str:
 
 
 @pytest.fixture
-def inception_typesystem_path():
+def inception_typesystem_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "inception_typesystem.xml")
 
 
@@ -391,7 +393,7 @@ def inception_typesystem_xml(inception_typesystem_path: str) -> str:
 
 
 @pytest.fixture
-def typesystem_with_floating_points_path():
+def typesystem_with_floating_points_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_floating_points.xml")
 
 
@@ -404,7 +406,7 @@ def typesystem_with_floating_points_xml(typesystem_with_floating_points_path: st
 # Type system merge base
 
 
-def typesystem_merge_base_path():
+def typesystem_merge_base_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_merge_base.xml")
 
 
@@ -412,7 +414,7 @@ def typesystem_merge_base_path():
 
 
 @pytest.fixture
-def typesystem_with_list_features_path():
+def typesystem_with_list_features_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_list_features.xml")
 
 
@@ -426,7 +428,7 @@ def typesystem_with_list_features_xml(typesystem_with_list_features_path: str) -
 
 
 @pytest.fixture
-def typesystem_with_array_features_path():
+def typesystem_with_array_features_path() -> str:
     return os.path.join(FIXTURE_DIR, "typesystems", "typesystem_with_array_features.xml")
 
 
@@ -440,7 +442,7 @@ def typesystem_with_array_features_xml(typesystem_with_array_features_path: str)
 
 
 @pytest.fixture
-def tokens(small_typesystem_xml: str):
+def tokens(small_typesystem_xml: str) -> List[FeatureStructure]:
     typesystem = load_typesystem(small_typesystem_xml)
 
     cas = Cas(typesystem)
@@ -468,7 +470,7 @@ def tokens(small_typesystem_xml: str):
 
 
 @pytest.fixture
-def sentences(small_typesystem_xml: str):
+def sentences(small_typesystem_xml: str) -> List[FeatureStructure]:
     typesystem = load_typesystem(small_typesystem_xml)
     SentenceType = typesystem.get_type("cassis.Sentence")
 

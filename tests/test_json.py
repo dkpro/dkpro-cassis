@@ -97,7 +97,7 @@ ONE_WAY_FIXTURES = [
 
 
 @pytest.mark.parametrize("json_path, annotations", ROUND_TRIP_FIXTURES)
-def test_deserialization_serialization(json_path, annotations):
+def test_deserialization_serialization(json_path: str, annotations):
     with open(os.path.join(json_path, "data.json"), "rb") as f:
         cas = load_cas_from_json(f)
 
@@ -110,7 +110,7 @@ def test_deserialization_serialization(json_path, annotations):
 
 
 @pytest.mark.parametrize("json_path, annotations", ONE_WAY_FIXTURES)
-def test_deserialization_serialization_one_way(json_path, annotations):
+def test_deserialization_serialization_one_way(json_path: str, annotations):
     with open(os.path.join(json_path, "data.json"), "rb") as f:
         cas = load_cas_from_json(f)
 
@@ -288,7 +288,7 @@ def test_multi_feature_random_serialization_deserialization():
 
 
 @pytest.mark.parametrize("json_path, annotations", ROUND_TRIP_FIXTURES)
-def test_unicode(json_path, annotations):
+def test_unicode(json_path: str, annotations):
     with open(os.path.join(json_path, "data.json"), "rb") as f:
         cas = load_cas_from_json(f)
 

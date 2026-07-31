@@ -133,13 +133,13 @@ FIXTURES = [
 ]
 
 
-def test_deserializing_from_file(small_xmi_path, small_typesystem_xml):
+def test_deserializing_from_file(small_xmi_path: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     with open(small_xmi_path, "rb") as f:
         load_cas_from_xmi(f, typesystem=typesystem)
 
 
-def test_deserializing_from_string(small_typesystem_xml):
+def test_deserializing_from_string(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
@@ -156,7 +156,7 @@ def test_deserializing_from_string(small_typesystem_xml):
     load_cas_from_xmi(cas_xmi, typesystem=typesystem)
 
 
-def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
+def test_sofas_are_parsed(small_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem)
 
@@ -173,7 +173,7 @@ def test_sofas_are_parsed(small_xmi, small_typesystem_xml):
     assert expected_sofas == cas.sofas
 
 
-def test_views_are_parsed(small_xmi, small_typesystem_xml):
+def test_views_are_parsed(small_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
@@ -198,7 +198,7 @@ def test_views_are_parsed(small_xmi, small_typesystem_xml):
     assert 1 == len(list(view2.select_all_annotations()))
 
 
-def test_deep_copy_preserves_view_membership_for_non_annotation_fs(small_typesystem_xml):
+def test_deep_copy_preserves_view_membership_for_non_annotation_fs(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas_xmi = """<?xml version="1.0" encoding="UTF-8"?>
     <xmi:XMI xmlns:tcas="http:///uima/tcas.ecore" xmlns:xmi="http://www.omg.org/XMI" xmlns:cas="http:///uima/cas.ecore"
@@ -261,7 +261,7 @@ def test_deep_copy_preserves_non_annotation_membership_in_multiple_views():
     assert_xml_equal(xmi_copy, xmi_orig)
 
 
-def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesystem_xml):
+def test_deserializing_and_then_adding_annotations_works(small_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     TokenType = typesystem.get_type("cassis.Token")
 
@@ -288,7 +288,7 @@ def test_deserializing_and_then_adding_annotations_works(small_xmi, small_typesy
     assert set(member_ids) == set(fs_ids)
 
 
-def test_deserializing_references_in_attributes_work(cas_with_references_xmi, webanno_typesystem_xml):
+def test_deserializing_references_in_attributes_work(cas_with_references_xmi: str, webanno_typesystem_xml: str):
     typesystem = load_typesystem(webanno_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
 
@@ -321,7 +321,7 @@ def test_deserializing_references_in_attributes_work(cas_with_references_xmi, we
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
-def test_serializing_cas_to_string(xmi, typesystem_xml):
+def test_serializing_cas_to_string(xmi: str, typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
 
@@ -332,7 +332,7 @@ def test_serializing_cas_to_string(xmi, typesystem_xml):
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
-def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
+def test_serializing_cas_to_file_path(tmpdir, xmi: str, typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
     path = str(tmpdir.join("cas.xml"))
@@ -345,7 +345,7 @@ def test_serializing_cas_to_file_path(tmpdir, xmi, typesystem_xml):
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("xmi, typesystem_xml", FIXTURES)
-def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
+def test_serializing_cas_to_file(tmpdir, xmi: str, typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
     cas = load_cas_from_xmi(xmi, typesystem=typesystem)
     path = Path(str(tmpdir.join("cas.xml")))
@@ -356,7 +356,7 @@ def test_serializing_cas_to_file(tmpdir, xmi, typesystem_xml):
         assert_xml_equal(actual.read(), xmi)
 
 
-def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml):
+def test_serializing_xmi_has_correct_namespaces(small_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
 
@@ -368,7 +368,7 @@ def test_serializing_xmi_has_correct_namespaces(small_xmi, small_typesystem_xml)
     assert actual_xml.count("ns0") == 0
 
 
-def test_serializing_xmi_ignores_none_features(small_xmi, small_typesystem_xml):
+def test_serializing_xmi_ignores_none_features(small_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
     cas = load_cas_from_xmi(small_xmi, typesystem=typesystem)
     TokenType = typesystem.get_type("cassis.Token")
@@ -422,7 +422,7 @@ def test_serializing_with_unset_xmi_ids_works():
 # UIMA vs cassis offsets
 
 
-def test_offsets_are_mapped_from_uima_to_cassis(cas_with_smileys_xmi, dkpro_typesystem_xml):
+def test_offsets_are_mapped_from_uima_to_cassis(cas_with_smileys_xmi: str, dkpro_typesystem_xml: str):
     typesystem = load_typesystem(dkpro_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
 
@@ -433,7 +433,7 @@ def test_offsets_are_mapped_from_uima_to_cassis(cas_with_smileys_xmi, dkpro_type
     assert surface_forms == ["Transformers", "Transformers", "Transformers", "PyTorch", "TensorFlow"]
 
 
-def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi, dkpro_typesystem_xml):
+def test_offsets_are_recomputed_when_sofa_string_changes(cas_with_smileys_xmi: str, dkpro_typesystem_xml: str):
     typesystem = load_typesystem(dkpro_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_smileys_xmi, typesystem=typesystem)
 
@@ -507,14 +507,14 @@ def test_that_invalid_offsets_remain_unmapped_on_export():
 # Leniency
 
 
-def test_leniency_type_not_in_typesystem_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+def test_leniency_type_not_in_typesystem_lenient(cas_with_leniency_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.warns(UserWarning):
         load_cas_from_xmi(cas_with_leniency_xmi, typesystem=typesystem, lenient=True)
 
 
-def test_leniency_type_not_in_typesystem_not_lenient(cas_with_leniency_xmi, small_typesystem_xml):
+def test_leniency_type_not_in_typesystem_not_lenient(cas_with_leniency_xmi: str, small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
 
     with pytest.raises(TypeNotFoundError):

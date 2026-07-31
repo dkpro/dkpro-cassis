@@ -1,5 +1,6 @@
 import warnings
 from pathlib import Path
+from typing import Optional
 from pytest_lazy_fixtures import lf
 
 import pytest as pytest
@@ -218,7 +219,7 @@ def test_type_can_create_instance_with_inherited_fields():
     assert annotation.childFeature == "child"
 
 
-def test_type_can_create_instance_with_deeply_inherited_fields(typesystem_with_inheritance_xml):
+def test_type_can_create_instance_with_deeply_inherited_fields(typesystem_with_inheritance_xml: str):
     # https://github.com/dkpro/dkpro-cassis/issues/97
     typesystem = load_typesystem(typesystem_with_inheritance_xml)
 
@@ -228,7 +229,7 @@ def test_type_can_create_instance_with_deeply_inherited_fields(typesystem_with_i
     assert "childFeature" in t._inherited_features
 
 
-def test_type_can_retrieve_children(typesystem_with_inheritance_xml):
+def test_type_can_retrieve_children(typesystem_with_inheritance_xml: str):
     typesystem = load_typesystem(typesystem_with_inheritance_xml)
 
     t = typesystem.get_type("cassis.Child")
@@ -238,7 +239,7 @@ def test_type_can_retrieve_children(typesystem_with_inheritance_xml):
     assert children == ["cassis.GrandChild"]
 
 
-def test_type_can_retrieve_descendants(typesystem_with_inheritance_xml):
+def test_type_can_retrieve_descendants(typesystem_with_inheritance_xml: str):
     typesystem = load_typesystem(typesystem_with_inheritance_xml)
 
     t = typesystem.get_type("cassis.Child")
@@ -626,18 +627,18 @@ def test_subsumes(parent_name: str, child_name: str, expected: bool):
         lf("dkpro_typesystem_path"),
     ],
 )
-def test_deserializing_from_file(typesystem_path):
+def test_deserializing_from_file(typesystem_path: str):
     with open(typesystem_path, "rb") as f:
         load_typesystem(f)
 
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
-def test_deserializing_from_string(typesystem_xml):
+def test_deserializing_from_string(typesystem_xml: str):
     load_typesystem(typesystem_xml)
 
 
-def test_deserializing_small_typesystem(small_typesystem_xml):
+def test_deserializing_small_typesystem(small_typesystem_xml: str):
     typesystem = load_typesystem(small_typesystem_xml)
 
     # There are two types in the type system and we implicitly
@@ -683,7 +684,7 @@ def test_deserializing_small_typesystem(small_typesystem_xml):
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
-def test_serializing_typesystem_to_string(typesystem_xml):
+def test_serializing_typesystem_to_string(typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
 
     actual_xml = typesystem.to_xml()
@@ -693,7 +694,7 @@ def test_serializing_typesystem_to_string(typesystem_xml):
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
-def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
+def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
     path = Path(str(tmpdir.join("typesystem.xml")))
 
@@ -705,7 +706,7 @@ def test_serializing_typesystem_to_file_path(tmpdir, typesystem_xml):
 
 @pytest.mark.filterwarnings("ignore:Trying to add feature")
 @pytest.mark.parametrize("typesystem_xml", TYPESYSTEM_FIXTURES)
-def test_serializing_typesystem_to_file(tmpdir, typesystem_xml):
+def test_serializing_typesystem_to_file(tmpdir, typesystem_xml: str):
     typesystem = load_typesystem(typesystem_xml)
     path = str(tmpdir.join("typesystem.xml"))
 
@@ -738,7 +739,7 @@ def test_that_typesystem_with_child_redefining_type_differently_throws():
 
 
 def test_that_typesystem_with_redefined_documentation_annotation_works(
-    typesystem_with_redefined_documentannotation_xml,
+    typesystem_with_redefined_documentannotation_xml: str,
 ):
     typesystem = load_typesystem(typesystem_with_redefined_documentannotation_xml)
 
@@ -761,7 +762,9 @@ def test_that_typesystem_with_redefined_documentation_annotation_works(
         ("arrayTop", "uima.cas.FSArray", None, None),  # No elementType,
     ],
 )
-def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementType, multipleReferencesAllowed):
+def test_that_merging_compatible_typesystem_works(
+    name: str, rangeTypeName: str, elementType: Optional[str], multipleReferencesAllowed: Optional[bool]
+):
     with open(typesystem_merge_base_path()) as f:
         base = load_typesystem(f.read())
 
@@ -795,7 +798,9 @@ def test_that_merging_compatible_typesystem_works(name, rangeTypeName, elementTy
         ("arrayMultiRefsOk", "uima.cas.FSArray", "uima.cas.TOP", None),  # Different multiref default
     ],
 )
-def test_that_merging_incompatible_typesystem_throws(name, rangeTypeName, elementType, multipleReferencesAllowed):
+def test_that_merging_incompatible_typesystem_throws(
+    name: str, rangeTypeName: str, elementType: Optional[str], multipleReferencesAllowed: Optional[bool]
+):
     with open(typesystem_merge_base_path()) as f:
         base = load_typesystem(f.read())
 
@@ -936,7 +941,7 @@ def test_typchecking_fs_array():
 # Getting/Setting with path selector
 
 
-def test_get_set_path_semargs(cas_with_references_xmi, webanno_typesystem_xml):
+def test_get_set_path_semargs(cas_with_references_xmi: str, webanno_typesystem_xml: str):
     typesystem = load_typesystem(webanno_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
 
@@ -997,7 +1002,7 @@ def test_get_set_path_stringlist():
     assert lst["tail.tail.head"] == "newer_baz"
 
 
-def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
+def test_set_path_not_found(cas_with_references_xmi: str, webanno_typesystem_xml: str):
     typesystem = load_typesystem(webanno_typesystem_xml)
     cas = load_cas_from_xmi(cas_with_references_xmi, typesystem=typesystem)
 
@@ -1010,7 +1015,7 @@ def test_set_path_not_found(cas_with_references_xmi, webanno_typesystem_xml):
         first_arg.set("target.bar", 42)
 
 
-def test_bad_feature_path(small_typesystem_xml):
+def test_bad_feature_path(small_typesystem_xml: str):
     cas = Cas(typesystem=load_typesystem(small_typesystem_xml))
     TokenType = cas.typesystem.get_type("cassis.Token")
     token = TokenType(xmiID=10, begin=0, end=0)

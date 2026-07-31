@@ -3,7 +3,7 @@ from collections import defaultdict
 from io import BytesIO
 from math import isinf, isnan
 from pathlib import Path
-from typing import IO, Dict, List, Union
+from typing import IO, Dict, List, Union, cast
 
 import attr
 from lxml import etree
@@ -48,6 +48,7 @@ from cassis.typesystem import (
     TYPE_NAME_STRING,
     TYPE_NAME_STRING_ARRAY,
     TYPE_NAME_STRING_LIST,
+    ArrayBase,
     FeatureStructure,
     Type,
     TypeNotFoundError,
@@ -581,6 +582,8 @@ class CasXmiSerializer:
 
         # Case where arrays are rendered as separate elements (not inline) for use with multipleReferencesAllowed = True
         if ts.is_primitive_array(fs.type.name) or fs.type.name == "uima.cas.FSArray":
+            # Array types are generated with ArrayBase as their static base, so they carry `elements`
+            fs = cast(ArrayBase, fs)
             if fs.elements is None:
                 return
             elif ts.is_instance_of(fs.type.name, "uima.cas.StringArray"):

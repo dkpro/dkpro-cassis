@@ -5,7 +5,7 @@ import struct
 from collections import defaultdict
 from functools import cmp_to_key
 from io import IOBase, StringIO
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeGuard, cast
 
 from cassis import Cas
 from cassis.cas import Sofa
@@ -26,6 +26,7 @@ from cassis.typesystem import (
     TYPE_NAME_SHORT_ARRAY,
     TYPE_NAME_STRING_ARRAY,
     AnnotationBase,
+    ArrayBase,
     FeatureStructure,
     Type,
     is_annotation,
@@ -373,7 +374,7 @@ def _is_primitive_value(value: Any) -> bool:
     return isinstance(value, (int, float, bool, str))
 
 
-def _is_array_fs(fs: Any) -> bool:
+def _is_array_fs(fs: Any) -> TypeGuard[ArrayBase]:
     if not isinstance(fs, FeatureStructure):
         return False
 

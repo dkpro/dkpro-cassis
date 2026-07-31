@@ -10,7 +10,9 @@ from toposort import toposort_flatten
 from cassis.cas import NAME_DEFAULT_SOFA, Cas, IdGenerator, Sofa, View
 from cassis.typesystem import (
     TYPE_NAME_ANNOTATION,
+    FeatureStructure,
     TypeSystem,
+    is_array_fs,
     is_predefined,
     merge_typesystems,
     TYPE_NAME_SOFA,
@@ -491,29 +493,30 @@ class CasJsonSerializer:
 
         return json_feature
 
-    def _serialize_feature_structure(self, fs) -> dict:
+    def _serialize_feature_structure(self, fs: FeatureStructure) -> dict:
         type_name = fs.type.name
 
         json_fs = OrderedDict()
         json_fs[ID_FIELD] = fs.xmiID
         json_fs[TYPE_FIELD] = type_name
 
-        if type_name == TYPE_NAME_BYTE_ARRAY:
-            if fs.elements:
-                json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
-            return json_fs
-        elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
-            if fs.elements:
-                json_fs[ELEMENTS_FIELD] = [self._serialize_float_value(e) for e in fs.elements]
-            return json_fs
-        elif is_primitive_array(fs.type):
-            if fs.elements:
-                json_fs[ELEMENTS_FIELD] = fs.elements
-            return json_fs
-        elif TYPE_NAME_FS_ARRAY == type_name:
-            if fs.elements:
-                json_fs[ELEMENTS_FIELD] = [self._serialize_ref(e) for e in fs.elements]
-            return json_fs
+        if is_array_fs(fs):
+            if type_name == TYPE_NAME_BYTE_ARRAY:
+                if fs.elements:
+                    json_fs[ELEMENTS_FIELD] = base64.b64encode(bytes(fs.elements)).decode("ascii")
+                return json_fs
+            elif type_name in {TYPE_NAME_DOUBLE_ARRAY, TYPE_NAME_FLOAT_ARRAY}:
+                if fs.elements:
+                    json_fs[ELEMENTS_FIELD] = [self._serialize_float_value(e) for e in fs.elements]
+                return json_fs
+            elif is_primitive_array(fs.type):
+                if fs.elements:
+                    json_fs[ELEMENTS_FIELD] = fs.elements
+                return json_fs
+            elif TYPE_NAME_FS_ARRAY == type_name:
+                if fs.elements:
+                    json_fs[ELEMENTS_FIELD] = [self._serialize_ref(e) for e in fs.elements]
+                return json_fs
 
         for feature in fs.type.all_features:
             if feature.name in CasJsonSerializer._COMMON_FIELD_NAMES:

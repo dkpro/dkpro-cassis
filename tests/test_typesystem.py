@@ -175,7 +175,7 @@ def test_type_can_get_all_features_with_in_between_added_features():
 
     parent_feature = typesystem.create_feature(domainType=parent_type, name="parentFeature", rangeType=TYPE_NAME_STRING)
 
-    assert child_type.all_features == [child_feature, parent_feature]
+    assert child_type.all_features == [parent_feature, child_feature]
 
 
 # Type

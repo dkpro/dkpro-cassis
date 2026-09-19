@@ -893,7 +893,7 @@ class Type:
         if self._cached_all_features is None:
             # We use `unique_everseen` here, as children could redefine parent types (Issue #56)
             self._cached_all_features = list(
-                unique_everseen(chain(self._features.values(), self._inherited_features.values()))
+                unique_everseen(chain(self._inherited_features.values(), self._features.values()))
             )
 
         return self._cached_all_features
